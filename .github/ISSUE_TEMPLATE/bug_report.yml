@@ -1,0 +1,36 @@
+name: Bug report / 故障报告 / Fehler melden
+description: Report a reproducible problem with reading, pagination, translation, or installation.
+title: "[Bug] "
+body:
+  - type: markdown
+    attributes:
+      value: |
+        English, 中文, and Deutsch are welcome.
+        欢迎用中英德三语反馈。Berichte auf Deutsch sind willkommen.
+        For slowness or memory use, please choose the performance form instead.
+  - type: textarea
+    id: environment
+    attributes:
+      label: Environment / 运行环境 / Umgebung
+      description: DSH version, plugin version or commit, OS, and Desktop or Web.
+      placeholder: "DSH: ...; plugin: ...; OS: ...; Desktop/Web: ..."
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce / 复现步骤 / Schritte
+      placeholder: "1. Open ...\n2. Choose ...\n3. Observe ..."
+    validations:
+      required: true
+  - type: textarea
+    id: behavior
+    attributes:
+      label: Expected and actual behavior / 期望与实际表现 / Erwartetes und tatsächliches Verhalten
+    validations:
+      required: true
+  - type: textarea
+    id: evidence
+    attributes:
+      label: Screenshots, errors, or sample / 截图、错误或样本 / Belege
+      description: Optional. Use a small public or redacted example; omit private documents and credentials.

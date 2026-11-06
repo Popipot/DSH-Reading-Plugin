@@ -1,0 +1,27 @@
+name: Idea or feature / 意见建议 / Verbesserungsidee
+description: Suggest a feature, a better reading workflow, documentation, or a usability improvement.
+title: "[Suggestion] "
+body:
+  - type: markdown
+    attributes:
+      value: |
+        English, 中文, and Deutsch are welcome. Small improvements matter too.
+        欢迎提出优化意见和建议。Auch kleine Verbesserungsvorschläge sind willkommen.
+  - type: textarea
+    id: need
+    attributes:
+      label: Your reading need / 使用需求 / Ihr Bedarf
+      description: What are you trying to do, and what makes it difficult today?
+    validations:
+      required: true
+  - type: textarea
+    id: idea
+    attributes:
+      label: Suggested improvement / 改进建议 / Verbesserungsvorschlag
+    validations:
+      required: true
+  - type: textarea
+    id: examples
+    attributes:
+      label: Examples or alternatives / 示例或参考 / Beispiele
+      description: Optional sketches, public product references, or alternative approaches.

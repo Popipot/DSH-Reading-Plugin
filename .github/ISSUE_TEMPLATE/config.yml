@@ -1,0 +1,8 @@
+blank_issues_enabled: true
+contact_links:
+  - name: Installation / 安装 / Installation
+    url: https://github.com/Popipot/DSH-Reading-Plugin/blob/main/docs/INSTALL.en.md
+    about: Start here for Desktop, CLI/Web, and local installation; Chinese and German links are at the top.
+  - name: Email / 邮箱 / E-Mail
+    url: https://github.com/Popipot/DSH-Reading-Plugin#contact
+    about: "Contact: csty341@gmail.com"

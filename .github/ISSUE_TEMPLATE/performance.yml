@@ -1,0 +1,44 @@
+name: Performance & optimization / 性能优化 / Leistung
+description: Help improve loading, scrolling, page turning, rendering, and memory use.
+title: "[Performance] "
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Suggestions and measurements in English, 中文, or Deutsch are welcome.
+        欢迎提供卡顿场景和优化建议。Beschreiben Sie gern Leistungsprobleme und Verbesserungsideen.
+        A public/redacted sample is helpful; please do not attach private documents.
+  - type: textarea
+    id: environment
+    attributes:
+      label: Environment / 运行环境 / Umgebung
+      description: DSH/plugin versions, OS, Desktop/Web, and CPU/RAM/display scale if known.
+    validations:
+      required: true
+  - type: textarea
+    id: document
+    attributes:
+      label: Document / 文档信息 / Dokument
+      description: Format, size, page count, text/scans/complex graphics; optional public sample link.
+      placeholder: "PDF; 80 MB; 1,029 pages; text and images; ..."
+    validations:
+      required: true
+  - type: textarea
+    id: reproduce
+    attributes:
+      label: Slow action and reproduction / 卡顿操作与复现 / Langsamer Vorgang
+      description: Opening, scrolling, turning, zooming, or switching modes; include page numbers and whether it is a first visit or revisit.
+    validations:
+      required: true
+  - type: textarea
+    id: settings
+    attributes:
+      label: Reading settings / 阅读设置 / Leseeinstellungen
+      description: Scroll/horizontal mode, zoom, translation on/off, next-page pretranslation; does it still happen with translation disabled?
+    validations:
+      required: true
+  - type: textarea
+    id: measurements
+    attributes:
+      label: Measurements or improvement idea / 数据或优化建议 / Messwerte oder Vorschlag
+      description: Optional timings, memory observations, visible freezes, screenshots, or a proposed improvement. Compare the same file/settings when possible.
