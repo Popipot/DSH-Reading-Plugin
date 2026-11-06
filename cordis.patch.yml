@@ -1,0 +1,8 @@
+# dsh-reader bundle patch: insert the reader as one profile row.
+#
+# The row name is the bare package name on purpose: dsh-client-modules scans
+# bare-name rows to find package.json's `dsh.client` declaration and serve the
+# browser half at /plugins/dsh-reader/client.js.
+- insert:
+    - id: dsh-reader
+      name: dsh-reader

@@ -1,0 +1,57 @@
+{
+  "name": "dsh-reader",
+  "version": "0.1.0",
+  "private": true,
+  "description": "DSH Reader — a left-sidebar reading workspace for PDF, EPUB, MOBI and text documents with live Chinese translation and in-place AI/Google lookup.",
+  "type": "module",
+  "main": "./lib/index.js",
+  "exports": {
+    ".": "./lib/index.js",
+    "./client": "./client/client.js",
+    "./package.json": "./package.json",
+    "./cordis.patch.yml": "./cordis.patch.yml"
+  },
+  "files": [
+    "lib",
+    "client",
+    "dist",
+    "docs",
+    "cordis.patch.yml",
+    "README.md",
+    "OPTIMIZATION.md",
+    "LICENSE"
+  ],
+  "dsh": {
+    "bundle": {
+      "patch": "./cordis.patch.yml"
+    },
+    "client": {
+      "platform": "web"
+    }
+  },
+  "scripts": {
+    "build": "npm run build:client && npm run build:pdf && npm run build:assets",
+    "build:client": "node scripts/build-client.mjs",
+    "build:pdf": "node scripts/build-pdf.mjs",
+    "build:assets": "node scripts/copy-assets.mjs",
+    "test": "node --test tests/*.test.mjs",
+    "test:pdf-browser": "node scripts/check-pdf-browser.mjs",
+    "test:flow-browser": "node scripts/check-pdf-browser.mjs --flow",
+    "test:translation-browser": "node scripts/check-pdf-browser.mjs --translation",
+    "test:pdf-performance": "node scripts/check-pdf-browser.mjs --performance"
+  },
+  "devDependencies": {
+    "@lingo-reader/mobi-parser": "0.4.6",
+    "dompurify": "3.3.1",
+    "esbuild": "0.28.2",
+    "fflate": "0.8.3",
+    "jsdom": "26.1.0",
+    "pdfjs-dist": "6.5.438",
+    "react": "19.2.0",
+    "react-dom": "19.2.0"
+  },
+  "engines": {
+    "node": "^22.19.0 || >=24.0.0"
+  },
+  "license": "MIT"
+}
