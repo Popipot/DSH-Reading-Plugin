@@ -321,6 +321,31 @@ export const styles = String.raw`
 .dshr-paged-status em { font-style: normal; }
 .dshr-paged-scroll { scrollbar-width: none; scroll-behavior: auto; overflow-anchor: none; }
 .dshr-page-tail { width: 1px; pointer-events: none; }
+.dshr-flow-transition {
+  position: absolute; z-index: 17; overflow: hidden; isolation: isolate;
+  pointer-events: none; user-select: none; contain: strict;
+  background: var(--dshr-reader-bg, #fbf7ee);
+  color: var(--dshr-reader-ink); filter: brightness(var(--dshr-reader-brightness, 1));
+}
+.dshr-turn-page { position: absolute; inset: 0; overflow: hidden; background: var(--dshr-reader-bg, #fbf7ee); }
+.dshr-turn-page::before {
+  content: ''; position: absolute; inset: 0; background: var(--dshr-reader-image, none) center / cover no-repeat;
+  opacity: var(--dshr-reader-image-opacity, .26); filter: blur(var(--dshr-reader-image-blur, 0px));
+}
+.dshr-turn-page.has-edge-shadow { box-shadow: -14px 0 24px -18px rgba(0,0,0,.38); }
+.dshr-turn-mask { position: absolute; left: 0; right: 0; z-index: 4; background: var(--dshr-reader-bg, #fbf7ee); }
+.dshr-turn-mask--top { top: 0; }
+.dshr-turn-mask--bottom { bottom: 0; }
+.dshr-is-turning .dshr-book-mask { visibility: hidden; }
+.dshr-turn-fold {
+  position: absolute; inset: 0; z-index: 3; transform-origin: 0 0; overflow: hidden;
+  background: linear-gradient(100deg, rgba(0,0,0,.13), transparent 9%, rgba(255,255,255,.15) 30%, transparent 75%), var(--dshr-reader-bg, #fbf7ee);
+  box-shadow: inset 1px 0 2px rgba(0,0,0,.12);
+}
+.dshr-turn-fold-shadow {
+  position: absolute; left: 0; top: 0; width: 70px; height: 200%; transform-origin: 0 50%;
+  background: linear-gradient(to right, #000, transparent); pointer-events: none;
+}
 .dshr-paged-scroll::-webkit-scrollbar { width: 0; height: 0; }
 .dshr-topbar {
   display: flex; align-items: center; gap: 10px; padding: 9px 16px 9px 12px;

@@ -13,7 +13,8 @@ import { complexPdfFixture } from './pdf-complex-fixture.mjs';
 const project = fileURLToPath(new URL('../', import.meta.url));
 const output = path.join(project, 'output/playwright');
 await mkdir(output, { recursive: true });
-const flowCheck = process.argv.includes('--flow');
+const animationCheck = process.argv.includes('--flow-animations');
+const flowCheck = process.argv.includes('--flow') || animationCheck;
 const translationCheck = process.argv.includes('--translation');
 const performanceCheck = process.argv.includes('--performance');
 const suppliedPdf = flowCheck || translationCheck ? null : process.argv.slice(2).find(arg => !arg.startsWith('--'));
@@ -46,7 +47,7 @@ function fixture(pages = 1029, paragraphs = false) {
 }
 const pdf = flowCheck ? Buffer.alloc(0) : translationCheck ? fixture(24, true) : suppliedPdf ? await readFile(path.resolve(suppliedPdf)) : performanceCheck ? complexPdfFixture() : fixture();
 const bundle = await build({
-  entryPoints: [path.join(project, flowCheck ? 'scripts/flow-browser-harness.jsx' : translationCheck ? 'scripts/translation-browser-harness.jsx' : performanceCheck ? 'scripts/pdf-performance-harness.jsx' : 'scripts/pdf-browser-harness.jsx')],
+  entryPoints: [path.join(project, animationCheck ? 'scripts/flow-animation-harness.jsx' : flowCheck ? 'scripts/flow-browser-harness.jsx' : translationCheck ? 'scripts/translation-browser-harness.jsx' : performanceCheck ? 'scripts/pdf-performance-harness.jsx' : 'scripts/pdf-browser-harness.jsx')],
   bundle: true, write: false, format: 'esm', platform: 'browser', target: 'chrome120', jsx: 'automatic',
   define: { 'process.env.NODE_ENV': '"production"' },
 });
@@ -100,6 +101,15 @@ try {
   let result;
   const deadline = Date.now() + 90000;
   while (Date.now() < deadline) {
+    if (animationCheck) {
+      const capture = await command('Runtime.evaluate', { expression: 'window.__flowCapture?.name', returnByValue: true });
+      const name = capture.result?.result?.value;
+      if (name) {
+        const frame = await command('Page.captureScreenshot', { format: 'png' });
+        if (frame.result?.data) await writeFile(path.join(output, `flow-animation-${name}.png`), Buffer.from(frame.result.data, 'base64'));
+        await command('Runtime.evaluate', { expression: 'window.__flowCapture = null' });
+      }
+    }
     const response = await command('Runtime.evaluate', { expression: 'JSON.stringify(window.__pdfCheck)', returnByValue: true });
     const value = response.result?.result?.value;
     result = value ? JSON.parse(value) : null;
@@ -107,7 +117,7 @@ try {
     await new Promise((resolve) => setTimeout(resolve, 200));
   }
   const shot = await command('Page.captureScreenshot', { format: 'png' });
-  const reportBase = flowCheck ? 'flow-regression' : translationCheck ? 'translation-regression' : performanceCheck ? suppliedPdf ? 'pdf-real-performance' : 'pdf-complex-performance' : 'pdf-regression';
+  const reportBase = animationCheck ? 'flow-animations' : flowCheck ? 'flow-regression' : translationCheck ? 'translation-regression' : performanceCheck ? suppliedPdf ? 'pdf-real-performance' : 'pdf-complex-performance' : 'pdf-regression';
   const report = reportBase + (process.argv.includes('--hidpi') ? '-hidpi' : '');
   if (shot.result?.data) await writeFile(path.join(output, `${report}.png`), Buffer.from(shot.result.data, 'base64'));
   await writeFile(path.join(output, `${report}.json`), JSON.stringify(result, null, 2));

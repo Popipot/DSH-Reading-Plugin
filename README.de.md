@@ -59,6 +59,9 @@ Die PDF-Übersetzungsspalte scrollt unabhängig und verändert das Originallayou
 
 Weitere bebilderte Hinweise: [ausführliche chinesische Anleitung](docs/USER_GUIDE.zh-CN.md).
 
+
+Animationen für Nicht-PDF-Dateien verwenden zwei deckende Seitenansichten: horizontales Verschieben (250 ms), Überdecken einer ruhenden Seite (300 ms) und weiches Falten ab der Seitenecke (500 ms). Bei reduzierter Bewegung oder außergewöhnlich großen Inhaltsblöcken erfolgt der Seitenwechsel sofort. Faltgeometrie: [StPageFlip](https://github.com/Nodlik/StPageFlip), [MIT-Hinweis](LICENSES/StPageFlip.txt).
+
 ## PDF-Leistung
 
 Analyse und Zeichnen laufen, soweit unterstützt, in separaten Workern. Lokale Dateien werden bedarfsgerecht abschnittsweise gelesen; nahe Seiten werden virtualisiert. Vorschaubilder werden verfeinert, zuletzt gelesene Seiten in einem begrenzten Bildcache gehalten. Die Cover-Erstellung stoppt beim Öffnen des Readers.
@@ -102,6 +105,7 @@ npm run build
 npm test
 npm run test:pdf-browser
 npm run test:flow-browser
+npm run test:flow-animations
 npm run test:translation-browser
 npm run test:pdf-performance -- --hidpi
 ```

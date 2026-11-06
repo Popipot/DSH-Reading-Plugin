@@ -59,6 +59,9 @@ PDF 译文侧栏独立滚动，不改变原文页高；支持段落联动、术�
 
 更多截图和操作细节见 [中文使用详解](docs/USER_GUIDE.zh-CN.md)。
 
+
+非 PDF 横版采用两张不透明页面：横向滑页（250 ms）、静止底页上的书页覆盖（300 ms）、从页角折叠的软页（500 ms）。系统开启减少动态效果或内容块超出动画预算时直接切页。软页几何来自 [StPageFlip](https://github.com/Nodlik/StPageFlip)，[MIT 声明](LICENSES/StPageFlip.txt)。
+
 ## PDF 性能
 
 在支持的环境中，解析和绘制使用独立线程。本地文件按需分段读取，附近页面采用虚拟布局；预览逐步补清晰，最近阅读页使用有预算的图像缓存。进入阅读后停止后台封面生成。
@@ -102,6 +105,7 @@ npm run build
 npm test
 npm run test:pdf-browser
 npm run test:flow-browser
+npm run test:flow-animations
 npm run test:translation-browser
 npm run test:pdf-performance -- --hidpi
 ```

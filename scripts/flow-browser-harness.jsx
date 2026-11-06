@@ -57,10 +57,10 @@ async function settled(expected) {
   const deadline = performance.now() + 5000;
   do {
     await sleep(20);
-    if ((!expected || page() === expected) && stage().getAnimations().length === 0
+    if ((!expected || page() === expected) && scroll().dataset.readerTurning !== 'true'
       && Math.abs(scroll().scrollTop - Number(scroll().dataset.readerTarget)) < 1) {
       await sleep(35);
-      if ((!expected || page() === expected) && stage().getAnimations().length === 0) return;
+      if ((!expected || page() === expected) && scroll().dataset.readerTurning !== 'true') return;
     }
   } while (performance.now() < deadline);
   throw new Error(`navigation did not settle: wanted ${expected}, got ${page()} at ${scroll().scrollTop}`);
@@ -171,7 +171,7 @@ try {
   const beforeCancel = page();
   next().click();
   await sleep(5);
-  for (const effect of stage().getAnimations()) effect.cancel();
+  for (const effect of document.querySelector('.dshr-flow-transition')?.getAnimations({ subtree: true }) || []) effect.cancel();
   await settled(beforeCancel + 1);
   await turn();
   results.push({ check: 'cancelled-animation-unlocks-navigation', page: page() });

@@ -1,6 +1,6 @@
 # DSH Reader PDF 优化流程
 
-> **更新说明**：第 1–8 节保留先前优化记录，其中的“最终结果”是历史结论。PDF 修复见第 9 节；后续发现的 EPUB 与全格式横版分页修复、最新测试结果见第 10 节。
+> **更新说明**：第 1–8 节保留先前优化记录，其中的“最终结果”是历史结论。PDF 修复见第 9、12 节；全格式横版分页修复见第 10 节；非 PDF 翻页动画方案 A 与本轮验证见第 13 节。
 
 > 记录时间：2026-11-05  
 > 插件版本：0.1.0  
@@ -526,3 +526,38 @@ Host 的状态接口返回模型与提示词版本；翻译请求可携带期望
 本轮已重新构建 client/client.js 与 dist/reader-assets（包含新增 pdf.renderer.mjs）。旧 DSH 实例如仍持有旧模块，请完整退出重启后使用，desktop profile 的项目链接无需重装。
 
 设计参考：[PDF.js API](https://mozilla.github.io/pdf.js/api/draft/api.js.html)、[Mozilla FAQ](https://github.com/mozilla/pdf.js/wiki/Frequently-Asked-Questions)、[Chromium PDFium 调度源码](https://chromium.googlesource.com/chromium/src/+/refs/heads/main/pdf/pdfium/pdfium_engine.cc)、[Nutrient 性能指南](https://www.nutrient.io/guides/web/best-practices/performance/)。不把其它引擎的实现细节或产品跑分视作本插件已拥有的能力。
+
+
+## 13. 非 PDF 横版动画方案 A（2026-11-07）
+
+### 13.1 根因与范围
+
+旧实现对同一份整章 .dshr-content__inner 先做 180 ms 淡出到 0.03，再切换 scrollTop，接着做 260 ms 淡入。因此两段动画之间正文几乎消失。cover 只把同一平移距离乘以 0.63，没有静止底页；flip 则把整章绕默认中心旋转 ±60 度，没有实际页角折叠。
+
+本轮替换 EPUB、MOBI/KF8、TXT、Markdown、HTML 共用的流式动画展示层。PDF 继续在 PagedReader 的独立分支分发 dshr-pdf-page-turn，不经过这些快照和折叠效果。
+
+### 13.2 实现与参数
+
+- 新增 web/src/components/flow-transition.js。分页重排时建立块的尺寸索引；动画只克隆当前页和目标页相交的内容块，保留原始宽度、位置、图像、译文、表格/代码水平滚动及可见批注。整个长章节不再参与 transform，也不克隆整章。
+- 横向滑页：250 ms，两张不透明页面同步平移并首尾衔接；取消正文淡入淡出。
+- 书页覆盖：300 ms，向前时新页从右覆盖固定的旧页；向后时当前页向右移开，露出固定的前一页；仅移动页带克制的边缘阴影。
+- 3D 书页：500 ms，从右下页角向左侧书脊折叠，返回时反向展开。使用锁定版本 page-flip 2.0.7 的 FlipCalculation/Helper 源码计算裁剪区域与折叠位置，配合纸背和随折线移动的阴影。只使用其几何计算，没有挂载第三方阅读器、全局 UI 或永久渲染循环。这是软页折叠近似，不是连续弯曲的 WebGL 网格模拟。
+- 动画统一采用 cubic-bezier(.25,.1,.25,1)。滑页/覆盖使用 WAAPI，软页由有限 WAAPI 时钟驱动独立 RAF；结束、取消、换章、跳转、退出横版都清理时钟、RAF、定时器和快照。完成保护上限为动画时长加 300 ms，避免宿主挂起的 finished Promise 永久锁住翻页。
+- 页面接受一次明确导航后，真实且可选字的文档立即定位在目标页，展示层在其上运行；动画结束不从 scrollTop 推断新页码，也不再次翻页。快速输入继续排队；显式跳转/换章使旧异步任务失效。
+- 展示层放在阅读视口对应的区域，保留工具栏、目录、侧栏及翻页按钮位置；inert 和 aria-hidden 禁止快照参与焦点、选字、翻译段落索引和读屏。SVG 的 ID 与局部绘制引用一起重命名，避免重复 ID 或破坏渐变/裁剪图示。
+- 动画开始时冻结快照继承的阅读 CSS 变量。异步译文/图片造成的正文重排等动画结束后围绕字符锚点重建；窗口尺寸改变或新字体加载使当前展示提前结束，并保留已经接受的目标锚点。
+- 尊重 prefers-reduced-motion。为避免异常单块复制再次阻塞 DSH，两页共享 1800 DOM 节点/64000 文本字符预算，单块高度不得超过 8 个视口；超限或动画准备失败时直接显示已接受的目标页，继续允许向前/后阅读。
+- 新增第三方 MIT 声明 LICENSES/StPageFlip.txt，并加入发布文件。构建产物 client/client.js 已更新。
+
+### 13.3 验证
+
+- npm run build 通过；npm test：186 项通过。单元回归额外确认真实文档在动画下方已提交目标页、快照隔离、显式跳转释放成对动画。
+- npm run test:flow-browser：15 项通过，五种格式均可完成整章，覆盖全部动画前后翻、连续点击、原生滚动干扰、译文/图像/字体/宽度重排、动画取消、模式切换、恢复位置、迟到跳转和换章。
+- npm run test:flow-animations：38 项通过。五种格式 × 三种效果 × 前后两个方向 × 五个时间采样，加图文译文混合页，共检查 165 个中间状态；断言不透明、滑页无几何空隙、覆盖底页不动、软页存在有效页角裁剪，以及导航只提交一次。
+- 该流程还覆盖深色纸张/亮度、已解码图片、译文卡片、高亮、SVG 渐变引用、工具栏与侧栏偏移、活动软页退出、系统减少动态效果、动画中调整窗口/字体设置，以及超大块降级。保留原文节点，结束后可继续选字。
+- 普通 PDF 浏览器回归 13 项、同步翻译回归 12 项通过。翻译测试使用本地模拟服务，没有调用真实模型。
+- 中间帧截图已查看，三种效果有独立行为。原始报告为 output/playwright/flow-animations.json、flow-regression.json、pdf-regression.json、translation-regression.json；EPUB 三种效果的前/中/后截图以 flow-animation- 开头。测试产物不入库。
+
+这些是本机 Chrome 的自动回归和截图检查；本轮没有把它们表述为任意文档绝无卡顿的保证，也没有重新进行实际 DSH 宿主的人工验收。旧宿主实例若缓存客户端模块，需要完整退出并重启 DSH 后查看新效果。
+
+参考实现：[StPageFlip](https://github.com/Nodlik/StPageFlip)、[官方演示](https://nodlik.github.io/StPageFlip/)、[随包 MIT 声明](LICENSES/StPageFlip.txt)。

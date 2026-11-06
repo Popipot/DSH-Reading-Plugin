@@ -1,4 +1,5 @@
 import React from 'react';
+import { createFlowTransition, indexFlowSnapshots } from './flow-transition.js';
 import { IconChevronLeft, IconChevronRight } from './icons.jsx';
 import {
   BOOK_PADDING_TOP, BOOK_PADDING_BOTTOM, buildFlowPageStarts, createPageCursor,
@@ -49,7 +50,8 @@ export function PagedReader({
     let lines = [];
     let anchor = null;
     const pendingTurns = [];
-    const animations = new Set();
+    let transition = null;
+    let snapshotRecords = [];
     const tail = !isPdf && stage ? document.createElement('div') : null;
     if (tail) {
       tail.className = 'dshr-page-tail';
@@ -67,12 +69,15 @@ export function PagedReader({
       scroll.dataset.readerTarget = String(cursor.top);
       setPageState(previous => previous.page === cursor.page && previous.pages === cursor.pages
         ? previous : { page: cursor.page, pages: cursor.pages });
-      const bottom = cursor.top + scroll.clientHeight - BOOK_PADDING_BOTTOM;
+      const cover = bottomCover(cursor.top);
+      setFrameCovers(previous => previous.bottom === cover ? previous : { top: BOOK_PADDING_TOP, bottom: cover });
+    };
+    const bottomCover = top => {
+      const bottom = top + scroll.clientHeight - BOOK_PADDING_BOTTOM;
       const crossing = lines.find(line => line.top < bottom - 0.5 && line.bottom > bottom + 0.5
         && line.bottom - line.top <= scroll.clientHeight - BOOK_PADDING_TOP - BOOK_PADDING_BOTTOM
-        && line.top > cursor.top + BOOK_PADDING_TOP);
-      const cover = crossing ? Math.max(BOOK_PADDING_BOTTOM, scroll.clientHeight - (crossing.top - cursor.top)) : BOOK_PADDING_BOTTOM;
-      setFrameCovers(previous => previous.bottom === cover ? previous : { top: BOOK_PADDING_TOP, bottom: cover });
+        && line.top > top + BOOK_PADDING_TOP);
+      return crossing ? Math.max(BOOK_PADDING_BOTTOM, scroll.clientHeight - (crossing.top - top)) : BOOK_PADDING_BOTTOM;
     };
     const position = () => {
       if (Math.abs(scroll.scrollTop - cursor.top) > 0.5) scroll.scrollTop = cursor.top;
@@ -83,6 +88,7 @@ export function PagedReader({
       if (busy) { dirty = true; return; }
       const top = requestedTop ?? resolveFlowAnchor(anchor, scroll, scroll.scrollTop);
       lines = collectFlowLines(scroll, stage);
+      snapshotRecords = indexFlowSnapshots(scroll, stage);
       const starts = buildFlowPageStarts(lines, scroll.clientHeight);
       if (tail) {
         const naturalHeight = scroll.scrollHeight - tail.offsetHeight;
@@ -95,9 +101,14 @@ export function PagedReader({
       anchor = captureFlowAnchor(lines, cursor.top, scroll);
       publish();
     };
-    const invalidate = () => {
+    const invalidate = event => {
       if (disposed || isPdf) return;
       dirty = true;
+      // A frozen page can survive incoming translation/image content. A new
+      // viewport or newly loaded font changes its own geometry: finish the
+      // presentation now, then rebuild around the already accepted text anchor.
+      if (busy && transition && (transition.width !== scroll.clientWidth
+        || transition.height !== scroll.clientHeight || event?.type === 'loadingdone')) transition.cancel();
       if (layoutFrame) return;
       layoutFrame = requestAnimationFrame(() => {
         layoutFrame = 0;
@@ -106,8 +117,10 @@ export function PagedReader({
     };
     const cancelAnimations = () => {
       revision += 1;
-      for (const active of animations) active.cancel();
-      animations.clear();
+      transition?.cancel();
+      transition = null;
+      delete scroll.dataset.readerTurning;
+      reader.classList.remove('dshr-is-turning');
       busy = false;
       pendingTurns.length = 0;
     };
@@ -133,20 +146,6 @@ export function PagedReader({
         }
       }
     };
-    const play = async (keyframes, duration, run) => {
-      if (disposed || run !== revision) return false;
-      const effect = stage.animate(keyframes, { duration, easing: 'cubic-bezier(.2,.8,.2,1)', fill: 'both' });
-      animations.add(effect);
-      let timeout;
-      try {
-        // Host throttling or a broken animation completion must never hold the
-        // navigation lock indefinitely. Commit the accepted page after a bound.
-        await Promise.race([effect.finished, new Promise(resolve => { timeout = setTimeout(resolve, duration + 300); })]);
-      }
-      catch { return false; }
-      finally { clearTimeout(timeout); animations.delete(effect); effect.cancel(); }
-      return !disposed && run === revision;
-    };
     const turn = async direction => {
       if (disposed) return;
       activeReader = reader;
@@ -157,6 +156,7 @@ export function PagedReader({
       }
       if (busy) { if (pendingTurns.length < 32) pendingTurns.push(direction); return; }
       if (dirty) rebuild();
+      const from = cursor.top;
       if (!cursor.turn(direction)) { edge(direction); return; }
       clearChapterArm();
       anchor = captureFlowAnchor(lines, cursor.top, scroll);
@@ -164,25 +164,27 @@ export function PagedReader({
       publish();
       busy = true;
       const run = ++revision;
+      scroll.dataset.readerTurning = 'true';
       try {
         if (stage?.animate && !reducedMotion()) {
-          const style = callbacks.current.animation;
-          const distance = direction > 0 ? -92 : 92;
-          const outgoing = style === 'flip'
-            ? [{ transform: 'perspective(1500px) rotateY(0deg)', opacity: 1 }, { transform: 'perspective(1500px) rotateY(' + (direction * -60) + 'deg)', opacity: 0.03 }]
-            : [{ transform: 'translateX(0)', opacity: 1 }, { transform: 'translateX(' + (style === 'cover' ? distance * 0.63 : distance) + '%)', opacity: 0.03 }];
-          if (!await play(outgoing, 180, run)) return;
-          position();
-          const incoming = style === 'flip'
-            ? [{ transform: 'perspective(1500px) rotateY(' + (direction * 60) + 'deg)', opacity: 0.03 }, { transform: 'perspective(1500px) rotateY(0deg)', opacity: 1 }]
-            : [{ transform: 'translateX(' + -distance + '%)', opacity: 0.03 }, { transform: 'translateX(0)', opacity: 1 }];
-          await play(incoming, 260, run);
-        } else position();
+          transition = createFlowTransition({ reader, scroll, stage, records: snapshotRecords,
+            from, to: cursor.top, fromBottom: bottomCover(from), toBottom: bottomCover(cursor.top),
+            mode: callbacks.current.animation, direction });
+          reader.classList.add('dshr-is-turning');
+        }
+        // The real, selectable document advances once underneath the opaque
+        // presentation layer. Its position never depends on animation progress.
+        position();
+        if (transition) await transition.play();
       } catch {
         // Animation is presentation only. A failed/cancelled effect cannot undo
         // an accepted turn or leave navigation permanently locked.
       } finally {
         if (!disposed && run === revision) {
+          transition?.cancel();
+          transition = null;
+          delete scroll.dataset.readerTurning;
+          reader.classList.remove('dshr-is-turning');
           busy = false;
           if (dirty) rebuild();
           else { position(); publish(); }
@@ -307,7 +309,7 @@ export function PagedReader({
       if (activeReader === reader) activeReader = null;
       scroll.classList.remove('dshr-paged-scroll');
       Object.assign(scroll.style, originalStyle);
-      for (const name of ['readerPage', 'readerPages', 'readerTarget', 'readerNavigation']) delete scroll.dataset[name];
+      for (const name of ['readerPage', 'readerPages', 'readerTarget', 'readerNavigation', 'readerTurning']) delete scroll.dataset[name];
       tail?.remove();
       turnRef.current = null;
     };

@@ -59,6 +59,9 @@ For PDFs, the translation pane scrolls independently and does not change the ori
 
 More illustrated instructions: [Chinese user guide](docs/USER_GUIDE.zh-CN.md).
 
+
+Non-PDF page animations use two opaque page views: Slide (250 ms), Cover over a stationary page (300 ms), and a corner-folding soft page (500 ms). Reduced-motion preferences and unusually large blocks use instant page changes. Soft-page geometry: [StPageFlip](https://github.com/Nodlik/StPageFlip), [MIT notice](LICENSES/StPageFlip.txt).
+
 ## PDF performance
 
 Parsing and drawing use separate workers where supported. Local files use on-demand range reads; nearby pages are virtualized. Preview images refine to full quality, recently viewed pages use a bounded image cache, and background cover generation stops when you enter the reader.
@@ -102,6 +105,7 @@ npm run build
 npm test
 npm run test:pdf-browser
 npm run test:flow-browser
+npm run test:flow-animations
 npm run test:translation-browser
 npm run test:pdf-performance -- --hidpi
 ```

@@ -59,9 +59,9 @@ export const READING_MODES = Object.freeze([
 ]);
 
 export const BOOK_ANIMATIONS = Object.freeze([
-  Object.freeze({ id: 'slide', label: '横向滑页', hint: '整页向左滑出，下一页从右侧滑入' }),
-  Object.freeze({ id: 'cover', label: '书页覆盖', hint: '像翻过一张书页，旧页让出新的阅读面' }),
-  Object.freeze({ id: 'flip', label: '3D 书页', hint: '绕书脊透视翻页，最接近实体书手感' }),
+  Object.freeze({ id: 'slide', label: '横向滑页', hint: '前后两页连续平移衔接，不淡出正文' }),
+  Object.freeze({ id: 'cover', label: '书页覆盖', hint: '新页从右侧覆盖静止底页，回翻时揭开当前页' }),
+  Object.freeze({ id: 'flip', label: '3D 书页', hint: '从右下页角向书脊折叠，带纸背与动态阴影' }),
 ]);
 
 /**

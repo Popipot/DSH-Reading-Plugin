@@ -35,7 +35,7 @@ Object.defineProperties(HTMLElement.prototype, {
   scrollHeight: { get() { return 5000 + (this.querySelector('.dshr-page-tail')?.offsetHeight || 0); } },
 });
 HTMLElement.prototype.getBoundingClientRect = function () {
-  if (this.classList.contains('paragraph')) return new DOMRect(0, -(this.closest('.dshr-content')?.scrollTop || 0), 800, 5000);
+  if (this.classList.contains('paragraph')) return new DOMRect(0, -(this.closest('.dshr-content')?.scrollTop || 0), 800, 4500);
   return new DOMRect(0, 0, 800, 600);
 };
 const effects = new Set();
@@ -43,7 +43,8 @@ let hangNextAnimation = false;
 HTMLElement.prototype.animate = function () {
   let resolve;
   let reject;
-  const effect = { finished: new Promise((yes, no) => { resolve = yes; reject = no; }),
+  const effect = { effect: { getComputedTiming: () => ({ progress: 0.5 }) },
+    finished: new Promise((yes, no) => { resolve = yes; reject = no; }),
     cancel() { clearTimeout(timer); effects.delete(effect); reject(new Error('cancelled')); } };
   const timer = hangNextAnimation ? undefined : setTimeout(() => { effects.delete(effect); resolve(); }, 15);
   hangNextAnimation = false;
@@ -109,6 +110,26 @@ test('rapid clicks queue turns and cancelled animations release navigation', asy
     await act(() => view.next().click());
     await pause();
     assert.equal(view.page(), 8);
+  } finally { await view.close(); }
+});
+
+test('accepted navigation advances the live document underneath an isolated opaque transition', async () => {
+  const view = await mount();
+  try {
+    hangNextAnimation = true;
+    await act(() => view.next().click());
+    const overlay = document.querySelector('.dshr-flow-transition');
+    assert.ok(overlay, 'must exercise a real transition rather than the instant fallback');
+    assert.equal(overlay.querySelectorAll('.dshr-turn-page').length, 2);
+    assert.equal(overlay.getAttribute('aria-hidden'), 'true');
+    assert.equal(view.page(), 2);
+    assert.equal(view.scroll().scrollTop, Number(view.scroll().dataset.readerTarget));
+    assert.equal(view.scroll().querySelector('.dshr-content__inner').style.transform, '');
+    await act(() => view.scroll().dispatchEvent(new CustomEvent('dshr-flow-navigate', { cancelable: true, detail: { top: 0 } })));
+    await pause();
+    assert.equal(view.page(), 1);
+    assert.equal(document.querySelector('.dshr-flow-transition'), null);
+    assert.equal(effects.size, 0, 'explicit navigation must release every paired effect');
   } finally { await view.close(); }
 });
 

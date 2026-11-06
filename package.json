@@ -31,7 +31,8 @@
     "README.de.md",
     "CONTRIBUTING.md",
     "OPTIMIZATION.md",
-    "LICENSE"
+    "LICENSE",
+    "LICENSES"
   ],
   "dsh": {
     "bundle": {
@@ -50,7 +51,8 @@
     "test:pdf-browser": "node scripts/check-pdf-browser.mjs",
     "test:flow-browser": "node scripts/check-pdf-browser.mjs --flow",
     "test:translation-browser": "node scripts/check-pdf-browser.mjs --translation",
-    "test:pdf-performance": "node scripts/check-pdf-browser.mjs --performance"
+    "test:pdf-performance": "node scripts/check-pdf-browser.mjs --performance",
+    "test:flow-animations": "node scripts/check-pdf-browser.mjs --flow-animations"
   },
   "devDependencies": {
     "@lingo-reader/mobi-parser": "0.4.6",
@@ -58,6 +60,7 @@
     "esbuild": "0.28.2",
     "fflate": "0.8.3",
     "jsdom": "26.1.0",
+    "page-flip": "2.0.7",
     "pdfjs-dist": "6.5.438",
     "react": "19.2.0",
     "react-dom": "19.2.0"
