@@ -2,6 +2,15 @@ export const BOOK_PADDING_TOP = 48;
 export const BOOK_PADDING_BOTTOM = 56;
 const EPSILON = 0.5;
 
+export function flowScrollRatio(scroll) {
+  const range = scroll.scrollHeight - scroll.clientHeight;
+  return range > 0 ? Math.max(0, Math.min(1, scroll.scrollTop / range)) : 0;
+}
+
+export function flowProgress(chapter, chapters, scrollRatio) {
+  return { chapter, chapters, scrollRatio, percent: ((chapter + scrollRatio) / chapters) * 100 };
+}
+
 // Break at whole text lines. Oversized objects must advance by a viewport's
 // usable area; snapping back to their top would make the page impossible to turn.
 export function buildFlowPageStarts(lines, viewport) {

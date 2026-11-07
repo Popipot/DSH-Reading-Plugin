@@ -3,14 +3,13 @@ import { IconChevronLeft, IconChevronRight, IconTranslate, IconRotate } from './
 import { translateSegments, isAbortError } from '../ai-client.js';
 import { FlowAnnotationLayer } from '../annotations/FlowAnnotationLayer.jsx';
 import { collectFlowSelection } from '../annotations/model.js';
+import { flowProgress, flowScrollRatio } from './flow-pagination.js';
 
 const TRANSLATABLE = new Set(['heading', 'paragraph', 'list-item', 'quote']);
 const BATCH_SIZE = 6;
 
 function setFlowScrollTop(root, top) {
-  // The scroll reader has CSS smooth scrolling. Initializing a chapter before
-  // PagedReader attaches must still be immediate, or its first measurement can
-  // see the old position and overwrite the restore midway through that scroll.
+  // Direct navigation in scroll mode should settle before the chapter paints.
   const previous = root.style.scrollBehavior;
   root.style.scrollBehavior = 'auto';
   root.scrollTop = top;
@@ -70,13 +69,12 @@ function TranslationBlock({ state, onRetry }) {
 }
 
 export function FlowReader({
-  book, chapterIndex, onChapterChange, settings, restore, onRestored, onSelection, onProgress,
+  book, chapterIndex, onChapterChange, settings, chapterEntry, onChapterEntered, onSelection, onProgress,
   annotations = [], onOpenAnnotation, focusAnnotation, layoutVersion = 0,
 }) {
   const chapter = book.chapters[chapterIndex];
   const contentRef = React.useRef(null);
   const observerRef = React.useRef(null);
-  const appliedChapterRef = React.useRef(null);
   const scrollSaveRef = React.useRef(0);
   const queueRef = React.useRef(new Map());
   const flushingRef = React.useRef(false);
@@ -178,31 +176,14 @@ export function FlowReader({
     return () => observer.disconnect();
   }, [blocksById, chapter?.id, enqueue, settings.autoTranslate]);
 
-  // Restore the saved chapter position once; every later chapter starts at
-  // the top. The guard also prevents a restore-clearing state update from
-  // scrolling the freshly restored page back to zero.
+  // PagedReader owns chapter entry in book mode, after measuring the new pages.
   React.useLayoutEffect(() => {
     const root = contentRef.current;
-    if (!root || (appliedChapterRef.current?.book === book && appliedChapterRef.current?.index === chapterIndex)) return;
-    if (restore && restore.chapter === chapterIndex) {
-      const ratio = Math.max(0, Math.min(1, Number(restore.scrollRatio) || 0));
-      const navigation = root.dataset.readerNavigation || '0';
-      const frame = requestAnimationFrame(() => {
-        appliedChapterRef.current = { book, index: chapterIndex };
-        // An explicit turn/jump supersedes a late saved-position restore.
-        if ((root.dataset.readerNavigation || '0') !== navigation) { onRestored?.(); return; }
-        const event = new CustomEvent('dshr-flow-navigate', { cancelable: true, detail: { ratio } });
-        if (root.dispatchEvent(event)) setFlowScrollTop(root, Math.max(0, root.scrollHeight - root.clientHeight) * ratio);
-        onRestored?.();
-      });
-      return () => cancelAnimationFrame(frame);
-    } else {
-      appliedChapterRef.current = { book, index: chapterIndex };
-      setFlowScrollTop(root, 0);
-    }
-    // Position is initialized once per document/chapter, independently of the
-    // parent's progress renders and inline callback identities.
-  }, [book, chapterIndex]);
+    if (!root || !chapterEntry || settings.readingMode === 'book') return;
+    const ratio = chapterEntry.edge === 'end' ? 1 : Math.max(0, Math.min(1, Number(chapterEntry.scrollRatio) || 0));
+    setFlowScrollTop(root, Math.max(0, root.scrollHeight - root.clientHeight) * ratio);
+    onChapterEntered?.(chapterEntry, flowScrollRatio(root));
+  }, [chapterEntry, settings.readingMode, onChapterEntered]);
 
   const handleTextSelection = React.useCallback((event) => {
     const container = contentRef.current;
@@ -225,16 +206,16 @@ export function FlowReader({
     const root = contentRef.current;
     const navigation = root?.dataset.readerNavigation || '0';
     const timer = window.setTimeout(() => {
-      if ((root?.dataset.readerNavigation || '0') !== navigation) return;
+      if (!root || root !== contentRef.current || (root.dataset.readerNavigation || '0') !== navigation) return;
       const block = focusAnnotation.blockId
-        ? contentRef.current?.querySelector(`[data-anno-block="${CSS.escape(focusAnnotation.blockId)}"]`)
+        ? root.querySelector(`[data-anno-block="${CSS.escape(focusAnnotation.blockId)}"]`)
         : null;
       if (!block) return;
       const event = new CustomEvent('dshr-flow-navigate', { cancelable: true, detail: { element: block } });
-      if (contentRef.current.dispatchEvent(event)) block.scrollIntoView({ block: 'center', behavior: 'smooth' });
+      if (root.dispatchEvent(event)) block.scrollIntoView({ block: 'center', behavior: 'smooth' });
     }, 120);
     return () => window.clearTimeout(timer);
-  }, [focusAnnotation]);
+  }, [book, chapterIndex, focusAnnotation]);
 
   const handleScroll = React.useCallback(() => {
     const root = contentRef.current;
@@ -242,13 +223,7 @@ export function FlowReader({
     const now = Date.now();
     if (now - scrollSaveRef.current < 600) return;
     scrollSaveRef.current = now;
-    const ratio = root.scrollHeight > root.clientHeight ? root.scrollTop / (root.scrollHeight - root.clientHeight) : 0;
-    onProgress?.({
-      chapter: chapterIndex,
-      chapters: book.chapters.length,
-      scrollRatio: Math.max(0, Math.min(1, ratio)),
-      percent: Math.max(0, Math.min(100, ((chapterIndex + Math.max(0, Math.min(1, ratio))) / book.chapters.length) * 100)),
-    });
+    onProgress?.(flowProgress(chapterIndex, book.chapters.length, flowScrollRatio(root)));
   }, [book.chapters.length, chapterIndex, onProgress]);
 
   const handleClick = React.useCallback((event) => {

@@ -7,6 +7,7 @@ import { SelectionToolbar } from './components/SelectionToolbar.jsx';
 import { SettingsDialog, ConfirmDeleteDialog, Toast } from './components/Dialogs.jsx';
 import { OnlineImportDialog } from './components/OnlineImportDialog.jsx';
 import { PagedReader } from './components/PagedReader.jsx';
+import { flowProgress } from './components/flow-pagination.js';
 import { AppearancePanel } from './appearance/AppearancePanel.jsx';
 import { appearanceVars, BOOK_ANIMATIONS } from './appearance/appearance.js';
 import { AnnotationsPanel } from './annotations/AnnotationsPanel.jsx';
@@ -167,8 +168,7 @@ export function ReaderPage() {
   const rootRef = React.useRef(null);
   const [deleteTarget, setDeleteTarget] = React.useState(null);
   const [toast, showToast] = useToast();
-  const [chapterIndex, setChapterIndex] = React.useState(0);
-  const [restore, setRestore] = React.useState(null);
+  const [{ index: chapterIndex, entry: chapterEntry }, setFlowLocation] = React.useState({ index: 0, entry: null });
   const [progress, setProgress] = React.useState({});
   const [tocOpen, setTocOpen] = React.useState(true);
   const [aiOpen, setAiOpen] = React.useState(false);
@@ -615,8 +615,7 @@ export function ReaderPage() {
     }
     setCurrent(null);
     setProgress({});
-    setRestore(null);
-    setChapterIndex(0);
+    setFlowLocation({ index: 0, entry: null });
   }, [flushProgress]);
 
   const openBook = React.useCallback(async (summary) => {
@@ -642,8 +641,7 @@ export function ReaderPage() {
         const viewerRecord = { ...record, blob: null, blobName: record.blob.name || '' };
         setCurrent({ kind: 'pdf', record: viewerRecord, data });
         setProgress({ page: saved.page || 1, pages: saved.pages || 0, percent: saved.percent || 0 });
-        setChapterIndex(0);
-        setRestore(null);
+        setFlowLocation({ index: 0, entry: null });
         setTocOpen(false);
         setAnnotationsOpen(false);
         setFocusPdfAnnotation(null);
@@ -663,8 +661,7 @@ export function ReaderPage() {
       const saved = record.progress || {};
       const restoreChapter = clamp(Number(saved.chapter) || 0, 0, Math.max(0, parsed.chapters.length - 1));
       setCurrent({ kind: 'flow', record: merged, book: parsed });
-      setChapterIndex(restoreChapter);
-      setRestore({ chapter: restoreChapter, scrollRatio: Number(saved.scrollRatio) || 0 });
+      setFlowLocation({ index: restoreChapter, entry: { scrollRatio: Number(saved.scrollRatio) || 0 } });
       setProgress({
         chapter: restoreChapter,
         chapters: parsed.chapters.length,
@@ -895,16 +892,22 @@ export function ReaderPage() {
       return;
     }
     const nextChapter = Number.isFinite(annotation.chapterIndex) ? annotation.chapterIndex : 0;
-    setChapterIndex(nextChapter);
-    setRestore(null);
+    setFlowLocation(location => location.index === nextChapter ? location : { index: nextChapter, entry: { edge: 'start' } });
     setFocusAnnotation({ id: annotation.id, blockId: annotation.ranges?.[0]?.blockId, token: Date.now() });
     setAnnotationsOpen(false);
   }, []);
 
-  const handleChapterChange = React.useCallback((next) => {
-    setChapterIndex(next);
-    setRestore(null);
-  }, []);
+  const handleChapterChange = React.useCallback((next, entry = { edge: 'start' }) => {
+    if (next === chapterIndex || next < 0 || next >= (current?.book?.chapters.length ?? 0)) return;
+    setFocusAnnotation(null);
+    setFlowLocation({ index: next, entry });
+  }, [chapterIndex, current]);
+
+  const handleChapterEntered = React.useCallback((entry, ratio) => {
+    if (entry !== chapterEntry || current?.kind !== 'flow') return;
+    setFlowLocation(location => location.entry === entry ? { index: location.index, entry: null } : location);
+    scheduleProgress(current.record.id, flowProgress(chapterIndex, current.book.chapters.length, ratio));
+  }, [chapterEntry, chapterIndex, current, scheduleProgress]);
 
   function beginTocResize(event) {
     if (event.button !== 0) return;
@@ -1151,8 +1154,8 @@ export function ReaderPage() {
                   chapterIndex={chapterIndex}
                   onChapterChange={handleChapterChange}
                   settings={settings}
-                  restore={restore}
-                  onRestored={() => setRestore(null)}
+                  chapterEntry={chapterEntry}
+                  onChapterEntered={handleChapterEntered}
                   onSelection={handleFlowSelection}
                   onProgress={(next) => {
                     setProgress(next);
@@ -1228,8 +1231,9 @@ export function ReaderPage() {
               readerKey={`${current.record.id}:${current.kind}:${chapterIndex}`}
               canPrevChapter={current.kind === 'flow' && chapterIndex > 0}
               canNextChapter={current.kind === 'flow' && chapterIndex < (current.book?.chapters?.length || 1) - 1}
-              onPrevChapter={() => handleChapterChange(Math.max(0, chapterIndex - 1))}
-              onNextChapter={() => handleChapterChange(Math.min((current.book?.chapters?.length || 1) - 1, chapterIndex + 1))}
+              chapterEntry={chapterEntry}
+              onChapterEntered={handleChapterEntered}
+              onChapterTurn={(direction, entry) => handleChapterChange(chapterIndex + direction, entry)}
             />
           </div>
         ) : (

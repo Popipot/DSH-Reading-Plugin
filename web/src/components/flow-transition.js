@@ -134,7 +134,15 @@ export function softFoldFrame(width, height, progress) {
     strength: Math.sin(Math.PI * p) };
 }
 
-export function createFlowTransition({ reader, scroll, stage, records, from, to, fromBottom, toBottom, mode, direction }) {
+// Capture the departing page before React replaces the chapter. The destination
+// uses the same snapshot budget and renderer as a turn within a chapter.
+export function captureDepartingPage(scroll, stage, records, top, bottom) {
+  const budget = { nodes: 1800, text: 64000 };
+  const page = snapshot(scroll, stage, records, top, bottom, budget);
+  return { page, budget, width: scroll.clientWidth, height: scroll.clientHeight };
+}
+
+export function createFlowTransition({ reader, scroll, stage, records, from, to, fromBottom, toBottom, mode, direction, departing }) {
   const type = Object.hasOwn(DURATIONS, mode) ? mode : 'slide';
   const rect = scroll.getBoundingClientRect();
   const parent = reader.getBoundingClientRect();
@@ -151,9 +159,9 @@ export function createFlowTransition({ reader, scroll, stage, records, from, to,
   for (const name of Array.from(appearance)) {
     if (name.startsWith('--dshr-')) overlay.style.setProperty(name, appearance.getPropertyValue(name));
   }
-  const budget = { nodes: 1800, text: 64000 };
-  const oldPage = snapshot(scroll, stage, records, from, fromBottom, budget);
-  const newPage = snapshot(scroll, stage, records, to, toBottom, budget);
+  const old = departing ?? captureDepartingPage(scroll, stage, records, from, fromBottom);
+  const oldPage = old.page;
+  const newPage = snapshot(scroll, stage, records, to, toBottom, old.budget);
   oldPage.dataset.turnPage = 'old'; newPage.dataset.turnPage = 'new';
   overlay.append(oldPage, newPage);
   const effects = [];

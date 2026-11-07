@@ -1,38 +1,53 @@
 import React from 'react';
-import { createFlowTransition, indexFlowSnapshots } from './flow-transition.js';
+import { captureDepartingPage, createFlowTransition, indexFlowSnapshots } from './flow-transition.js';
 import { IconChevronLeft, IconChevronRight } from './icons.jsx';
 import {
   BOOK_PADDING_TOP, BOOK_PADDING_BOTTOM, buildFlowPageStarts, createPageCursor,
-  collectFlowLines, captureFlowAnchor, resolveFlowAnchor,
+  collectFlowLines, captureFlowAnchor, resolveFlowAnchor, flowScrollRatio,
 } from './flow-pagination.js';
 
 const FORM_SELECTOR = 'input, textarea, select, [contenteditable="true"]';
 const PANEL_SELECTOR = '.dshr-modal-mask,.dshr-modal,.dshr-appearance-panel,.dshr-anno-panel,.dshr-ai,.dshr-selection,.dshr-online-modal,.dshr-anno-composer,.dshr-pdf-translation-panel';
 const UI_SELECTOR = '.dshr-topbar,.dshr-toc,.dshr-paged-controls,' + PANEL_SELECTOR + ',' + FORM_SELECTOR;
 const reducedMotion = () => window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
+const TURN_BURST_MS = 220;
 let activeReader = null;
 
 export function PagedReader({
   enabled, animation, bookMode = false, bookFrame = false, pdfMode = false,
   frameTop = 52, frameLeft = 0, leftOffset, readerKey,
-  canPrevChapter, canNextChapter, onPrevChapter, onNextChapter,
+  canPrevChapter, canNextChapter, chapterEntry, onChapterTurn, onChapterEntered,
 }) {
   const [pageState, setPageState] = React.useState({ page: 1, pages: 1 });
-  const [edgeHint, setEdgeHint] = React.useState(false);
   const [frameCovers, setFrameCovers] = React.useState({ top: BOOK_PADDING_TOP, bottom: BOOK_PADDING_BOTTOM });
   const [controlBounds, setControlBounds] = React.useState(null);
   const controlsRef = React.useRef(null);
   const turnRef = React.useRef(null);
+  const departureRef = React.useRef(null);
+  const navigationId = React.useRef(0);
+  const lastWheelAt = React.useRef(-Infinity);
   const callbacks = React.useRef({});
-  callbacks.current = { canPrevChapter, canNextChapter, onPrevChapter, onNextChapter, animation };
 
-  React.useEffect(() => {
+  React.useLayoutEffect(() => {
+    // Input handlers must see the chapter that actually committed to the DOM.
+    callbacks.current = { canPrevChapter, canNextChapter, chapterEntry, onChapterTurn, onChapterEntered, animation };
+  });
+
+  React.useLayoutEffect(() => {
+    const departure = departureRef.current;
+    departureRef.current = null;
     if (!enabled) return undefined;
     const reader = controlsRef.current?.closest('.dshr-reader');
     const scroll = reader?.querySelector('.dshr-content,.dshr-pdf-scroll');
     if (!scroll) return undefined;
     const isPdf = scroll.classList.contains('dshr-pdf-scroll');
     const stage = scroll.querySelector('.dshr-content__inner');
+    let pendingEntry = isPdf ? null : callbacks.current.chapterEntry;
+    let departing = pendingEntry && departure?.entry === pendingEntry ? departure.snapshot : null;
+    let landingEdge = pendingEntry?.edge;
+    let enteringDirection = pendingEntry?.direction;
+    let enteredAt = -Infinity;
+    let chapterPending = false;
     const cursor = createPageCursor();
     const originalStyle = { scrollBehavior: scroll.style.scrollBehavior, overflowAnchor: scroll.style.overflowAnchor };
     scroll.style.scrollBehavior = 'auto';
@@ -44,9 +59,6 @@ export function PagedReader({
     let revision = 0;
     let layoutFrame = 0;
     let scrollFrame = 0;
-    let chapterTimer = 0;
-    let chapterArmAt = 0;
-    let lastWheelAt = -Infinity;
     let lines = [];
     let anchor = null;
     const pendingTurns = [];
@@ -58,8 +70,8 @@ export function PagedReader({
       tail.setAttribute('aria-hidden', 'true');
       scroll.append(tail);
     }
-    scroll.dataset.readerNavigation = '0';
-    setEdgeHint(false);
+    const markNavigation = () => { scroll.dataset.readerNavigation = String(++navigationId.current); };
+    markNavigation();
     setFrameCovers({ top: BOOK_PADDING_TOP, bottom: BOOK_PADDING_BOTTOM });
 
     const publish = () => {
@@ -83,10 +95,9 @@ export function PagedReader({
       if (Math.abs(scroll.scrollTop - cursor.top) > 0.5) scroll.scrollTop = cursor.top;
     };
     const rebuild = (requestedTop) => {
-      if (disposed || isPdf || !stage || !scroll.clientHeight || !scroll.clientWidth) return;
-      // Never read transformed getClientRects while a page animation is active.
+      if (disposed || isPdf || chapterPending || !stage || !scroll.clientHeight || !scroll.clientWidth) return;
+      // Keep the accepted page stable until the presentation is finished.
       if (busy) { dirty = true; return; }
-      const top = requestedTop ?? resolveFlowAnchor(anchor, scroll, scroll.scrollTop);
       lines = collectFlowLines(scroll, stage);
       snapshotRecords = indexFlowSnapshots(scroll, stage);
       const starts = buildFlowPageStarts(lines, scroll.clientHeight);
@@ -95,14 +106,34 @@ export function PagedReader({
         const extra = Math.max(0, Math.ceil(starts.at(-1) + scroll.clientHeight - naturalHeight));
         tail.style.height = extra + 'px';
       }
+      let top = requestedTop;
+      if (top == null) {
+        if (landingEdge === 'start') top = starts[0];
+        else if (landingEdge === 'end') top = starts.at(-1);
+        else if (pendingEntry) {
+          const ratio = Math.max(0, Math.min(1, Number(pendingEntry.scrollRatio) || 0));
+          top = ratio * Math.max(0, scroll.scrollHeight - scroll.clientHeight);
+        } else top = resolveFlowAnchor(anchor, scroll, scroll.scrollTop);
+      }
       cursor.replace(starts, top);
       dirty = false;
       position();
       anchor = captureFlowAnchor(lines, cursor.top, scroll);
       publish();
+      if (pendingEntry) {
+        const entry = pendingEntry;
+        pendingEntry = null;
+        enteredAt = performance.now();
+        const snapshot = departing;
+        departing = null;
+        if (snapshot && snapshot.width === scroll.clientWidth && snapshot.height === scroll.clientHeight) {
+          void animateTurn(cursor.top, entry.direction, snapshot);
+        }
+        callbacks.current.onChapterEntered?.(entry, flowScrollRatio(scroll));
+      }
     };
     const invalidate = event => {
-      if (disposed || isPdf) return;
+      if (disposed || isPdf || chapterPending) return;
       dirty = true;
       // A frozen page can survive incoming translation/image content. A new
       // viewport or newly loaded font changes its own geometry: finish the
@@ -124,52 +155,16 @@ export function PagedReader({
       busy = false;
       pendingTurns.length = 0;
     };
-    const clearChapterArm = () => {
-      chapterArmAt = 0;
-      clearTimeout(chapterTimer);
-      setEdgeHint(false);
-    };
-    const edge = direction => {
-      if (direction < 0) {
-        clearChapterArm();
-        if (callbacks.current.canPrevChapter) callbacks.current.onPrevChapter?.();
-      } else if (callbacks.current.canNextChapter) {
-        const now = Date.now();
-        if (chapterArmAt && now - chapterArmAt <= 700) {
-          clearChapterArm();
-          callbacks.current.onNextChapter?.();
-        } else {
-          chapterArmAt = now;
-          setEdgeHint(true);
-          clearTimeout(chapterTimer);
-          chapterTimer = setTimeout(clearChapterArm, 850);
-        }
-      }
-    };
-    const turn = async direction => {
-      if (disposed) return;
-      activeReader = reader;
-      direction = direction > 0 ? 1 : -1;
-      if (isPdf) {
-        scroll.dispatchEvent(new CustomEvent('dshr-pdf-page-turn', { detail: direction }));
-        return;
-      }
-      if (busy) { if (pendingTurns.length < 32) pendingTurns.push(direction); return; }
-      if (dirty) rebuild();
-      const from = cursor.top;
-      if (!cursor.turn(direction)) { edge(direction); return; }
-      clearChapterArm();
-      anchor = captureFlowAnchor(lines, cursor.top, scroll);
-      scroll.dataset.readerNavigation = String(Number(scroll.dataset.readerNavigation || 0) + 1);
-      publish();
+    const canAnimate = () => stage?.animate && !reducedMotion();
+    const animateTurn = async (from, direction, departingPage) => {
       busy = true;
       const run = ++revision;
       scroll.dataset.readerTurning = 'true';
       try {
-        if (stage?.animate && !reducedMotion()) {
+        if (canAnimate()) {
           transition = createFlowTransition({ reader, scroll, stage, records: snapshotRecords,
             from, to: cursor.top, fromBottom: bottomCover(from), toBottom: bottomCover(cursor.top),
-            mode: callbacks.current.animation, direction });
+            mode: callbacks.current.animation, direction, departing: departingPage });
           reader.classList.add('dshr-is-turning');
         }
         // The real, selectable document advances once underneath the opaque
@@ -192,24 +187,65 @@ export function PagedReader({
         }
       }
     };
+    const crossChapter = direction => {
+      const { canPrevChapter, canNextChapter, onChapterTurn } = callbacks.current;
+      if (!onChapterTurn || !(direction < 0 ? canPrevChapter : canNextChapter)) return;
+      chapterPending = true;
+      pendingTurns.length = 0;
+      markNavigation();
+      const entry = { edge: direction > 0 ? 'start' : 'end', direction };
+      if (canAnimate()) {
+        try {
+          departureRef.current = { entry, snapshot: captureDepartingPage(scroll, stage, snapshotRecords, cursor.top, bottomCover(cursor.top)) };
+        } catch { /* An oversized or unsupported snapshot still allows navigation. */ }
+      }
+      onChapterTurn(direction, entry);
+    };
+    const turn = (direction, repeatedClick = false) => {
+      if (disposed || chapterPending) return;
+      activeReader = reader;
+      direction = direction > 0 ? 1 : -1;
+      if (isPdf) {
+        scroll.dispatchEvent(new CustomEvent('dshr-pdf-page-turn', { detail: direction }));
+        return;
+      }
+      if (pendingEntry) { rebuild(); return; }
+      // A click burst at the seam must not consume the first page it just opened.
+      if (direction === enteringDirection && (repeatedClick || busy || performance.now() - enteredAt < TURN_BURST_MS)) return;
+      enteringDirection = null;
+      if (busy) { if (pendingTurns.length < 32) pendingTurns.push(direction); return; }
+      if (dirty) rebuild();
+      if (dirty || busy) return;
+      const from = cursor.top;
+      if (!cursor.turn(direction)) { crossChapter(direction); return; }
+      landingEdge = null;
+      anchor = captureFlowAnchor(lines, cursor.top, scroll);
+      markNavigation();
+      publish();
+      void animateTurn(from, direction);
+    };
     turnRef.current = turn;
     const onScroll = () => {
-      if (isPdf || busy || scrollFrame) return;
+      if (isPdf || busy || chapterPending || dirty || scrollFrame) return;
       scrollFrame = requestAnimationFrame(() => {
         scrollFrame = 0;
-        if (!disposed && !busy) position();
+        if (!disposed && !busy && !chapterPending && !dirty) position();
       });
     };
     const onNavigate = event => {
       if (isPdf || !stage) return;
       event.preventDefault();
+      if (chapterPending) return;
       cancelAnimations();
+      enteringDirection = null;
+      landingEdge = null;
+      departing = null;
       const detail = event.detail || {};
       let top = Number(detail.top) || 0;
       if (detail.ratio != null) top = Number(detail.ratio) * Math.max(0, scroll.scrollHeight - scroll.clientHeight);
       if (detail.element && stage.contains(detail.element)) top = detail.element.getBoundingClientRect().top
         - scroll.getBoundingClientRect().top + scroll.scrollTop - BOOK_PADDING_TOP;
-      scroll.dataset.readerNavigation = String(Number(scroll.dataset.readerNavigation || 0) + 1);
+      markNavigation();
       anchor = null;
       rebuild(Math.max(0, top));
     };
@@ -218,9 +254,9 @@ export function PagedReader({
       if (Math.abs(event.deltaY) < 8 && Math.abs(event.deltaX) < 8) return;
       event.preventDefault();
       const now = performance.now();
-      const elapsed = now - lastWheelAt;
-      lastWheelAt = now;
-      if (elapsed >= 220) void turn(event.deltaY > 0 || event.deltaX > 0 ? 1 : -1);
+      const elapsed = now - lastWheelAt.current;
+      lastWheelAt.current = now;
+      if (elapsed >= TURN_BURST_MS) turn(event.deltaY > 0 || event.deltaX > 0 ? 1 : -1);
     };
     const onKey = event => {
       if (event.defaultPrevented || event.repeat || event.ctrlKey || event.metaKey || event.altKey || !scroll.isConnected) return;
@@ -274,7 +310,7 @@ export function PagedReader({
       const pages = Number(scroll.dataset.pdfPages);
       if (page > 0 && pages > 0) setPageState({ page, pages });
     } else {
-      rebuild(scroll.scrollTop);
+      rebuild();
       if (typeof ResizeObserver === 'function') {
         resizeObserver = new ResizeObserver(invalidate);
         resizeObserver.observe(scroll);
@@ -291,7 +327,6 @@ export function PagedReader({
     return () => {
       disposed = true;
       cancelAnimations();
-      clearTimeout(chapterTimer);
       cancelAnimationFrame(layoutFrame);
       cancelAnimationFrame(scrollFrame);
       resizeObserver?.disconnect();
@@ -349,7 +384,7 @@ export function PagedReader({
       <button
         type="button"
         className="dshr-paged-btn dshr-paged-prev"
-        onClick={() => { if (!atStart) turnRef.current?.(-1); }}
+        onClick={event => { if (!atStart) turnRef.current?.(-1, event.detail > 1); }}
         disabled={atStart}
         title="上一页（← / ↑ / PageUp）"
         aria-label="上一页"
@@ -359,16 +394,13 @@ export function PagedReader({
       <button
         type="button"
         className="dshr-paged-btn dshr-paged-next"
-        onClick={() => { if (!atEnd) turnRef.current?.(1); }}
+        onClick={event => { if (!atEnd) turnRef.current?.(1, event.detail > 1); }}
         disabled={atEnd}
         title="下一页（→ / ↓ / PageDown / 空格）"
         aria-label="下一页"
       >
         <IconChevronRight size={20} />
       </button>
-      {edgeHint ? (
-        <div className="dshr-paged-hint" role="status">再按一次进入下一章</div>
-      ) : null}
       <div className="dshr-paged-status" title="翻页进度">
         <b>{page}</b><span>/</span><em>{pages}</em>
       </div>

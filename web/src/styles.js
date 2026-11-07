@@ -308,14 +308,6 @@ export const styles = String.raw`
   background: color-mix(in srgb, var(--dshr-bg) 84%, transparent); color: var(--dshr-fg-3);
   backdrop-filter: blur(8px); font: 11px/1.4 var(--dshr-sans); letter-spacing: .02em;
 }
-.dshr-paged-hint {
-  position: absolute; bottom: 50px; left: 50%; transform: translateX(-50%); z-index: 2;
-  padding: 5px 12px; border: 1px solid color-mix(in srgb, var(--dshr-brand) 34%, transparent);
-  border-radius: 30px; background: color-mix(in srgb, var(--dshr-bg) 88%, transparent);
-  color: var(--dshr-brand); backdrop-filter: blur(8px); font: 11.5px/1.4 var(--dshr-sans);
-  pointer-events: none; animation: dshr-page-hint-in .18s ease-out;
-}
-@keyframes dshr-page-hint-in { from { opacity: 0; transform: translate(-50%, 4px); } to { opacity: 1; transform: translate(-50%, 0); } }
 .dshr-paged-status b { color: var(--dshr-fg); font-size: 13px; font-weight: 650; }
 .dshr-paged-status span { opacity: .45; }
 .dshr-paged-status em { font-style: normal; }
