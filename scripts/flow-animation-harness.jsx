@@ -115,6 +115,49 @@ async function examine(mode, direction, screenshots, mixed = false) {
   results.push({ format: book.format, mode, direction, frames: 5, check: 'opaque-continuous-corner-correct' });
 }
 
+// The reader paper can be light even while DSH itself uses a dark skin. Chapter
+// controls must retain the paper's palette when moved into a transition view.
+async function examineChapterControls(mode, direction, scenario) {
+  animation = mode; render(); await sleep(25);
+  const originals = [...scroll().querySelectorAll('.dshr-chapter__nav button')];
+  const properties = ['backgroundColor', 'color', 'borderTopColor', 'borderTopWidth', 'borderRadius',
+    'fontFamily', 'fontSize', 'lineHeight', 'opacity', 'boxShadow'];
+  const expected = originals.map(button => {
+    const style = getComputedStyle(button);
+    return Object.fromEntries(properties.map(name => [name, style[name]]));
+  });
+  const before = Number(scroll().dataset.readerPage);
+  document.querySelector(direction > 0 ? '.dshr-paged-next' : '.dshr-paged-prev').click();
+  const overlay = document.querySelector('.dshr-flow-transition');
+  assert(overlay, 'chapter control transition did not start');
+  const copies = [...overlay.querySelectorAll('.dshr-chapter__nav button')];
+  assert(copies.length === 3, `wanted all three chapter controls, got ${copies.length}`);
+  const effects = overlay.getAnimations({ subtree: true });
+  for (const progress of [0, 0.5, 0.98]) {
+    for (const effect of effects) effect.currentTime = effect.effect.getTiming().duration * progress;
+    await raf(); await raf();
+    if (mode === 'flip' && direction > 0 && progress === 0.98) await capture(`chapter-controls-${scenario}`);
+    copies.forEach((button, i) => {
+      const actual = getComputedStyle(button);
+      for (const name of properties) assert(actual[name] === expected[i][name],
+        `${mode}/${direction}: chapter control ${i} ${name} changed from ${expected[i][name]} to ${actual[name]}`);
+      assert(button.disabled === originals[i].disabled, 'chapter control disabled state changed');
+      const icon = getComputedStyle(button.querySelector('svg'));
+      const originalIcon = getComputedStyle(originals[i].querySelector('svg'));
+      assert(icon.fill === originalIcon.fill && icon.stroke === originalIcon.stroke, 'chapter icon paint changed');
+    });
+  }
+  for (const effect of effects) effect.finish();
+  await settled();
+  assert(Number(scroll().dataset.readerPage) === before + direction, 'chapter controls changed pagination');
+  originals.forEach((button, i) => {
+    assert(button.isConnected, 'live chapter control was replaced');
+    const actual = getComputedStyle(button);
+    for (const name of properties) assert(actual[name] === expected[i][name], 'live control palette changed after animation');
+  });
+  results.push({ check: 'chapter-controls-retain-paper-palette', scenario, mode, direction });
+}
+
 try {
   const fixtures = [
     ['epub', new Blob([zipSync(Object.fromEntries(Object.entries(epubFiles).map(([k, v]) => [k, strToU8(v)])))])],
@@ -135,6 +178,34 @@ try {
       await examine(mode, -1, format === 'epub');
     }
   }
+  root.render(null); await sleep(25);
+  book = await parseBook(new Blob([`<html><body>${html}</body></html>`]), { fileName: 'chapter-controls.html' });
+  const sourceChapter = book.chapters[0];
+  book.chapters = ['关于判断与决策的有趣研究', '快思考，慢思考', '主要内容'].map((title, index) => ({
+    ...sourceChapter, title, id: `chapter-controls-${index}`,
+  }));
+  decorated = true;
+  for (const scenario of [
+    { name: 'dark-host-sepia-middle', dark: true, paper: 'sepia', chapter: 1 },
+    { name: 'dark-host-paper-first', dark: true, paper: 'paper', chapter: 0 },
+    { name: 'light-host-night-last', dark: false, paper: 'night', chapter: 2 },
+  ]) {
+    document.documentElement.toggleAttribute('data-ds-dark-theme', scenario.dark);
+    chapterIndex = scenario.chapter;
+    settings = { ...DEFAULT_SETTINGS, readingMode: 'book', backgroundPreset: scenario.paper };
+    // Let the intentional 160 ms control palette transition finish after a
+    // theme change; the assertion below isolates changes caused by page turns.
+    render(); await sleep(220); await settled();
+    const last = Number(scroll().dataset.readerPages);
+    for (const mode of ['slide', 'cover', 'flip']) {
+      scroll().dispatchEvent(new CustomEvent('dshr-flow-navigate', { cancelable: true, detail: { top: scroll().scrollHeight } }));
+      await settled();
+      assert(Number(scroll().dataset.readerPage) === last, 'could not reach chapter controls');
+      await examineChapterControls(mode, -1, scenario.name);
+      await examineChapterControls(mode, 1, scenario.name);
+    }
+  }
+  document.documentElement.removeAttribute('data-ds-dark-theme');
   // Real images + translation cards, dark paper, and asynchronous updates while
   // the presentation is frozen. The original node must survive every effect.
   root.render(null); await sleep(25);

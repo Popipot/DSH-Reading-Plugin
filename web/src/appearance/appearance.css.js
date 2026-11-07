@@ -187,26 +187,30 @@ export const appearanceStyles = String.raw`
   color: var(--dshr-reader-muted, #736f64);
 }
 
-.dshr-content .dshr-spinner {
+/* A transition page is a presentation-only copy outside the scroll container.
+   Share all descendant control paint rules with it, so a dark host skin cannot
+   replace the reading paper's palette at either end of a turn. Do not give the
+   copy .dshr-content: that class also identifies the live navigation surface. */
+:is(.dshr-content, .dshr-turn-page) .dshr-spinner {
   border-color: color-mix(in srgb, var(--dshr-reader-ink, #2b2a26) 18%, transparent);
   border-top-color: var(--dshr-reader-accent, #9a6b2f);
 }
 
-.dshr-content .dshr-btn {
+:is(.dshr-content, .dshr-turn-page) .dshr-btn {
   color: var(--dshr-reader-muted, #736f64);
 }
 
-.dshr-content .dshr-btn:hover {
+:is(.dshr-content, .dshr-turn-page) .dshr-btn:hover {
   background: color-mix(in srgb, var(--dshr-reader-ink, #2b2a26) 8%, transparent);
   color: var(--dshr-reader-ink, #2b2a26);
 }
 
-.dshr-content .dshr-btn--outline {
+:is(.dshr-content, .dshr-turn-page) .dshr-btn--outline {
   background: color-mix(in srgb, var(--dshr-reader-bg, #fbf7ee) 52%, transparent);
   border-color: var(--dshr-reader-border, rgba(43, 42, 38, 0.15));
 }
 
-.dshr-content .dshr-btn--outline:hover {
+:is(.dshr-content, .dshr-turn-page) .dshr-btn--outline:hover {
   border-color: color-mix(in srgb, var(--dshr-reader-ink, #2b2a26) 30%, transparent);
 }
 

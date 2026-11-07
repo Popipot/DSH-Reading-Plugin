@@ -16,6 +16,7 @@ const READER_CLASSES = new Set([
   'dshr-root',
   'dshr-content',
   'dshr-content__inner',
+  'dshr-turn-page',
   'dshr-block',
   'dshr-chapter',
   'dshr-chapter__kicker',
