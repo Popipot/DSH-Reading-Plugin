@@ -2,10 +2,13 @@ import React from 'react';
 import {
   IconBookOpen, IconUpload, IconBook, IconTrash, IconPlus, IconSettings,
   IconSparkles, IconTranslate, IconSearch, IconWand, IconTag, IconDownload,
+  IconCheck, IconChevronLeft, IconFolder, IconMinus,
 } from './icons.jsx';
 import {
   CATEGORIES, categoryLabel, formatBytes, formatLabel, formatRelativeTime, isSupportedFile,
+  saveBookCollection, deleteBookCollection,
 } from '../storage.js';
+import { bookTitle, CollectionCard, CollectionDialog, matchesBook } from './BookCollections.jsx';
 
 function progressPercent(book) {
   const progress = book.progress;
@@ -22,88 +25,130 @@ function progressPercent(book) {
 
 const NEXT_CATEGORY = { book: 'paper', paper: 'document', document: 'book' };
 
-function BookCard({ book, onOpen, onDelete, onCycleCategory }) {
+function BookCard({ book, onOpen, onDelete, onCycleCategory, onAdd, onRemove, selection, onToggle }) {
   const percent = progressPercent(book);
   const meta = [formatLabel(book.format), book.author || '', formatBytes(book.size)].filter(Boolean).join(' · ');
   return (
-    <div
-      className="dshr-book"
-      role="button"
-      tabIndex={0}
-      onClick={() => onOpen(book)}
-      onKeyDown={(event) => {
-        if (event.key === 'Enter' || event.key === ' ') {
-          event.preventDefault();
-          onOpen(book);
-        }
-      }}
-    >
-      <div className="dshr-book__media">
+    <article className={`dshr-book-card${selection ? ' is-selecting' : ''}${selection?.has(book.id) ? ' is-selected' : ''}`}>
+      <button type="button" className="dshr-book" aria-pressed={selection ? selection.has(book.id) : undefined}
+        aria-label={selection ? `选择 ${bookTitle(book)}` : `打开 ${bookTitle(book)}`}
+        onClick={() => selection ? onToggle(book.id) : onOpen(book)}>
+      <span className="dshr-book__media">
         {book.cover
-          ? <img className="dshr-book__cover" src={book.cover} alt={`${book.title || '文档'}封面`} loading="lazy" />
-          : <div className="dshr-book__spine">{formatLabel(book.format)}</div>}
-      </div>
-      <div className="dshr-book__body">
-        <div className="dshr-book__title">{book.title || '未命名文档'}</div>
-        <div className="dshr-book__meta">{meta}</div>
-        <div className="dshr-book__foot">
+          ? <img className="dshr-book__cover" src={book.cover} alt="" loading="lazy" decoding="async" />
+          : <span className="dshr-book__spine">{formatLabel(book.format)}</span>}
+      </span>
+      <span className="dshr-book__body">
+        <span className="dshr-book__title">{bookTitle(book)}</span>
+        <span className="dshr-book__meta">{meta}</span>
+        <span className="dshr-book__foot">
           <span>{book.lastOpenedAt ? `阅读于 ${formatRelativeTime(book.lastOpenedAt)}` : formatRelativeTime(book.addedAt)}</span>
           <span>{percent > 0 ? `${Math.round(percent)}%` : '未开始'}</span>
-        </div>
-        <div className="dshr-book__progress" aria-hidden="true"><i style={{ '--p': `${percent}%` }} /></div>
-      </div>
+        </span>
+        <span className="dshr-book__progress" aria-hidden="true"><i style={{ '--p': `${percent}%` }} /></span>
+      </span>
+      {selection && <span className="dshr-book__selected" aria-hidden="true">{selection.has(book.id) && <IconCheck size={14} />}</span>}
+      </button>
+      {!selection && (
       <div className="dshr-book__badges">
         <button
           type="button"
           className={`dshr-book__category is-${book.category || 'document'}`}
-          title={`分类：${categoryLabel(book.category)}${book.categoryManual ? '（手动）' : '（自动）'} · 点击切换`}
-          onClick={(event) => {
-            event.stopPropagation();
-            onCycleCategory(book);
-          }}
+          title={`默认分类：${categoryLabel(book.category)}${book.categoryManual ? '（手动）' : '（自动）'} · 点击切换`}
+          onClick={() => onCycleCategory(book)}
         >
           <IconTag size={11} /> {categoryLabel(book.category)}
         </button>
-        <button
-          type="button"
-          className="dshr-btn dshr-btn--icon dshr-btn--sm dshr-btn--ghost dshr-book__delete"
-          aria-label={`从书架删除 ${book.title || '这本书'}`}
-          title="从书架删除"
-          onClick={(event) => {
-            event.stopPropagation();
-            onDelete(book);
-          }}
-        >
-          <IconTrash size={14} />
+        <button type="button" className="dshr-btn dshr-btn--sm dshr-btn--ghost dshr-book__add" aria-label={`将 ${bookTitle(book)} 加入书单`} onClick={() => onAdd([book.id])}>
+          <IconPlus size={13} /> 加入书单
         </button>
+        {onRemove ? (
+          <button type="button" className="dshr-btn dshr-btn--icon dshr-btn--sm dshr-btn--ghost" aria-label={`从此书单移出 ${bookTitle(book)}`} title="从此书单移出" onClick={() => onRemove([book.id])}>
+            <IconMinus size={14} />
+          </button>
+        ) : (
+          <button type="button" className="dshr-btn dshr-btn--icon dshr-btn--sm dshr-btn--ghost dshr-book__delete" aria-label={`从书架删除 ${bookTitle(book)}`} title="从书架删除" onClick={() => onDelete(book)}>
+            <IconTrash size={14} />
+          </button>
+        )}
       </div>
-    </div>
+      )}
+    </article>
   );
 }
 
 export function LibraryView({
-  books, loading, resumeBook, onResume, importing, organizing, categoryFilter, onCategoryFilter,
+  books, collections, onCollectionsChange, loading, resumeBook, onResume, importing, organizing, categoryFilter, onCategoryFilter,
   onAutoOrganize, onImport, onOpen, onDelete, onCycleCategory, onSettings, onOnlineImport,
 }) {
   const inputRef = React.useRef(null);
   const [over, setOver] = React.useState(false);
   const [search, setSearch] = React.useState('');
+  const [preview, setPreview] = React.useState(null);
+  const [selection, setSelection] = React.useState(null);
+  const [action, setAction] = React.useState(null);
+  const [notice, setNotice] = React.useState('');
   const dragDepth = React.useRef(0);
+  const shelfRef = React.useRef(null);
+  const headingRef = React.useRef(null);
+  const focusHeading = React.useRef(false);
 
-  const counts = React.useMemo(() => {
-    const next = { all: books.length, book: 0, paper: 0, document: 0 };
-    for (const book of books) next[book.category] = (next[book.category] || 0) + 1;
-    return next;
-  }, [books]);
+  const folders = React.useMemo(() => {
+    const byId = new Map(books.map(book => [book.id, book]));
+    const byCategory = new Map(CATEGORIES.map(category => [category.id, []]));
+    const byImport = [...books].sort((a, b) => a.addedAt - b.addedAt);
+    for (const book of byImport) byCategory.get(book.category)?.push(book);
+    return [
+      ...collections.map(collection => ({ ...collection, books: collection.bookIds.map(id => byId.get(id)).filter(Boolean) })),
+      ...CATEGORIES.map(category => ({ id: category.id, name: category.label, system: true, books: byCategory.get(category.id) })),
+    ];
+  }, [books, collections]);
+  const active = folders.find(folder => folder.id === categoryFilter);
+  const scope = active?.books ?? books;
+  const query = search.trim().toLowerCase();
+  const filtered = query ? scope.filter(book => matchesBook(book, query)) : scope;
+  const selectedIds = selection ? scope.filter(book => selection.has(book.id)).map(book => book.id) : [];
 
-  const filtered = React.useMemo(() => {
-    const query = search.trim().toLowerCase();
-    return books.filter((book) => {
-      if (categoryFilter !== 'all' && book.category !== categoryFilter) return false;
-      if (!query) return true;
-      return `${book.title} ${book.author || ''}`.toLowerCase().includes(query);
-    });
-  }, [books, categoryFilter, search]);
+  React.useLayoutEffect(() => {
+    if (!focusHeading.current) return;
+    focusHeading.current = false;
+    headingRef.current?.focus({ preventScroll: true });
+  }, [categoryFilter]);
+
+  function openFolder(id) {
+    focusHeading.current = true;
+    onCategoryFilter(id);
+    setSearch('');
+    setSelection(null);
+    setPreview(null);
+    setNotice('');
+    shelfRef.current?.scrollTo({ top: 0 });
+  }
+
+  const createFolder = (bookIds = []) => setAction({ kind: 'edit', bookIds });
+  const addToFolder = bookIds => collections.length ? setAction({ kind: 'add', bookIds }) : createFolder(bookIds);
+  async function saveFolder(input) {
+    const saved = await saveBookCollection(input);
+    onCollectionsChange(current => current.some(item => item.id === saved.id)
+      ? current.map(item => item.id === saved.id ? saved : item)
+      : [...current, saved]);
+    return saved;
+  }
+  async function removeFromFolder(bookIds) {
+    try {
+      await saveFolder({ id: active.id, remove: bookIds });
+      setSelection(null);
+      setNotice(`已从「${active.name}」移出 ${bookIds.length} 本。`);
+    } catch (error) {
+      setNotice(error?.message || '移出书单失败。');
+    }
+  }
+  async function deleteFolder(id) {
+    await deleteBookCollection(id);
+    onCollectionsChange(current => current.filter(item => item.id !== id));
+    if (categoryFilter === id) openFolder('all');
+    setNotice('书单已删除。');
+  }
 
   const pick = () => inputRef.current?.click();
 
@@ -120,16 +165,13 @@ export function LibraryView({
   };
 
   return (
-    <div className="dshr-library">
+    <div className="dshr-library" ref={shelfRef}>
       <div className="dshr-library__inner">
         <header className="dshr-hero">
           <div>
             <div className="dshr-hero__eyebrow"><IconBookOpen size={15} /> DSH READER · LIBRARY</div>
-            <h1>你的跨语言阅读助手</h1>
-            <p>
-              PDF、EPUB、MOBI、TXT 都能在这里打开。自动整理成书籍与文献书单，
-              读到外文时实时对照中文；选中文字即可翻译、问 AI 或跳转 Google 搜索。
-            </p>
+            <h1>我的书架</h1>
+            <p>用书单整理书籍、论文和阅读资料。</p>
           </div>
           <div className="dshr-hero__actions">
             <button type="button" className="dshr-btn dshr-btn--primary" onClick={pick} disabled={importing}>
@@ -178,8 +220,22 @@ export function LibraryView({
           </button>
         ) : null}
 
-        <section
-          className={`dshr-drop${over ? ' is-over' : ''}`}
+        {!active && !loading && (
+          <section className="dshr-collections" aria-label="书单文件夹">
+            <div className="dshr-collections__bar">
+              <h2 ref={headingRef} tabIndex={-1}>书单文件夹</h2>
+              <button type="button" className="dshr-btn dshr-btn--outline" onClick={() => createFolder()}><IconPlus size={15} /> 新建书单</button>
+            </div>
+            <div className="dshr-collections__grid">
+              {folders.map(folder => <CollectionCard key={folder.id} folder={folder} expanded={preview === folder.id}
+                onToggle={() => setPreview(value => value === folder.id ? null : folder.id)}
+                onOpen={() => openFolder(folder.id)} onRead={onOpen} />)}
+            </div>
+          </section>
+        )}
+
+        {!active && <section
+          className={`dshr-drop${books.length ? ' is-compact' : ''}${over ? ' is-over' : ''}`}
           onDragEnter={(event) => {
             event.preventDefault();
             dragDepth.current += 1;
@@ -199,55 +255,54 @@ export function LibraryView({
             <div className="dshr-drop__hint">
               文件只保存在本机浏览器书架中，不会上传；翻译仅发送当前选中的段落。
             </div>
-            <div className="dshr-drop__formats">
+            {!books.length && <div className="dshr-drop__formats">
               {['PDF', 'EPUB', 'MOBI', 'AZW3', 'TXT', 'Markdown', 'HTML'].map((format) => (
                 <span key={format} className="dshr-chip">{format}</span>
               ))}
-            </div>
+            </div>}
           </div>
           <button type="button" className="dshr-btn dshr-btn--outline" onClick={pick} disabled={importing}>选择文件</button>
-        </section>
+        </section>}
+
+        {active && (
+          <div className="dshr-collection-context">
+            <nav aria-label="书架位置">
+              <button type="button" className="dshr-btn dshr-btn--ghost" onClick={() => openFolder('all')}><IconChevronLeft size={15} /> 返回书架</button>
+              <span ref={headingRef} tabIndex={-1} aria-current="page"><IconFolder size={16} /> {active.name}</span>
+            </nav>
+            {!active.system && <div className="dshr-collection-context__actions">
+              <button type="button" className="dshr-btn dshr-btn--outline" onClick={() => setAction({ kind: 'edit', collection: active })}>编辑书单</button>
+              <button type="button" className="dshr-btn dshr-btn--ghost" onClick={() => setAction({ kind: 'delete', collection: active })}><IconTrash size={15} /> 删除书单</button>
+            </div>}
+          </div>
+        )}
 
         <div className="dshr-library__bar">
-          <h2>我的书架</h2>
+          <h2>{active ? '书单内容' : '全部文档'}</h2>
           <div className="dshr-library__search">
             <IconSearch size={14} />
             <input
               type="search"
               value={search}
               onChange={(event) => setSearch(event.target.value)}
-              placeholder="搜索书名、作者"
-              aria-label="搜索书架"
+              placeholder={active ? '搜索此书单' : '搜索书名、作者'}
+              aria-label={active ? '搜索此书单' : '搜索书架'}
             />
           </div>
-          <span>{filtered.length} / {books.length} 本 · 最近阅读优先</span>
+          <span>{filtered.length} / {scope.length} 本</span>
+          {scope.length > 0 && <button type="button" className="dshr-btn dshr-btn--outline" aria-pressed={!!selection} onClick={() => setSelection(value => value ? null : new Set())}>
+            {selection ? '退出多选' : '多选'}
+          </button>}
         </div>
 
-        <div className="dshr-library__tabs" role="tablist" aria-label="书架分类">
-          <button
-            type="button"
-            role="tab"
-            aria-selected={categoryFilter === 'all'}
-            className={`dshr-library__tab${categoryFilter === 'all' ? ' is-active' : ''}`}
-            onClick={() => onCategoryFilter('all')}
-          >
-            全部 <span>{counts.all}</span>
-          </button>
-          {CATEGORIES.map((category) => (
-            <button
-              key={category.id}
-              type="button"
-              role="tab"
-              aria-selected={categoryFilter === category.id}
-              className={`dshr-library__tab${categoryFilter === category.id ? ' is-active' : ''}`}
-              onClick={() => onCategoryFilter(category.id)}
-              title={category.hint}
-            >
-              {category.label} <span>{counts[category.id] || 0}</span>
-            </button>
-          ))}
-          <span className="dshr-library__tabs-hint">点卡片右上角分类标签可手动切换</span>
-        </div>
+        <div className="dshr-library__notice" role="status">{notice}</div>
+        {selection && <div className="dshr-collection-selection" aria-label="批量书单操作">
+          <span>已选 {selectedIds.length} 本</span>
+          <button type="button" className="dshr-btn dshr-btn--sm dshr-btn--outline" disabled={!filtered.length}
+            onClick={() => setSelection(current => new Set([...current, ...filtered.map(book => book.id)]))}>全选当前结果</button>
+          <button type="button" className="dshr-btn dshr-btn--sm dshr-btn--primary" disabled={!selectedIds.length} onClick={() => addToFolder(selectedIds)}>加入书单</button>
+          {active && !active.system && <button type="button" className="dshr-btn dshr-btn--sm dshr-btn--outline" disabled={!selectedIds.length} onClick={() => void removeFromFolder(selectedIds)}>从此书单移出</button>}
+        </div>}
 
         {loading ? (
           <div className="dshr-loading" style={{ minHeight: 180 }}>
@@ -256,11 +311,11 @@ export function LibraryView({
           </div>
         ) : filtered.length === 0 ? (
           <div className="dshr-empty-books">
-            {books.length === 0
-              ? '书架是空的。导入第一篇论文、第一本书，或把文件拖进上面的虚线框。首次阅读后，进度会自动记录在这里。'
-              : search.trim()
-                ? `没有匹配「${search.trim()}」的文档。`
-                : `「${categoryLabel(categoryFilter)}」书单还是空的。导入文件，或点卡片上的分类标签把已有文档移进来。`}
+            {query ? `没有匹配「${search.trim()}」的文档。`
+              : active ? `「${active.name}」还没有书。` : '导入文档后，就可以把它们加入书单。'}
+            {active && !active.system && !query && <button type="button" className="dshr-btn dshr-btn--outline" onClick={() => setAction({ kind: 'edit', collection: active })}>
+              <IconPlus size={15} /> 添加书籍
+            </button>}
           </div>
         ) : (
           <div className="dshr-books">
@@ -271,6 +326,15 @@ export function LibraryView({
                 onOpen={onOpen}
                 onDelete={onDelete}
                 onCycleCategory={(item) => onCycleCategory(item, NEXT_CATEGORY[item.category || 'document'])}
+                onAdd={addToFolder}
+                onRemove={active && !active.system ? removeFromFolder : undefined}
+                selection={selection}
+                onToggle={id => setSelection(current => {
+                  const next = new Set(current);
+                  if (next.has(id)) next.delete(id);
+                  else next.add(id);
+                  return next;
+                })}
               />
             ))}
           </div>
@@ -283,6 +347,14 @@ export function LibraryView({
           <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}><IconBook size={14} /> 本地书架 · 进度与批注自动保存</span>
         </footer>
       </div>
+
+      {action && <CollectionDialog key={`${action.kind}:${action.collection?.id || ''}`} action={action} books={books} collections={collections}
+        onClose={() => setAction(null)} onCreate={createFolder} onDelete={deleteFolder}
+        onSave={async input => {
+          const saved = await saveFolder(input);
+          setSelection(null);
+          setNotice(action.kind === 'add' ? `已加入「${saved.name}」。` : `已保存「${saved.name}」。`);
+        }} />}
 
       <input
         ref={inputRef}

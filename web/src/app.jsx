@@ -18,7 +18,7 @@ import {
   IconMaximize, IconMinimize,
 } from './components/icons.jsx';
 import {
-  listBooks, getBook, saveBook, deleteBook, touchBook, updateBook, clearLibrary,
+  listBooks, listBookCollections, getBook, saveBook, deleteBook, touchBook, updateBook, clearLibrary,
   loadSettings, saveSettings, extensionOf, formatLabel, looksForeign,
   categoryLabel, setBookCategory, autoOrganizeLibrary, listAnnotations, saveAnnotation,
   updateAnnotation, deleteAnnotation, getReaderBackground, saveReaderBackground, deleteReaderBackground,
@@ -151,6 +151,8 @@ function useToast() {
 
 export function ReaderPage() {
   const [books, setBooks] = React.useState([]);
+  const [collections, setCollections] = React.useState([]);
+  const collectionRevision = React.useRef(0);
   const [loadingBooks, setLoadingBooks] = React.useState(true);
   const [importing, setImporting] = React.useState(false);
   const [organizing, setOrganizing] = React.useState(false);
@@ -231,14 +233,22 @@ export function ReaderPage() {
   }, [wallpaperTone, backgroundImageUrl, appearanceStyle, settings.customBackground, settings.backgroundImageOpacity, settings.brightness]);
 
   const refreshBooks = React.useCallback(async () => {
+    const revision = ++collectionRevision.current;
     try {
-      setBooks(await listBooks());
+      const [nextBooks, nextCollections] = await Promise.all([listBooks(), listBookCollections()]);
+      setBooks(nextBooks);
+      if (revision === collectionRevision.current) setCollections(nextCollections);
     } catch (error) {
       showToast(error?.message || '读取书架失败。');
     } finally {
       setLoadingBooks(false);
     }
   }, [showToast]);
+
+  const updateCollections = React.useCallback(update => {
+    collectionRevision.current += 1;
+    setCollections(update);
+  }, []);
 
   const reloadAnnotations = React.useCallback(async (bookId) => {
     if (!bookId) {
@@ -1239,6 +1249,8 @@ export function ReaderPage() {
         ) : (
           <LibraryView
             books={books}
+            collections={collections}
+            onCollectionsChange={updateCollections}
             loading={loadingBooks}
             resumeBook={lastBookSummary}
             onResume={(book) => void openBook(book)}

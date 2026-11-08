@@ -19,7 +19,7 @@ A reading workspace inside **DeepSeek Harness** for papers and books: a local li
 | Feature | What you can do |
 | --- | --- |
 | Formats | Read PDF, EPUB, MOBI/AZW/AZW3, TXT, Markdown, and HTML. |
-| Local library | Search, categorize books/papers/documents, display covers, and resume reading. |
+| Local library | Browse default categories and custom collections with cover previews, search books, add in bulk, and resume reading. |
 | PDF reading | Scroll or turn pages horizontally; zoom, fit width/whole page, jump to a page, and select text. |
 | PDF translation | Keep the original beside a fixed Chinese translation pane with paragraph linking, glossary, pause/retry, and local caching. |
 | Ebooks | Use chapter navigation, adjustable typography, horizontal pagination, and page animations. |
@@ -105,6 +105,7 @@ npm run build
 npm test
 npm run test:pdf-browser
 npm run test:flow-browser
+npm run test:library-browser
 npm run test:flow-animations
 npm run test:translation-browser
 npm run test:pdf-performance -- --hidpi

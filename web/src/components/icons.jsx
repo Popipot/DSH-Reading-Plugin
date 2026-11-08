@@ -142,6 +142,10 @@ export function IconPlus(props) {
   return <Icon {...props}><path d="M12 5v14M5 12h14" /></Icon>;
 }
 
+export function IconFolder(props) {
+  return <Icon {...props}><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2Z" /></Icon>;
+}
+
 export function IconMinus(props) {
   return <Icon {...props}><path d="M5 12h14" /></Icon>;
 }

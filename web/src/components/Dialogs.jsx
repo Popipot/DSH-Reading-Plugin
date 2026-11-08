@@ -88,7 +88,7 @@ export function SettingsDialog({ settings, onChange, onClose, onClearLibrary, on
         <div className="dshr-settings-row dshr-settings-row--danger">
           <div>
             <div className="dshr-settings-row__title">清空本地书架</div>
-            <div className="dshr-settings-row__hint">删除已导入的所有文档、批注和阅读进度，无法撤销。</div>
+            <div className="dshr-settings-row__hint">删除已导入的所有文档、书单、批注和阅读进度，无法撤销。</div>
           </div>
           {confirmClear ? (
             <div style={{ display: 'flex', gap: 6 }}>

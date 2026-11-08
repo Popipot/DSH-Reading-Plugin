@@ -14,6 +14,7 @@ const ANNOTATIONS = 'annotations';
 const ASSETS = 'assets';
 const TRANSLATIONS = 'pdfTranslations';
 const BACKGROUND_KEY = 'reader-background';
+const COLLECTION_PREFIX = 'book-collection:';
 const SETTINGS_KEY = 'dsh-reader:settings:v1';
 const MAX_BYTES = 320 * 1024 * 1024;
 const MAX_BACKGROUND_BYTES = 16 * 1024 * 1024;
@@ -98,6 +99,16 @@ function txDone(transaction) {
     transaction.onabort = () => reject(transaction.error ?? new Error('书架写入已取消。'));
   });
 }
+
+function requestValue(request) {
+  return new Promise((resolve, reject) => {
+    request.onsuccess = () => resolve(request.result);
+    request.onerror = () => reject(request.error);
+  });
+}
+
+const collectionRange = () => IDBKeyRange.bound(COLLECTION_PREFIX, `${COLLECTION_PREFIX}\uffff`);
+const collectionKey = id => `${COLLECTION_PREFIX}${id}`;
 
 export function extensionOf(fileName) {
   const match = /\.([^./\\]+)$/u.exec(String(fileName ?? ''));
@@ -275,13 +286,17 @@ export async function saveBook(file, { title, author, language } = {}) {
 }
 
 export async function updateBook(id, patch) {
-  const existing = await getBook(id);
-  if (!existing) return null;
-  const next = { ...existing, ...patch };
   const db = await openDatabase();
   try {
     const tx = db.transaction(BOOKS, 'readwrite');
-    tx.objectStore(BOOKS).put(next);
+    const store = tx.objectStore(BOOKS);
+    const request = store.get(id);
+    let next = null;
+    request.onsuccess = () => {
+      if (!request.result) return;
+      next = { ...request.result, ...patch };
+      store.put(next);
+    };
     await txDone(tx);
     return next;
   } finally {
@@ -324,12 +339,84 @@ export async function touchBook(id, progress) {
   });
 }
 
+// Collections are metadata assets. Membership uses the existing book identity,
+// so adding a book never reads or duplicates its file payload.
+export async function listBookCollections() {
+  const db = await openDatabase();
+  try {
+    const assets = db.transaction(ASSETS, 'readonly').objectStore(ASSETS);
+    const rows = await requestValue(assets.getAll(collectionRange()));
+    return rows.sort((a, b) => a.createdAt - b.createdAt);
+  } finally {
+    db.close();
+  }
+}
+
+export async function saveBookCollection({ id, name, add = [], remove = [] }) {
+  const title = name == null ? undefined : String(name).trim();
+  if ((title !== undefined || !id) && (!title || title.length > 60)) throw new Error('书单名称须为 1–60 个字符。');
+  const db = await openDatabase();
+  try {
+    const tx = db.transaction([ASSETS, BOOKS], 'readwrite');
+    const assets = tx.objectStore(ASSETS);
+    const books = tx.objectStore(BOOKS);
+    const additions = [...new Set(add)];
+    const done = txDone(tx);
+    // The individual requests can fail before the transaction settles.
+    void done.catch(() => {});
+    const [collections, existingKeys] = await Promise.all([
+      requestValue(assets.getAll(collectionRange())),
+      Promise.all(additions.map(bookId => requestValue(books.getKey(bookId)))),
+    ]);
+    const existing = collections.find(item => item.id === id);
+    if (id && !existing) throw new Error('这个书单已被删除。');
+    const nextName = title ?? existing.name;
+    if (collections.some(item => item.id !== id && item.name.toLowerCase() === nextName.toLowerCase())) {
+      throw new Error('已有同名书单，请换一个名称。');
+    }
+    if (existingKeys.some(key => key === undefined)) throw new Error('部分选中的书已从书架删除，请重新选择。');
+    const removed = new Set(remove);
+    const nextId = id ?? newId('collection');
+    const row = {
+      id: nextId,
+      key: collectionKey(nextId),
+      name: nextName,
+      bookIds: [...new Set([...(existing?.bookIds ?? []), ...existingKeys])].filter(bookId => !removed.has(bookId)),
+      createdAt: existing?.createdAt ?? Date.now(),
+    };
+    assets.put(row);
+    await done;
+    return row;
+  } finally {
+    db.close();
+  }
+}
+
+export async function deleteBookCollection(id) {
+  const db = await openDatabase();
+  try {
+    const tx = db.transaction(ASSETS, 'readwrite');
+    tx.objectStore(ASSETS).delete(collectionKey(id));
+    await txDone(tx);
+  } finally {
+    db.close();
+  }
+}
+
 export async function deleteBook(id) {
   const db = await openDatabase();
   try {
     const tx = db.transaction([BOOKS, ANNOTATIONS, TRANSLATIONS, ASSETS], 'readwrite');
     tx.objectStore(BOOKS).delete(id);
     tx.objectStore(ASSETS).delete(`pdf-translation:${id}`);
+    const memberships = tx.objectStore(ASSETS).openCursor(collectionRange());
+    memberships.onsuccess = () => {
+      const cursor = memberships.result;
+      if (!cursor) return;
+      const collection = cursor.value;
+      if (collection.bookIds.includes(id)) cursor.update({ ...collection, bookIds: collection.bookIds.filter(bookId => bookId !== id) });
+      cursor.continue();
+    };
     const cached = tx.objectStore(TRANSLATIONS).index('bookId').openKeyCursor(IDBKeyRange.only(id));
     cached.onsuccess = () => {
       const cursor = cached.result;
@@ -361,7 +448,8 @@ export async function clearLibrary() {
     preferences.onsuccess = () => {
       const cursor = preferences.result;
       if (cursor) {
-        if (String(cursor.key).startsWith('pdf-translation:')) tx.objectStore(ASSETS).delete(cursor.primaryKey);
+        const key = String(cursor.key);
+        if (key.startsWith('pdf-translation:') || key.startsWith(COLLECTION_PREFIX)) tx.objectStore(ASSETS).delete(cursor.primaryKey);
         cursor.continue();
       }
     };

@@ -19,7 +19,7 @@
 | 功能 | 说明 |
 | --- | --- |
 | 多格式 | PDF、EPUB、MOBI/AZW/AZW3、TXT、Markdown、HTML。 |
-| 本地书架 | 搜索、书籍/文献/文档分类、封面和继续阅读。 |
+| 本地书架 | 默认分类、自建书单、封面与完整书名预览、批量归类、搜索和继续阅读。 |
 | PDF 阅读 | 滚动或横版翻页、缩放、适宽/整页、跳页与原生选字。 |
 | PDF 对照翻译 | 固定中文侧栏、段落联动、术语表、暂停/重试与本地译文缓存。 |
 | 电子书 | 目录章节、字体排版、横版分页和翻页动画。 |
@@ -105,6 +105,7 @@ npm run build
 npm test
 npm run test:pdf-browser
 npm run test:flow-browser
+npm run test:library-browser
 npm run test:flow-animations
 npm run test:translation-browser
 npm run test:pdf-performance -- --hidpi

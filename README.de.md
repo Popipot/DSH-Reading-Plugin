@@ -19,7 +19,7 @@ Ein Lesebereich in **DeepSeek Harness** für Fachliteratur und Bücher: lokale B
 | Funktion | Möglichkeiten |
 | --- | --- |
 | Formate | PDF, EPUB, MOBI/AZW/AZW3, TXT, Markdown und HTML lesen. |
-| Lokale Bibliothek | Suchen, Bücher/Fachartikel/Dokumente einordnen, Cover anzeigen und weiterlesen. |
+| Lokale Bibliothek | Standardkategorien und eigene Sammlungen mit Cover-Vorschau, Suche, Sammelzuordnung und Weiterlesen. |
 | PDF-Anzeige | Scrollen oder horizontal umblättern, zoomen, Seitenbreite/ganze Seite anpassen, Seiten anspringen und Text auswählen. |
 | PDF-Übersetzung | Feste chinesische Übersetzungsspalte mit Absatzverknüpfung, Glossar, Pause/Wiederholung und lokalem Cache. |
 | E-Books | Kapitelverzeichnis, anpassbare Typografie, horizontale Seiten und Blätteranimationen. |
@@ -105,6 +105,7 @@ npm run build
 npm test
 npm run test:pdf-browser
 npm run test:flow-browser
+npm run test:library-browser
 npm run test:flow-animations
 npm run test:translation-browser
 npm run test:pdf-performance -- --hidpi

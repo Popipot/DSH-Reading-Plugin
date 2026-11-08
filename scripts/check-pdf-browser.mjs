@@ -14,10 +14,11 @@ const project = fileURLToPath(new URL('../', import.meta.url));
 const output = path.join(project, 'output/playwright');
 await mkdir(output, { recursive: true });
 const animationCheck = process.argv.includes('--flow-animations');
+const libraryCheck = process.argv.includes('--library');
 const flowCheck = process.argv.includes('--flow') || animationCheck;
 const translationCheck = process.argv.includes('--translation');
 const performanceCheck = process.argv.includes('--performance');
-const suppliedPdf = flowCheck || translationCheck ? null : process.argv.slice(2).find(arg => !arg.startsWith('--'));
+const suppliedPdf = flowCheck || translationCheck || libraryCheck ? null : process.argv.slice(2).find(arg => !arg.startsWith('--'));
 function fixture(pages = 1029, paragraphs = false) {
   const objects = ['<< /Type /Catalog /Pages 2 0 R >>', '', '<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>'];
   const kids = [];
@@ -45,9 +46,9 @@ function fixture(pages = 1029, paragraphs = false) {
   pdf += `trailer\n<< /Size ${objects.length + 1} /Root 1 0 R >>\nstartxref\n${xref}\n%%EOF\n`;
   return Buffer.from(pdf);
 }
-const pdf = flowCheck ? Buffer.alloc(0) : translationCheck ? fixture(24, true) : suppliedPdf ? await readFile(path.resolve(suppliedPdf)) : performanceCheck ? complexPdfFixture() : fixture();
+const pdf = flowCheck || libraryCheck ? Buffer.alloc(0) : translationCheck ? fixture(24, true) : suppliedPdf ? await readFile(path.resolve(suppliedPdf)) : performanceCheck ? complexPdfFixture() : fixture();
 const bundle = await build({
-  entryPoints: [path.join(project, animationCheck ? 'scripts/flow-animation-harness.jsx' : flowCheck ? 'scripts/flow-browser-harness.jsx' : translationCheck ? 'scripts/translation-browser-harness.jsx' : performanceCheck ? 'scripts/pdf-performance-harness.jsx' : 'scripts/pdf-browser-harness.jsx')],
+  entryPoints: [path.join(project, libraryCheck ? 'scripts/library-browser-harness.jsx' : animationCheck ? 'scripts/flow-animation-harness.jsx' : flowCheck ? 'scripts/flow-browser-harness.jsx' : translationCheck ? 'scripts/translation-browser-harness.jsx' : performanceCheck ? 'scripts/pdf-performance-harness.jsx' : 'scripts/pdf-browser-harness.jsx')],
   bundle: true, write: false, format: 'esm', platform: 'browser', target: 'chrome120', jsx: 'automatic',
   define: { 'process.env.NODE_ENV': '"production"' },
 });
@@ -101,12 +102,12 @@ try {
   let result;
   const deadline = Date.now() + 90000;
   while (Date.now() < deadline) {
-    if (animationCheck) {
+    if (animationCheck || libraryCheck) {
       const capture = await command('Runtime.evaluate', { expression: 'window.__flowCapture?.name', returnByValue: true });
       const name = capture.result?.result?.value;
       if (name) {
         const frame = await command('Page.captureScreenshot', { format: 'png' });
-        if (frame.result?.data) await writeFile(path.join(output, `flow-animation-${name}.png`), Buffer.from(frame.result.data, 'base64'));
+        if (frame.result?.data) await writeFile(path.join(output, `${libraryCheck ? 'library' : 'flow-animation'}-${name}.png`), Buffer.from(frame.result.data, 'base64'));
         await command('Runtime.evaluate', { expression: 'window.__flowCapture = null' });
       }
     }
@@ -117,7 +118,7 @@ try {
     await new Promise((resolve) => setTimeout(resolve, 200));
   }
   const shot = await command('Page.captureScreenshot', { format: 'png' });
-  const reportBase = animationCheck ? 'flow-animations' : flowCheck ? 'flow-regression' : translationCheck ? 'translation-regression' : performanceCheck ? suppliedPdf ? 'pdf-real-performance' : 'pdf-complex-performance' : 'pdf-regression';
+  const reportBase = libraryCheck ? 'library-regression' : animationCheck ? 'flow-animations' : flowCheck ? 'flow-regression' : translationCheck ? 'translation-regression' : performanceCheck ? suppliedPdf ? 'pdf-real-performance' : 'pdf-complex-performance' : 'pdf-regression';
   const report = reportBase + (process.argv.includes('--hidpi') ? '-hidpi' : '');
   if (shot.result?.data) await writeFile(path.join(output, `${report}.png`), Buffer.from(shot.result.data, 'base64'));
   await writeFile(path.join(output, `${report}.json`), JSON.stringify(result, null, 2));
