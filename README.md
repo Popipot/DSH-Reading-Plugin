@@ -4,30 +4,30 @@
 
 **[Install & tutorial](docs/INSTALL.en.md)** · **[Download ZIP](https://github.com/Popipot/DSH-Reading-Plugin/archive/refs/heads/main.zip)** · **[Suggest an improvement](https://github.com/Popipot/DSH-Reading-Plugin/issues/new?template=feature_request.yml)** · **[Report slowness](https://github.com/Popipot/DSH-Reading-Plugin/issues/new?template=performance.yml)**
 
-A reading workspace inside **DeepSeek Harness** for papers and books: a local library, PDF/ebook reading, Chinese translation, annotations, and contextual AI assistance.
+A **DeepSeek Harness** plugin for reading papers and books. Organize your local library into collections, read PDFs alongside Chinese translations, and annotate or ask AI about selected text.
 
-> **Quick install:** Open **DSH → Plugins → Add plugin**, paste the address below, install, then enable **dsh-reader**. Fully restart DSH if requested. Open **阅读** (Reading) in the sidebar.
+> To install, open **DSH → Plugins → Add plugin** and paste the address below. Enable **dsh-reader** after installing, then open **阅读** (Reading) in the sidebar. Fully restart DSH if requested.
 >
 > `github:Popipot/DSH-Reading-Plugin#main`
 >
-> [Step-by-step installation](docs/INSTALL.en.md) · [Get DeepSeek Harness](https://www.deepseek.com/harness/en/) · [Bugs & feedback](https://github.com/Popipot/DSH-Reading-Plugin/issues/new/choose) · [csty341@gmail.com](mailto:csty341@gmail.com)
+> [Step-by-step installation](docs/INSTALL.en.md) · [Get DeepSeek Harness](https://www.deepseek.com/en/harness/) · [Bugs & feedback](https://github.com/Popipot/DSH-Reading-Plugin/issues/new/choose) · [csty341@gmail.com](mailto:csty341@gmail.com)
 
-![DSH Reader library, showing the current Chinese interface](docs/v3-library-covers.png)
+![DSH Reader pixel-art banner featuring the whale girl reading a book](docs/images/dsh-reader-banner.png)
 
 ## Features
 
 | Feature | What you can do |
 | --- | --- |
 | Formats | Read PDF, EPUB, MOBI/AZW/AZW3, TXT, Markdown, and HTML. |
-| Local library | Browse default categories and custom collections with cover previews, search books, add in bulk, and resume reading. |
+| Local library | Browse default categories and custom collection folders, preview their contents, file books in bulk, and resume reading. |
 | PDF reading | Scroll or turn pages horizontally; zoom, fit width/whole page, jump to a page, and select text. |
 | PDF translation | Keep the original beside a fixed Chinese translation pane with paragraph linking, glossary, pause/retry, and local caching. |
-| Ebooks | Use chapter navigation, adjustable typography, horizontal pagination, and page animations. |
+| Ebooks | Adjust typography and turn pages across chapter boundaries in either direction. |
 | Notes and AI | Highlight, underline, add sticky notes, translate a selection, ask contextual questions, or search Google/Google Scholar. |
 | Appearance | Adjust fonts, spacing, width, brightness, backgrounds, and immersive reading. |
 | Public-source import | Import supported direct file links from public book and open-access sources. |
 
-**Language scope:** These project pages and installation guides are available in English, Chinese, and German. The reader interface is currently primarily Chinese; automatic document translation targets **Simplified Chinese**. German/English interface localization and selectable translation targets are not implemented yet.
+The project overview and installation guides are available in English, Simplified Chinese, and German. The reader interface is currently primarily Chinese, and automatic document translation targets **Simplified Chinese**.
 
 ## Install
 
@@ -45,6 +45,14 @@ dsh plugin --profile web add "github:Popipot/DSH-Reading-Plugin#main"
 
 For Desktop, use its plugin manager. A `web` profile installation does not install into Desktop's separate profile.
 
+## Organize your library
+
+Create a collection for a topic, project, or reading list alongside the built-in Books, Papers, and Documents categories. A folder card previews up to four covers and titles. Expand it to see every title and open a book directly.
+
+![Example library with cover previews and an expanded list of titles in the Chinese interface](docs/images/library-collections.png)
+
+Use **加入书单** (Add to collection) on a book card, or choose **多选** (Select multiple) to file several books at once. A book can belong to multiple collections and shares its reading position and notes across them. The [illustrated guide to collections](docs/USER_GUIDE.zh-CN.md#图书馆封面书单与批量归类) shows how to edit a collection or remove a book from it.
+
 ## Start reading
 
 1. Open **阅读** (Reading) in the DSH sidebar.
@@ -53,22 +61,17 @@ For Desktop, use its plugin manager. A `web` profile installation does not insta
 4. Enable **实时翻译** (Live translation) when needed. It is off by default.
 5. Select text to translate, annotate, ask AI, or search. Progress and notes are saved locally.
 
-For PDFs, the translation pane scrolls independently and does not change the original page layout. It supports paragraph links, glossary, font size, retry, and optional next-page pretranslation. Reflowable ebooks show translations below paragraphs.
+For PDFs, the translation pane scrolls independently while the original keeps its layout. It supports paragraph links, a glossary, font size controls, retry, and optional next-page pretranslation. Reflowable ebooks show translations below paragraphs.
 
-![PDF reading in horizontal mode](docs/v10-pdf-book.png)
+In horizontal mode, each ebook chapter starts on a fresh page. Turn forward once at the end of a chapter to reach the first page of the next. Turn backward from a chapter’s first page to reach the previous chapter’s last page. For EPUB and other reflowable formats, choose horizontal slide, page cover, or a 3D page turn that folds from the corner. The reader honors the system’s reduced-motion preference. The 3D turn uses geometry from [StPageFlip](https://github.com/Nodlik/StPageFlip) ([MIT notice](LICENSES/StPageFlip.txt)).
 
-More illustrated instructions: [Chinese user guide](docs/USER_GUIDE.zh-CN.md).
-
-
-Non-PDF page animations use two opaque page views: Slide (250 ms), Cover over a stationary page (300 ms), and a corner-folding soft page (500 ms). Reduced-motion preferences and unusually large blocks use instant page changes. Soft-page geometry: [StPageFlip](https://github.com/Nodlik/StPageFlip), [MIT notice](LICENSES/StPageFlip.txt).
+The [illustrated Chinese user guide](docs/USER_GUIDE.zh-CN.md) includes PDF reading and annotation screenshots.
 
 ## PDF performance
 
 Parsing and drawing use separate workers where supported. Local files use on-demand range reads; nearby pages are virtualized. Preview images refine to full quality, recently viewed pages use a bounded image cache, and background cover generation stops when you enter the reader.
 
-The current implementation passed **185 tests**, PDF/translation/five-format pagination browser checks, and complex-document performance checks. The existing 1,029-page Floyd textbook was also checked inside DSH. Results depend on file, hardware, and host; these checks are not an Adobe comparison or a guarantee of zero latency for every PDF.
-
-Implementation history and measurement limits: [OPTIMIZATION.md, section 12](OPTIMIZATION.md#12-pdf-性能方案-a双-worker随机读取与分级缓存2026-11-06) (Chinese).
+The performance checks include complex sample PDFs and a 1,029-page textbook opened in DSH. The [optimization log](OPTIMIZATION.md#12-pdf-性能方案-a双-worker随机读取与分级缓存2026-11-06) records the test environment and measured results in Chinese.
 
 ## Privacy and limitations
 

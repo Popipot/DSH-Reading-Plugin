@@ -2,7 +2,7 @@
 
 [English](INSTALL.en.md) · **简体中文** · [Deutsch](INSTALL.de.md) · [项目主页](../README.zh-CN.md)
 
-**[下载 ZIP](https://github.com/Popipot/DSH-Reading-Plugin/archive/refs/heads/main.zip)** · **[下载 DeepSeek Harness](https://www.deepseek.com/harness/en/)** · **[安装求助](https://github.com/Popipot/DSH-Reading-Plugin/issues/new?template=bug_report.yml)**
+**[下载 ZIP](https://github.com/Popipot/DSH-Reading-Plugin/archive/refs/heads/main.zip)** · **[下载 DeepSeek Harness](https://www.deepseek.com/harness/)** · **[安装求助](https://github.com/Popipot/DSH-Reading-Plugin/issues/new?template=bug_report.yml)**
 
 安装地址：
 
@@ -14,7 +14,7 @@ github:Popipot/DSH-Reading-Plugin#main
 
 ## 1. 桌面版：通过 DSH 安装（推荐）
 
-1. 安装并打开 [DeepSeek Harness](https://www.deepseek.com/harness/en/)。
+1. 安装并打开 [DeepSeek Harness](https://www.deepseek.com/harness/)。
 2. 进入侧栏 **插件 → 添加插件**，英文界面对应 **Plugins → Add plugin**。若有添加方式菜单，选择安装第三方插件。
 3. 在包名/Git 地址输入框粘贴 `github:Popipot/DSH-Reading-Plugin#main`。
 4. 核对显示的插件信息和安装提示，然后点击 **安装 / Install**。

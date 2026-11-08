@@ -4,30 +4,30 @@
 
 **[安装与教程](docs/INSTALL.zh-CN.md)** · **[下载 ZIP](https://github.com/Popipot/DSH-Reading-Plugin/archive/refs/heads/main.zip)** · **[提出改进建议](https://github.com/Popipot/DSH-Reading-Plugin/issues/new?template=feature_request.yml)** · **[反馈卡顿与性能问题](https://github.com/Popipot/DSH-Reading-Plugin/issues/new?template=performance.yml)**
 
-装进 **DeepSeek Harness** 侧栏的文献与书籍阅读空间：本地书架、PDF/电子书阅读、中文对照翻译、批注笔记和上下文 AI 问答。
+在 **DeepSeek Harness** 里读论文和书。用自建书单整理本地藏书，读 PDF 时对照中文译文，还能划词批注或就原文向 AI 提问。
 
-> **快速安装：** 打开 **DSH → 插件 → 添加插件**，粘贴下面的安装地址，安装后启用 **dsh-reader**。如有提示，完整退出并重启 DSH。侧栏出现 **阅读** 入口后即可使用。
+> 打开 **DSH → 插件 → 添加插件**，粘贴下方地址。安装后启用 **dsh-reader**，从侧栏打开 **阅读**。如有提示，完整退出并重启 DSH。
 >
 > `github:Popipot/DSH-Reading-Plugin#main`
 >
-> [分步安装教程](docs/INSTALL.zh-CN.md) · [下载 DeepSeek Harness](https://www.deepseek.com/harness/en/) · [故障与建议入口](https://github.com/Popipot/DSH-Reading-Plugin/issues/new/choose) · [csty341@gmail.com](mailto:csty341@gmail.com)
+> [分步安装教程](docs/INSTALL.zh-CN.md) · [下载 DeepSeek Harness](https://www.deepseek.com/harness/) · [故障与建议入口](https://github.com/Popipot/DSH-Reading-Plugin/issues/new/choose) · [csty341@gmail.com](mailto:csty341@gmail.com)
 
-![DSH Reader 本地书架](docs/v3-library-covers.png)
+![DSH Reader 像素风横幅，鲸鱼娘正在读书](docs/images/dsh-reader-banner.png)
 
 ## 功能
 
 | 功能 | 说明 |
 | --- | --- |
 | 多格式 | PDF、EPUB、MOBI/AZW/AZW3、TXT、Markdown、HTML。 |
-| 本地书架 | 默认分类、自建书单、封面与完整书名预览、批量归类、搜索和继续阅读。 |
+| 本地书架 | 默认分类、自建书单文件夹、封面与完整书名预览、批量归类、搜索和继续阅读。 |
 | PDF 阅读 | 滚动或横版翻页、缩放、适宽/整页、跳页与原生选字。 |
 | PDF 对照翻译 | 固定中文侧栏、段落联动、术语表、暂停/重试与本地译文缓存。 |
-| 电子书 | 目录章节、字体排版、横版分页和翻页动画。 |
+| 电子书 | 可调排版，横版支持前后跨章翻页。 |
 | 批注与 AI | 荧光笔、下划线、便签、划词翻译、上下文问答和 Google/Google 学术搜索。 |
 | 阅读外观 | 字体、行距、版心宽度、亮度、背景与沉浸阅读。 |
 | 公开来源导入 | 从公开书库与开放获取来源导入受支持的文件直链。 |
 
-**语言范围：** 仓库主页和安装教程提供中英德三语。阅读界面当前主要为中文，文档自动翻译目标为**简体中文**；尚未实现完整英德语界面或可选译文目标语言。
+仓库主页和安装教程提供中英德三语。阅读界面目前主要为中文，文档自动翻译目标为**简体中文**。
 
 ## 安装
 
@@ -45,6 +45,14 @@ dsh plugin --profile web add "github:Popipot/DSH-Reading-Plugin#main"
 
 桌面版请使用自带插件管理器。安装到 `web` profile 不会自动安装到桌面版独立的 profile。
 
+## 整理书架
+
+除了默认的「书籍」「文献」「文档」分类，还可以按专题、项目或阅读计划新建书单文件夹。每张卡片最多预览四本书的封面和书名。展开「预览全部」可查看完整书名清单，点书名直接阅读。
+
+![书架示例，展示文件夹封面预览和展开的书名清单](docs/images/library-collections.png)
+
+点击书籍卡片上的 **加入书单**，也可以先点 **多选** 批量归类。同一本书可以加入多个书单，阅读进度和批注共用。编辑书单或移出书籍的方法见 [书单图文教程](docs/USER_GUIDE.zh-CN.md#图书馆封面书单与批量归类)。
+
 ## 开始阅读
 
 1. 在 DSH 侧栏打开 **阅读**。
@@ -53,22 +61,17 @@ dsh plugin --profile web add "github:Popipot/DSH-Reading-Plugin#main"
 4. 需要时开启 **实时翻译**，默认关闭。
 5. 选中文字即可翻译、标记、问 AI 或搜索；进度和批注保存在本机。
 
-PDF 译文侧栏独立滚动，不改变原文页高；支持段落联动、术语表、字号、重试和可选的预译下一页。EPUB 等流式格式的译文显示在段落下方。
+PDF 译文侧栏独立滚动，原文保持原有版式。侧栏支持段落联动、术语表、字号调整、重试和可选的下一页预译。EPUB 等流式格式的译文显示在段落下方。
 
-![PDF 横版阅读](docs/v10-pdf-book.png)
+横版阅读时，每章从新的一页开始。章末向前翻一次就到下一章第一页，从章首往回翻则到上一章最后一页。EPUB 等流式格式可选横向滑页、书页覆盖和从页角折起的 3D 书页。动画遵循系统的减少动态效果设置。3D 书页使用 [StPageFlip](https://github.com/Nodlik/StPageFlip) 的折页几何（[MIT 声明](LICENSES/StPageFlip.txt)）。
 
-更多截图和操作细节见 [中文使用详解](docs/USER_GUIDE.zh-CN.md)。
-
-
-非 PDF 横版采用两张不透明页面：横向滑页（250 ms）、静止底页上的书页覆盖（300 ms）、从页角折叠的软页（500 ms）。系统开启减少动态效果或内容块超出动画预算时直接切页。软页几何来自 [StPageFlip](https://github.com/Nodlik/StPageFlip)，[MIT 声明](LICENSES/StPageFlip.txt)。
+PDF 阅读和批注截图见 [中文使用详解](docs/USER_GUIDE.zh-CN.md)。
 
 ## PDF 性能
 
 在支持的环境中，解析和绘制使用独立线程。本地文件按需分段读取，附近页面采用虚拟布局；预览逐步补清晰，最近阅读页使用有预算的图像缓存。进入阅读后停止后台封面生成。
 
-当前实现已通过 **185 项测试**、PDF/翻译/五种流式格式分页回归及复杂文档性能流程，并在实际 DSH 中检查 1029 页 Floyd 教材。结果取决于文件、硬件和宿主，不等于与 Adobe 的同机对照，也不是任意 PDF 零延迟的保证。
-
-实现过程与验证边界见 [OPTIMIZATION.md 第 12 节](OPTIMIZATION.md#12-pdf-性能方案-a双-worker随机读取与分级缓存2026-11-06)。
+性能检查涵盖复杂 PDF 样本，以及在 DSH 中实际打开的 1029 页教材。测试环境和实测数据见 [优化记录第 12 节](OPTIMIZATION.md#12-pdf-性能方案-a双-worker随机读取与分级缓存2026-11-06)。
 
 ## 隐私与限制
 

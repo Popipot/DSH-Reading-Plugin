@@ -2,7 +2,7 @@
 
 [English](INSTALL.en.md) · [简体中文](INSTALL.zh-CN.md) · **Deutsch** · [Projektübersicht](../README.de.md)
 
-**[ZIP herunterladen](https://github.com/Popipot/DSH-Reading-Plugin/archive/refs/heads/main.zip)** · **[DeepSeek Harness herunterladen](https://www.deepseek.com/harness/en/)** · **[Hilfe zur Installation](https://github.com/Popipot/DSH-Reading-Plugin/issues/new?template=bug_report.yml)**
+**[ZIP herunterladen](https://github.com/Popipot/DSH-Reading-Plugin/archive/refs/heads/main.zip)** · **[DeepSeek Harness herunterladen](https://www.deepseek.com/en/harness/)** · **[Hilfe zur Installation](https://github.com/Popipot/DSH-Reading-Plugin/issues/new?template=bug_report.yml)**
 
 Installationsadresse:
 
@@ -14,7 +14,7 @@ Diese Adresse installiert den aktuellen Branch `main`. Für einen bestimmten Sta
 
 ## 1. Desktop: über DSH installieren — empfohlen
 
-1. [DeepSeek Harness](https://www.deepseek.com/harness/en/) installieren und öffnen.
+1. [DeepSeek Harness](https://www.deepseek.com/en/harness/) installieren und öffnen.
 2. **Plugins → Add plugin** in der Seitenleiste öffnen. Auf Chinesisch heißen die Einträge **插件 → 添加插件**. Falls ein Menü erscheint, die Installation eines Drittanbieter-Plugins wählen.
 3. `github:Popipot/DSH-Reading-Plugin#main` in das Feld für Paket- oder Git-Adressen einfügen.
 4. Paketinformationen und Installationshinweis prüfen, dann **Install** wählen.
