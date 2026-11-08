@@ -54,6 +54,7 @@ const RENDER_ROOT_MARGIN = "1000px 0px";
 const MAX_CANVAS_PIXELS = 10_000_000;
 const MAX_CANVAS_DIMENSION = 8192;
 const MAX_CONCURRENT_RENDERS = 2;
+const TEXT_LAYER_BATCH_SIZE = 128;
 const REFRESH_DELAY_MS = 160;
 
 const SELECTION_CONTEXT_CHARS = 600;
@@ -64,6 +65,31 @@ const SELECTION_CONTEXT_CHARS = 600;
 
 function clamp(value, min, max) {
   return Math.min(max, Math.max(min, value));
+}
+
+// Yield between batches on dense pages so the canvas can paint and navigation
+// can be processed while selectable text is being laid out.
+function textLayerSource(content) {
+  if (content.items.length <= TEXT_LAYER_BATCH_SIZE) return content;
+  let offset = 0;
+  let cancelled = false;
+  return new ReadableStream({
+    async pull(controller) {
+      await new Promise(resolve => setTimeout(resolve, 0));
+      if (cancelled) return;
+      const end = Math.min(offset + TEXT_LAYER_BATCH_SIZE, content.items.length);
+      controller.enqueue({
+        items: content.items.slice(offset, end),
+        styles: offset === 0 ? content.styles : undefined,
+        lang: content.lang,
+      });
+      offset = end;
+      if (offset === content.items.length) controller.close();
+    },
+    cancel() {
+      cancelled = true;
+    },
+  });
 }
 
 function computePageBox(dim, mode, scale, viewportWidth, viewportHeight = 0) {
@@ -413,6 +439,8 @@ export function PdfViewer({
   const showTranslationPanel = autoTranslate && !hideTranslations && !panelDismissed;
   const translation = usePdfTranslation({ documentId, title: fileName, enabled: showTranslationPanel,
     activePage: currentPage, sources: pageSources, visibleIds: visibleSegmentIds });
+  const translationPaneOpenRef = useRef(false);
+  translationPaneOpenRef.current = showTranslationPanel;
   const linkedEnabledRef = useRef(false);
   linkedEnabledRef.current = showTranslationPanel && translation.preferences.linked !== false;
   linkedSegmentRef.current = linkedSegment;
@@ -460,6 +488,7 @@ export function PdfViewer({
   }
 
   function updateReadingFocus() {
+    if (!translationPaneOpenRef.current) return;
     const scroll = scrollRef.current;
     const frame = frameElementsRef.current.get(lastPageRef.current);
     if (!scroll || !frame) return;
@@ -635,6 +664,9 @@ export function PdfViewer({
   function updateCurrentPage(pageNumber) {
     if (!Number.isFinite(pageNumber) || pageNumber === lastPageRef.current) {
       return;
+    }
+    if (propsRef.current?.paged) {
+      pageStatesRef.current.get(lastPageRef.current)?.textLayer?.cancel();
     }
     lastPageRef.current = pageNumber;
     setCurrentPage(pageNumber);
@@ -867,16 +899,21 @@ export function PdfViewer({
           }
           state.textContent = textContent;
         }
+        if (!active()) return;
         if (!state.grouped) {
           state.grouped = extractPdfParagraphs(textContent.items, pageNumber, baseViewport.width);
           publishPageSource(pageNumber, state.grouped);
         }
 
-        textLayerContainer.replaceChildren();
         const textViewport = page.getViewport({ scale: box.pageScale });
+        // Build dense text off the live page to avoid a layout after each
+        // batch. The previous selection layer stays usable until replacement.
+        const dense = textContent.items.length > TEXT_LAYER_BATCH_SIZE;
+        const target = dense ? textLayerContainer.cloneNode(false) : textLayerContainer;
+        target.replaceChildren();
         const textLayer = new engine.TextLayer({
-          textContentSource: textContent,
-          container: textLayerContainer,
+          textContentSource: textLayerSource(textContent),
+          container: target,
           viewport: textViewport,
         });
         state.textLayer = textLayer;
@@ -887,8 +924,14 @@ export function PdfViewer({
             state.textLayer = null;
           }
         }
-        if (!isFresh(state, token, generation)) {
+        if (!isFresh(state, token, generation) || !active()) {
           return;
+        }
+        if (dense) {
+          const text = document.createDocumentFragment();
+          while (target.firstChild) text.append(target.firstChild);
+          textLayerContainer.style.cssText = target.style.cssText;
+          textLayerContainer.replaceChildren(text);
         }
         state.textLayerReady = true;
         const divs = textLayer.textDivs || [];

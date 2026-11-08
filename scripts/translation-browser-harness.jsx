@@ -210,6 +210,42 @@ try {
   root.render(null); await sleep(100);
   render();
   await until(() => page() === 2 && frame()?.dataset.rendered === 'true', 'final preview');
+  // Simulate a backend that finishes after cancellation and after switching books.
+  const normalFetch = window.fetch;
+  const delayed = [];
+  const delayedTitle = 'B1 delayed PDF';
+  const delayMs = 30_000;
+  const cacheBeforeDelay = await countRows('pdfTranslations', 'bookId', bookA.id);
+  window.fetch = (resource, init) => {
+    if (resource !== '/dsh-reader/ai/translate') return normalFetch(resource, init);
+    const body = JSON.parse(init.body);
+    if (body.title !== delayedTitle) return normalFetch(resource, init);
+    const response = sleep(delayMs).then(() => new Response(JSON.stringify({
+      translations: body.segments.map(segment => ({ id: segment.id, zh: 'B1 stale result' })),
+      model: { provider: 'fixture', model: 'v2' }, promptVersion: 'academic-zh-2',
+    }), { headers: { 'content-type': 'application/json' } }));
+    delayed.push(response);
+    return response;
+  };
+  try {
+    render({ documentId: bookA.id, fileName: delayedTitle });
+    await go(11);
+    await until(() => delayed.length > 0, 'first delayed model request');
+    const started = performance.now();
+    for (let target = 12; target <= 20; target++) await go(target);
+    render({ documentId: bookB.id, fileName: 'Library B', data: bookB.blob.slice() });
+    await until(() => page() === 2 && frame()?.dataset.rendered === 'true', 'switch books during model delay');
+    const navigationMs = Math.round(performance.now() - started);
+    assert(navigationMs < delayMs, 'model delay blocked the ten navigation operations');
+    await until(() => done().length === 8 && done().every(card => card.textContent.includes('Library B')), 'current document translates while old requests wait');
+    await Promise.all(delayed);
+    await sleep(100);
+    assert(!list().textContent.includes('B1 stale result'), 'stale model result appeared in the new document');
+    assert(await countRows('pdfTranslations', 'bookId', bookA.id) === cacheBeforeDelay, 'late results reached the previous book cache');
+    results.push({ check: 'b1-30-second-model-delay', delayMs, navigationMs, completedDuringDelay: 10, lateCommits: 0 });
+  } finally {
+    window.fetch = normalFetch;
+  }
   await deleteBook(bookA.id);
   assert(await countRows('pdfTranslations', 'bookId', bookA.id) === 0, 'deleted book kept its translation cache');
   await clearLibrary();

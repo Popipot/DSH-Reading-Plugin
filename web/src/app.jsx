@@ -9,7 +9,7 @@ import { OnlineImportDialog } from './components/OnlineImportDialog.jsx';
 import { PagedReader } from './components/PagedReader.jsx';
 import { flowProgress } from './components/flow-pagination.js';
 import { AppearancePanel } from './appearance/AppearancePanel.jsx';
-import { appearanceVars, BOOK_ANIMATIONS } from './appearance/appearance.js';
+import { appearanceVars, autoInk, BOOK_ANIMATIONS } from './appearance/appearance.js';
 import { AnnotationsPanel } from './annotations/AnnotationsPanel.jsx';
 import { AnnotationComposer } from './annotations/AnnotationComposer.jsx';
 import {
@@ -28,11 +28,7 @@ import { generateCover } from './cover.js';
 
 const LAST_BOOK_KEY = 'dsh-reader:last-book:v1';
 const SESSION_BOOK_KEY = 'dsh-reader:session-book:v1';
-
-function channel(value) {
-  const normalized = value / 255;
-  return normalized <= 0.03928 ? normalized / 12.92 : ((normalized + 0.055) / 1.055) ** 2.4;
-}
+const IMMERSIVE_BAR_HEIGHT = 44;
 
 function hexRgb(hex) {
   const match = /^#?([0-9a-f]{6})$/iu.exec(String(hex || '').trim());
@@ -43,12 +39,6 @@ function hexRgb(hex) {
     g: parseInt(value.slice(2, 4), 16),
     b: parseInt(value.slice(4, 6), 16),
   };
-}
-
-function colorLuminance(hex) {
-  const rgb = hexRgb(hex);
-  if (!rgb) return 1;
-  return (0.2126 * channel(rgb.r)) + (0.7152 * channel(rgb.g)) + (0.0722 * channel(rgb.b));
 }
 
 function mixHex(top, bottom, amount) {
@@ -222,15 +212,11 @@ export function ReaderPage() {
     const wallpaper = wallpaperTone && backgroundImageUrl
       ? mixHex(wallpaperTone, base, Number(settings.backgroundImageOpacity) || 0)
       : base;
-    const luminance = colorLuminance(wallpaper) * Math.max(0.35, Math.min(1.25, Number(settings.brightness) || 1));
-    const ink = luminance < 0.4 ? '#f8f5ec' : '#17181a';
     return {
-      '--dshr-immersive-ink': ink,
-      '--dshr-immersive-chip': `color-mix(in srgb, ${wallpaper} 58%, transparent)`,
-      '--dshr-immersive-chip-hover': `color-mix(in srgb, ${wallpaper} 82%, transparent)`,
-      '--dshr-immersive-border': `color-mix(in srgb, ${ink} 32%, transparent)`,
+      '--dshr-immersive-surface': wallpaper,
+      '--dshr-immersive-ink': autoInk(wallpaper).ink,
     };
-  }, [wallpaperTone, backgroundImageUrl, appearanceStyle, settings.customBackground, settings.backgroundImageOpacity, settings.brightness]);
+  }, [wallpaperTone, backgroundImageUrl, appearanceStyle, settings.customBackground, settings.backgroundImageOpacity]);
 
   const refreshBooks = React.useCallback(async () => {
     const revision = ++collectionRevision.current;
@@ -317,7 +303,7 @@ export function ReaderPage() {
     const onKey = (event) => {
       if (event.defaultPrevented || event.repeat || event.ctrlKey || event.metaKey || event.altKey) return;
       if (!['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown'].includes(event.key)) return;
-      if (event.target instanceof Element && event.target.closest('input, textarea, select, [contenteditable="true"], .dshr-modal-mask, .dshr-appearance-panel, .dshr-anno-panel, .dshr-ai, .dshr-selection, .dshr-anno-composer, .dshr-pdf-translation-panel')) return;
+      if (event.target instanceof Element && event.target.closest('input, textarea, select, [contenteditable="true"], .dshr-immersive-controls, .dshr-modal-mask, .dshr-appearance-panel, .dshr-anno-panel, .dshr-ai, .dshr-selection, .dshr-anno-composer, .dshr-pdf-translation-panel')) return;
       const selection = window.getSelection?.();
       if (selection && !selection.isCollapsed) return;
       const scrollElement = document.querySelector('.dshr-root .dshr-content')
@@ -588,16 +574,16 @@ export function ReaderPage() {
   }, [current, immersive, exitImmersive]);
 
   React.useEffect(() => {
-    if (!immersive) return undefined;
+    if (!immersive || appearanceOpen) return undefined;
     const onKey = (event) => {
-      if (event.key === 'Escape') {
+      if (event.key === 'Escape' && !event.defaultPrevented) {
         event.preventDefault();
         void exitImmersive();
       }
     };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
-  }, [immersive, exitImmersive]);
+  }, [immersive, appearanceOpen, exitImmersive]);
 
   const closeBook = React.useCallback(() => {
     try { localStorage.removeItem(LAST_BOOK_KEY); } catch { /* storage unavailable */ }
@@ -1098,6 +1084,47 @@ export function ReaderPage() {
                 </button>
               </div>
             </div>
+            {immersive ? (
+              <div className="dshr-immersive-controls" role="group" aria-label="沉浸阅读控件" style={{ height: IMMERSIVE_BAR_HEIGHT }}>
+                {current.kind === 'flow' ? (
+                  <button
+                    type="button"
+                    className="dshr-immersive-btn"
+                    onClick={() => setTocOpen((value) => !value)}
+                    title={tocOpen ? '收起目录' : '打开目录'}
+                    aria-pressed={tocOpen}
+                  >
+                    <IconList size={15} /> 目录
+                  </button>
+                ) : null}
+                <button
+                  type="button"
+                  className="dshr-immersive-btn"
+                  onClick={() => { setAppearanceOpen(true); setSelection(null); }}
+                  title="阅读外观"
+                  aria-label="阅读外观"
+                  aria-haspopup="dialog"
+                  aria-expanded={appearanceOpen}
+                  autoFocus
+                >
+                  <IconPalette size={15} /> 外观
+                </button>
+                <button
+                  type="button"
+                  className="dshr-immersive-btn"
+                  onClick={() => void toggleFullscreen()}
+                  title={fullscreen ? '退出全屏' : '进入全屏'}
+                  aria-label={fullscreen ? '退出全屏' : '进入全屏'}
+                  aria-pressed={fullscreen}
+                >
+                  {fullscreen ? <IconMinimize size={15} /> : <IconMaximize size={15} />}
+                  {fullscreen ? '还原' : '全屏'}
+                </button>
+                <button type="button" className="dshr-immersive-btn" onClick={() => void exitImmersive()} title="退出沉浸模式（Esc）">
+                  <IconX size={15} /> 退出沉浸
+                </button>
+              </div>
+            ) : null}
             <div className="dshr-body">
               {current.kind === 'flow' ? (
                 <aside className={`dshr-toc${tocOpen ? '' : ' is-closed'}`} aria-label="目录">
@@ -1199,43 +1226,13 @@ export function ReaderPage() {
                 />
               ) : null}
             </div>
-            {immersive ? (
-              <>
-                <div className="dshr-immersive-controls">
-                  <button
-                    type="button"
-                    className="dshr-immersive-btn"
-                    onClick={() => void toggleFullscreen()}
-                    title={fullscreen ? '退出全屏（Esc）' : '进入全屏'}
-                    aria-label={fullscreen ? '退出全屏' : '进入全屏'}
-                    aria-pressed={fullscreen}
-                  >
-                    {fullscreen ? <IconMinimize size={15} /> : <IconMaximize size={15} />}
-                  </button>
-                  <button type="button" className="dshr-immersive-btn dshr-immersive-btn--exit" onClick={() => void exitImmersive()} title="退出沉浸模式（Esc）">
-                    <IconX size={14} /> 退出沉浸
-                  </button>
-                </div>
-                {current.kind === 'flow' && !tocOpen ? (
-                  <button
-                    type="button"
-                    className="dshr-immersive-toc"
-                    onClick={() => setTocOpen(true)}
-                    title="打开目录"
-                    aria-label="打开目录"
-                  >
-                    <IconList size={15} />
-                  </button>
-                ) : null}
-              </>
-            ) : null}
             <PagedReader
               enabled={settings.readingMode === 'book'}
               animation={settings.bookAnimation}
               bookMode
               bookFrame={current.kind === 'flow'}
               pdfMode={current.kind === 'pdf'}
-              frameTop={immersive ? 0 : 52}
+              frameTop={immersive ? IMMERSIVE_BAR_HEIGHT : 52}
               frameLeft={current.kind === 'flow' && tocOpen ? settings.tocWidth : 0}
               leftOffset={current.kind === 'flow' && tocOpen ? settings.tocWidth + 12 : 12}
               readerKey={`${current.record.id}:${current.kind}:${chapterIndex}`}

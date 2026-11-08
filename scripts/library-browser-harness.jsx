@@ -3,10 +3,12 @@ import { createRoot } from 'react-dom/client';
 import { ReaderPage } from '../web/src/app.jsx';
 import { styles } from '../web/src/styles.js';
 import { appearanceStyles } from '../web/src/appearance/appearance.css.js';
+import { resolveAppearance } from '../web/src/appearance/appearance.js';
 import { annotationStyles } from '../web/src/annotations/styles.js';
 import {
-  clearLibrary, getBook, listAnnotations, listBookCollections, listBooks, saveAnnotation,
-  saveBook, saveBookCollection, updateBook,
+  clearLibrary, deleteBook, deleteReaderBackground, getBook, getReaderBackground,
+  listAnnotations, listBookCollections, listBooks, saveAnnotation, saveBook,
+  saveBookCollection, saveReaderBackground, updateBook,
 } from '../web/src/storage.js';
 
 const sleep = ms => new Promise(resolve => setTimeout(resolve, ms));
@@ -58,11 +60,35 @@ const capture = async name => {
 };
 
 try {
+  // Use actual IndexedDB with tiny fixtures that report the size under test.
+  const sizeStub = (file, size) => Object.defineProperty(file, 'size', { value: size });
+  const localLimit = 320 * 1024 * 1024;
+  const atLimit = await saveBook(sizeStub(new File(['local boundary'], 'limit.txt'), localLimit));
+  assert((await getBook(atLimit.id)).size === localLimit, 'local size boundary was not stored');
+  await saveBook(sizeStub(new File(['over limit'], 'over.txt'), localLimit + 1)).then(
+    () => { throw Error('oversized document was stored'); },
+    error => assert(error.message.includes('超过 320 MB'), 'unexpected local size failure'),
+  );
+  assert((await listBooks()).length === 1, 'oversized file created a shelf entry');
+  await deleteBook(atLimit.id);
+  const backgroundLimit = 16 * 1024 * 1024;
+  const background = label => new Blob([`<svg xmlns="http://www.w3.org/2000/svg"><title>${label}</title></svg>`], { type: 'image/svg+xml' });
+  await saveReaderBackground(sizeStub(background('boundary'), backgroundLimit));
+  await saveReaderBackground(sizeStub(background('over'), backgroundLimit + 1)).then(
+    () => { throw Error('oversized background was stored'); },
+    error => assert(error.message.includes('超过 16 MB'), 'unexpected background size failure'),
+  );
+  assert((await (await getReaderBackground()).text()).includes('<title>boundary</title>'), 'invalid background replaced the stored boundary fixture');
+  await deleteReaderBackground();
+  assert(resolveAppearance({ contentWidth: 1601 }).width === 1600, 'body width exceeded the CSS pixel limit');
+  results.push({ check: 'b1-local-file-and-background-limits', localLimit, backgroundLimit, maxContentCssPx: 1600 });
+
   const titles = ['Semiconductor Physics', 'Power Devices', 'Control Systems', 'Lecture 01', 'Lecture 02', 'Research Notes'];
   const colors = ['#224c67', '#a14b33', '#345d49', '#574c88', '#6e4c35'];
   const books = [];
   for (const [index, title] of titles.entries()) {
-    const book = await saveBook(new File([`${title}\n\nExample reading material. ${'A paragraph for the reader. '.repeat(30)}`], `${title}.txt`, { type: 'text/plain' }));
+    const book = await saveBook(new File([`${title}\n\nExample reading material. ${'A paragraph for the reader. '.repeat(30)}`], `${title}.txt`, { type: 'text/plain' }),
+      { author: index === 5 ? 'Ada Example' : '' });
     const cover = index < colors.length ? 'data:image/svg+xml,' + encodeURIComponent(`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 150"><rect width="100" height="150" fill="${colors[index]}"/><path d="M14 22h72M14 103h72" stroke="#f2e9cf"/><text x="14" y="54" fill="#f2e9cf" font-family="sans-serif" font-size="11">${title.split(' ')[0]}</text><text x="14" y="70" fill="#f2e9cf" font-family="sans-serif" font-size="11">${title.split(' ').slice(1).join(' ')}</text></svg>`) : '';
     books.push(await updateBook(book.id, {
       cover, category: index < 2 ? 'paper' : index < 5 ? 'book' : 'document', categoryManual: true,
@@ -73,6 +99,21 @@ try {
   root.render(<React.StrictMode><ReaderPage /></React.StrictMode>);
   await until(() => cards().length === titles.length && folder('文献'), 'initial library was not rendered');
   assert(folder('文献').textContent.includes('2 本') && folder('书籍').textContent.includes('3 本'), 'legacy classifications did not populate the default folders');
+  for (const category of ['书籍', '文献', '文档']) {
+    await click(`打开书单 ${category}`);
+    assert(document.querySelector('[aria-current="page"]').textContent.includes(category) && cards().length > 0, `cannot open ${category}`);
+    await click('返回书架');
+  }
+  const search = document.querySelector('input[aria-label="搜索书架"]');
+  await setInput(search, 'Ada Example');
+  assert(cards().length === 1 && cards()[0].textContent.includes('Research Notes'), 'author search selected the wrong documents');
+  await click('文档', cards()[0].closest('article'));
+  await until(async () => (await getBook(books[5].id)).category === 'book', 'manual category change was not saved');
+  await setInput(search, '');
+  await click('一键整理');
+  await until(() => named('一键整理') && !named('一键整理').disabled, 'automatic categorization did not finish');
+  assert((await getBook(books[5].id)).category === 'book', 'automatic categorization overwrote a manual choice');
+  results.push({ check: 'b1-default-categories-author-search-and-manual-override' });
 
   await click('新建书单');
   await setInput(dialog().querySelector('input[required]'), '芯片与器件');
@@ -83,7 +124,12 @@ try {
   assert(first.bookIds.length === 5 && folder('芯片与器件').querySelectorAll('.dshr-collection__sample').length === 4, 'folder cover must show up to four members');
   await click('预览全部 5 本', folder('芯片与器件'));
   assert(folder('芯片与器件').querySelectorAll('ul li').length === 5, 'preview omitted members beyond the cover');
-  await click('收起书名', folder('芯片与器件'));
+  const preview = folder('芯片与器件').querySelector('ul li button');
+  const previewTitle = preview.querySelector('span').textContent;
+  preview.click();
+  await until(() => document.querySelector('.dshr-content')?.textContent.includes(previewTitle), 'preview could not open a document');
+  await click('返回书架');
+  await until(() => folder('芯片与器件'), 'book did not return to the shelf');
   results.push({ check: 'default-folders-and-custom-preview', visibleCovers: 4, previewTitles: 5 });
 
   await click('新建书单');
@@ -158,6 +204,34 @@ try {
   assert(!(await row('待精读')).bookIds.includes(books[1].id), 'a deleted book left a stale membership');
   assert((await listAnnotations(books[0].id)).length === 1, 'deleting another book damaged annotations');
   results.push({ check: 'narrow-layout-and-safe-folder-or-book-deletion' });
+  const fetchOnline = window.fetch;
+  const onlineCount = (await listBooks()).length;
+  window.fetch = (resource, init) => {
+    if (resource !== '/dsh-reader/import/fetch') return fetchOnline(resource, init);
+    const { url } = JSON.parse(init.body);
+    if (url.endsWith('/blocked.txt')) return Promise.resolve(Response.json({ error: { message: '来源不在允许列表' } }, { status: 403 }));
+    if (url.endsWith('/interrupted.txt')) return Promise.resolve(Response.json({ error: { message: '下载连接中断' } }, { status: 502 }));
+    return Promise.resolve(new Response('B1 online fixture\n\nThis document must open once.', {
+      headers: { 'content-type': 'text/plain', 'x-dsh-reader-filename': 'b1-online.txt' },
+    }));
+  };
+  try {
+    await click('公开书库导入');
+    for (const [url, message] of [['https://example.org/blocked.txt', '来源不在允许列表'], ['https://arxiv.org/interrupted.txt', '下载连接中断']]) {
+      await setInput(document.getElementById('dshr-online-url'), url);
+      await click('下载并打开');
+      await until(() => document.querySelector('.dshr-toast')?.textContent === message, `missing online import feedback for ${url}`);
+      assert((await listBooks()).length === onlineCount, 'failed online import left a shelf entry');
+    }
+    await setInput(document.getElementById('dshr-online-url'), 'https://arxiv.org/ok.txt');
+    await click('下载并打开');
+    await until(() => document.querySelector('.dshr-content')?.textContent.includes('B1 online fixture'), 'successful import did not open');
+    assert((await listBooks()).length === onlineCount + 1, 'successful online import did not add exactly one document');
+    await click('返回书架');
+    results.push({ check: 'b1-online-import-success-and-failure', addedDocuments: 1 });
+  } finally {
+    window.fetch = fetchOnline;
+  }
   await clearLibrary();
   assert(!(await listBookCollections()).length && !(await listBooks()).length, 'clear library left stale folders');
   assert(errors.length === 0, errors.join('; '));

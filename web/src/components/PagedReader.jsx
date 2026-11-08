@@ -8,7 +8,7 @@ import {
 
 const FORM_SELECTOR = 'input, textarea, select, [contenteditable="true"]';
 const PANEL_SELECTOR = '.dshr-modal-mask,.dshr-modal,.dshr-appearance-panel,.dshr-anno-panel,.dshr-ai,.dshr-selection,.dshr-online-modal,.dshr-anno-composer,.dshr-pdf-translation-panel';
-const UI_SELECTOR = '.dshr-topbar,.dshr-toc,.dshr-paged-controls,' + PANEL_SELECTOR + ',' + FORM_SELECTOR;
+const UI_SELECTOR = '.dshr-topbar,.dshr-immersive-controls,.dshr-toc,.dshr-paged-controls,' + PANEL_SELECTOR + ',' + FORM_SELECTOR;
 const reducedMotion = () => window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
 const TURN_BURST_MS = 220;
 let activeReader = null;
@@ -260,7 +260,7 @@ export function PagedReader({
     };
     const onKey = event => {
       if (event.defaultPrevented || event.repeat || event.ctrlKey || event.metaKey || event.altKey || !scroll.isConnected) return;
-      if (event.target instanceof Element && event.target.closest(FORM_SELECTOR + ',' + PANEL_SELECTOR)) return;
+      if (event.target instanceof Element && event.target.closest(FORM_SELECTOR + ',' + PANEL_SELECTOR + ',.dshr-immersive-controls')) return;
       const targetRoot = event.target instanceof Element && event.target.closest('.dshr-root');
       const targetReader = event.target instanceof Element && event.target.closest('.dshr-reader');
       if (targetReader && targetReader !== reader) return;

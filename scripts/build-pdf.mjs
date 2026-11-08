@@ -27,6 +27,7 @@ import {
   readdir,
   rm,
   stat,
+  writeFile,
 } from "node:fs/promises";
 import { existsSync } from "node:fs";
 import path from "node:path";
@@ -51,6 +52,14 @@ function fail(message) {
   const error = new Error(`[build-pdf] ${message}`);
   error.isBuildError = true;
   throw error;
+}
+
+function replacePdfjsBlock(source, before, after, label) {
+  const first = source.indexOf(before);
+  if (first < 0 || source.indexOf(before, first + before.length) >= 0) {
+    fail(`cannot apply the ${label} adaptation to this PDF.js build`);
+  }
+  return source.replace(before, after);
 }
 
 async function sizeOf(file) {
@@ -105,10 +114,8 @@ async function main() {
     path.join(pdfjsRoot, "build", "pdf.mjs"),
     "pdfjs-dist core"
   );
-  const pdfWorker = await assertFile(
-    path.join(pdfjsRoot, "build", "pdf.worker.mjs"),
-    "pdfjs-dist worker"
-  );
+  const pdfWorkerPath = path.join(pdfjsRoot, "build", "pdf.worker.mjs");
+  const workerSize = await assertFile(pdfWorkerPath, "pdfjs-dist worker");
   const cmapsDir = path.join(pdfjsRoot, "cmaps");
   const fontsDir = path.join(pdfjsRoot, "standard_fonts");
   if (!existsSync(cmapsDir)) fail(`Missing pdfjs-dist cmaps: ${cmapsDir}`);
@@ -137,6 +144,22 @@ async function main() {
     define: {
       "process.env.NODE_ENV": '"production"',
     },
+    plugins: [{
+      name: "dsh-reader-text-measurement",
+      setup(build) {
+        build.onLoad({ filter: /pdfjs-dist[\\/]build[\\/]pdf\.mjs$/ }, async ({ path }) => ({
+          // Keep the language and the existing canvas font metrics while
+          // preventing measureText from updating the DSH document's styles.
+          contents: replacePdfjsBlock(
+            (await readFile(path, "utf8")).replaceAll("\r\n", "\n"),
+            "canvas.lang = lang;\n      document.body.append(canvas);\n      ctx = canvas.getContext",
+            "canvas.lang = lang;\n      ctx = canvas.getContext",
+            "text measurement",
+          ),
+          loader: "js",
+        }));
+      },
+    }],
   });
 
   const inputs = Object.keys(result.metafile.inputs);
@@ -173,16 +196,25 @@ async function main() {
     }
   }
 
-  log("copying pdf.worker.mjs…");
-  const workerSize = await sizeOf(
-    path.join(pdfjsRoot, "build", "pdf.worker.mjs")
-  );
+  log("preparing pdf.worker.mjs…");
   if (workerSize < MIN_WORKER_BYTES) {
     fail(`pdfjs-dist worker is suspiciously small (${workerSize} bytes)`);
   }
-  await copyFile(
-    path.join(pdfjsRoot, "build", "pdf.worker.mjs"),
-    path.join(outDir, "pdf.worker.mjs")
+  const workerSource = (await readFile(pdfWorkerPath, "utf8")).replaceAll("\r\n", "\n");
+  const withPartialMapRecovery = replacePdfjsBlock(workerSource,
+    "function adjustType1ToUnicode(properties, builtInEncoding) {\n  if (properties.isInternalFont) {\n    return;\n  }\n  if (properties.hasIncludedToUnicodeMap) {\n    return;\n  }",
+    "function adjustType1ToUnicode(properties, builtInEncoding) {\n  if (properties.isInternalFont || (properties.composite && properties.hasIncludedToUnicodeMap)) {\n    return;\n  }",
+    "Type 1 partial Unicode map",
+  );
+  // Fill holes using the embedded Type 1 glyph names. A PDF's explicit
+  // Unicode mappings and Encoding/Differences remain authoritative.
+  await writeFile(
+    path.join(outDir, "pdf.worker.mjs"),
+    replacePdfjsBlock(withPartialMapRecovery,
+      'for (const charCode in builtInEncoding) {\n    if (properties.hasEncoding) {',
+      'for (const charCode in builtInEncoding) {\n    if (properties.hasIncludedToUnicodeMap && properties.toUnicode.has(+charCode)) {\n      continue;\n    }\n    if (properties.hasEncoding) {',
+      "Type 1 glyph precedence",
+    ),
   );
   await assertFile(path.join(pdfjsRoot, 'build', 'pdf.renderer.mjs'), 'PDF renderer worker');
   await copyFile(path.join(pdfjsRoot, 'build', 'pdf.renderer.mjs'), path.join(outDir, 'pdf.renderer.mjs'));

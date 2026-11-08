@@ -89,6 +89,31 @@ try {
   await sleep(250);
   assert(page() === 514, 'one gesture advanced multiple pages');
   results.push({ check: 'wheel-burst', page: page() });
+  const visited = new Set();
+  let maxResidentPages = 0;
+  let maxCacheBytes = 0;
+  for (let index = 0; index < 100; index += 1) {
+    const direction = index % 60 < 30 ? 1 : -1;
+    const target = page() + direction;
+    if (index % 3 === 1) {
+      scroller().dispatchEvent(new KeyboardEvent('keydown', { key: direction > 0 ? 'PageDown' : 'PageUp', bubbles: true, cancelable: true }));
+    } else if (index % 3 === 2) {
+      await sleep(230);
+      scroller().dispatchEvent(new WheelEvent('wheel', { deltaY: direction * 60, bubbles: true, cancelable: true }));
+    } else {
+      document.querySelector(direction > 0 ? '.dshr-paged-next' : '.dshr-paged-prev').click();
+    }
+    await until(() => page() === target && ready(), `mixed PDF turn to ${target}`);
+    scroller().dispatchEvent(new Event('scroll'));
+    await sleep(35);
+    assert(page() === target && ready(), `PDF lost readable page ${target} after mixed input`);
+    visited.add(target);
+    maxResidentPages = Math.max(maxResidentPages, document.querySelectorAll('.dshr-pdf-page').length);
+    maxCacheBytes = Math.max(maxCacheBytes, Number(reader.dataset.pdfCacheBytes));
+  }
+  assert(visited.size >= 30 && maxResidentPages <= 5 && maxCacheBytes <= 48 * 1024 * 1024, 'PDF cache or window budget exceeded');
+  results.push({ check: 'b1-navigation-stability', format: 'pdf', acceptedTurns: 100, errors: 0 });
+  results.push({ check: 'b1-pdf-residency', distinctPages: visited.size, maxResidentPages, maxCacheBytes });
   await go(1000);
   await until(() => activeFrame().querySelector('.dshr-pdf-text-layer').textContent.length > 0, 'selection text');
   results.push({ check: 'jump-and-text', page: page() });
@@ -104,6 +129,8 @@ try {
   document.querySelector('.dshr-pdf-toolbar button[title*="适合宽度"]').click();
   await sleep(300);
   results.push({ check: 'resize-and-zoom', page: page() });
+  document.getElementById('app').style.width = '1280px';
+  document.getElementById('app').style.height = '800px';
   const translated = [];
   render({ autoTranslate: true, onPageText: (page) => translated.push(page) });
   await sleep(100);

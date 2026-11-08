@@ -52,7 +52,8 @@ export function TranslationPanel({ page, source, rows = [], activeId, originRef,
     <div className="dshr-pdf-translation-list" ref={listRef} tabIndex={0} aria-label={`第 ${page} 页译文`} onWheel={() => { originRef.current = 'translation'; }}>
       {!source ? <p className="dshr-pdf-translation-empty">正在提取当前页段落…</p> : source.segments.length === 0 ? <p className="dshr-pdf-translation-empty">此页没有可提取的文字，可能是扫描页或图片页。</p> : null}
       {(source?.segments || []).map(segment => {
-        const row = rows.find(item => item.id === segment.id) || { status: 'queued' };
+        const row = segment.sourceNeedsReview ? { status: 'source-review' }
+          : rows.find(item => item.id === segment.id) || { status: 'queued' };
         return <article key={segment.id} data-translation-segment={segment.id} data-status={row.status}
           className={`dshr-pdf-translation-paragraph${activeId === segment.id && preferences.linked !== false ? ' is-linked' : ''}`}
           onPointerEnter={() => { if (preferences.linked !== false) activate(segment.id); }}>
@@ -62,6 +63,7 @@ export function TranslationPanel({ page, source, rows = [], activeId, originRef,
           {preferences.showSource ? <p className="dshr-pdf-translation-original">{segment.src}</p> : null}
           {row.zh ? <p className="dshr-pdf-translation-result">{row.zh}</p> : null}
           {row.status === 'done' ? null
+            : row.status === 'source-review' ? <p className="dshr-pdf-translation-waiting" role="status">本段含无法确认的 PDF 字符。请选择“定位原文”，在页面图像上核对。</p>
             : row.status === 'error' ? <div className="dshr-pdf-translation-segment-error"><p>{row.error}</p><button type="button" onClick={() => retry(page, segment.id)}>重试本段</button></div>
               : <p className="dshr-pdf-translation-waiting" role="status">{paused ? '等待继续翻译' : row.status === 'loading' ? '正在翻译本段…' : row.status === 'checking' ? '正在读取已有译文…' : '等待翻译…'}</p>}
         </article>;

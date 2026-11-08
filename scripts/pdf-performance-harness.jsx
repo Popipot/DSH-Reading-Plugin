@@ -3,14 +3,17 @@ import { createRoot } from 'react-dom/client';
 import PdfViewer, { pdfStyles } from '../web/src/pdf/PdfViewer.jsx';
 import { saveBook, getBook } from '../web/src/storage.js';
 import { generateCover } from '../web/src/cover.js';
+import { openPdfDocument } from '../web/src/pdf/engine.js';
+import { annotationStyles } from '../web/src/annotations/styles.js';
 
 const root = createRoot(document.getElementById('app'));
 const sleep = ms => new Promise(resolve => setTimeout(resolve, ms));
 const results = [], errors = [], longTasks = [];
 const workers = new Set();
+const workerUrls = new Set();
 const NativeWorker = window.Worker;
 window.Worker = class extends NativeWorker {
-  constructor(...args) { super(...args); workers.add(this); }
+  constructor(...args) { super(...args); workers.add(this); workerUrls.add(String(args[0])); }
   terminate() { workers.delete(this); return super.terminate(); }
 };
 const assert = (value, message) => { if (!value) throw Error(message); };
@@ -33,7 +36,7 @@ async function until(check, label, timeout = 30000) {
 let options, pageCount;
 function render(patch) {
   options = { ...options, ...patch };
-  root.render(<><style>{pdfStyles}</style><PdfViewer {...options} onReady={value => { pageCount = value.pageCount; }} /></>);
+  root.render(<><style>{pdfStyles + annotationStyles}</style><PdfViewer {...options} onReady={value => { pageCount = value.pageCount; }} /></>);
 }
 async function go(target) {
   input().focus();
@@ -56,6 +59,27 @@ try {
   results.push({ check: 'open-from-indexeddb', bytes: blob.size, pages: pageCount, dpr: devicePixelRatio, indexeddbMs: Math.round(acquisition), firstReadableMs: Math.round(performance.now() - start), bytesRead: Number(reader().dataset.pdfReadBytes), renderer: reader().dataset.pdfRenderer });
   assert(reader().dataset.pdfRenderer === 'worker', 'rendering was not isolated');
   await until(() => frame()?.dataset.pdfQuality === 'full', 'full quality');
+  await until(() => frame()?.querySelector('.dshr-pdf-text-layer span[data-pdf-segment]'), 'selectable text on the first page');
+  const firstSpan = frame().querySelector('.dshr-pdf-text-layer span[data-pdf-segment]');
+  const firstRange = document.createRange();
+  firstRange.selectNodeContents(firstSpan);
+  const selected = firstRange.getBoundingClientRect(), painted = frame().querySelector('canvas').getBoundingClientRect();
+  assert(firstRange.toString().trim() && selected.width > 0 && selected.left >= painted.left && selected.right <= painted.right + 1
+    && selected.top >= painted.top && selected.bottom <= painted.bottom + 1, 'native selection drifted outside the painted page');
+  if (pageCount > 1) {
+    const rect = { x: (selected.left - painted.left) / painted.width, y: (selected.top - painted.top) / painted.height,
+      w: selected.width / painted.width, h: selected.height / painted.height };
+    const mark = { id: 'a-selection-anchor', kind: 'pdf', style: 'underline', page: 1, rects: [rect] };
+    await go(2);
+    render({ annotations: [mark], focusAnnotation: mark });
+    await until(() => page() === 1 && frame()?.dataset.rendered === 'true' && frame().querySelector('[data-anno-id="a-selection-anchor"]'),
+      'annotation reopens the selected page');
+    const overlay = frame().querySelector('[data-anno-id="a-selection-anchor"]').getBoundingClientRect();
+    const surface = frame().querySelector('canvas').getBoundingClientRect();
+    assert(Math.abs(overlay.left - surface.left - rect.x * surface.width) < 1
+      && Math.abs(overlay.width - rect.w * surface.width) < 1, 'annotation no longer lines up with the selected text');
+    results.push({ check: 'native-selection-and-annotation-anchor', page: page(), dpr: devicePixelRatio });
+  }
   const timings = [];
   for (let target = 2; target <= Math.min(8, pageCount); target++) {
     const t = performance.now(); await go(target); timings.push(Math.round(performance.now() - t));
@@ -98,15 +122,58 @@ try {
   observer.disconnect();
   assert(errors.length === 0, errors.join('; '));
   results.push({ check: 'ui-thread', longestTaskMs: Math.round(Math.max(0, ...longTasks)), longTaskCount: longTasks.length, mainRenders: Number(reader().dataset.pdfMainRenders || 0), workerRenders: Number(reader().dataset.pdfWorkerRenders || 0) });
+  assert([...workerUrls].some(url => url.includes('pdf.worker.mjs')) && [...workerUrls].some(url => url.includes('pdf.renderer.mjs')), 'independent parsing and rendering workers were not used');
   root.render(null);
-  await until(() => workers.size === 0, 'document worker cleanup');
+  await until(() => workers.size === 0, 'document worker cleanup', 5000);
+  const calibration = await openPdfDocument(blob);
+  try {
+    const pdfPage = await calibration.pdf.getPage(1);
+    for (const [text, lang, rotation] of [
+      ['Maße und Länge', 'de', 0],
+      ['中文段落和數學', 'zh-CN', 90],
+      ['日本語の数式', 'ja', 180],
+      ['𝑂(𝑁²𝑑²𝑀⁻¹) 9×', 'en', 270],
+    ]) {
+      const container = document.createElement('div');
+      const reference = document.createElement('canvas');
+      reference.lang = lang;
+      reference.style.cssText = 'display:none;letter-spacing:normal;word-spacing:normal';
+      document.body.append(reference);
+      const ctx = reference.getContext('2d');
+      ctx.font = `${12 * devicePixelRatio}px sans-serif`;
+      const expectedScale = 140 * devicePixelRatio / ctx.measureText(text).width;
+      reference.remove();
+      const layer = new calibration.engine.TextLayer({
+        container,
+        viewport: pdfPage.getViewport({ scale: 1, rotation }),
+        textContentSource: {
+          lang, styles: { sample: { fontFamily: 'sans-serif', ascent: 0.8, descent: -0.2, vertical: false } },
+          items: [{ str: text, fontName: 'sample', dir: 'ltr', width: 140, height: 12, transform: [12, 0, 0, 12, 60, 660] }],
+        },
+      });
+      await layer.render();
+      const span = layer.textDivs[0];
+      assert(span.textContent === text && Math.abs(Number(span.style.getPropertyValue('--scale-x')) - expectedScale) < 0.015,
+        `detached measurement changed text geometry for ${lang}`);
+      assert(container.dataset.mainRotation === String(rotation), `text rotation changed for ${lang}`);
+    }
+    assert(![...document.body.querySelectorAll('canvas')].some(canvas => canvas.style.display === 'none'
+      && canvas.style.letterSpacing === 'normal' && canvas.style.wordSpacing === 'normal'), 'PDF.js attached a measurement canvas');
+    results.push({ check: 'detached-text-measurement', languages: ['de', 'zh-CN', 'ja', 'en'], rotations: [0, 90, 180, 270], dpr: devicePixelRatio });
+  } finally {
+    await calibration.close();
+  }
   const controller = new AbortController();
   const cover = generateCover({ blob, format: 'pdf', title: 'performance cover' }, { signal: controller.signal });
   await until(() => workers.size > 0, 'cover starts in background');
+  const cancelStarted = performance.now();
   controller.abort();
   await cover.then(() => { throw Error('cover ignored cancellation'); }, error => assert(error.name === 'AbortError', 'cover failed with unexpected error'));
-  await until(() => workers.size === 0, 'cover worker cleanup');
-  results.push({ check: 'close-and-cover-cancel-release-workers', liveWorkers: workers.size });
+  await until(() => workers.size === 0, 'cover worker cleanup', 5000);
+  const releasedMs = Math.round(performance.now() - cancelStarted);
+  assert(releasedMs <= 5000, 'cover worker cleanup exceeded five seconds');
+  results.push({ check: 'close-and-cover-cancel-release-workers', liveWorkers: workers.size, releasedMs,
+    workers: [...workerUrls].map(url => url.split('/').at(-1)) });
   // Leave the screenshot on a readable page after teardown assertions.
   render({ paged: true, initialPage: 1 });
   await until(() => frame()?.dataset.rendered === 'true', 'reopen after cover cancellation');

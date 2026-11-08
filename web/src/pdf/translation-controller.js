@@ -1,4 +1,4 @@
-export const PDF_TRANSLATION_VERSION = 'reader-a-1';
+export const PDF_TRANSLATION_VERSION = 'reader-a-2';
 
 export function normalizeGlossary(value) {
   return String(value || '').split(/\r?\n/u).map(line => line.trim()).filter(Boolean).join('\n').slice(0, 4000);
@@ -13,17 +13,19 @@ export function protectPdfText(text, protectedTokens = []) {
   let masked = text;
   for (const token of tokens) {
     const placeholder = `⟦KEEP_${replacements.length}⟧`;
-    if (!masked.includes(token)) continue;
-    masked = masked.split(token).join(placeholder);
-    replacements.push({ placeholder, token });
+    const pieces = masked.split(token);
+    if (pieces.length === 1) continue;
+    masked = pieces.join(placeholder);
+    replacements.push({ placeholder, token, count: pieces.length - 1 });
   }
   return {
     text: masked,
     restore(result) {
       let output = String(result || '');
-      for (const { placeholder, token } of replacements) {
-        if (!output.includes(placeholder)) throw new Error('译文遗漏了公式或引用标记，请重试本段。');
-        output = output.split(placeholder).join(token);
+      for (const { placeholder, token, count } of replacements) {
+        const pieces = output.split(placeholder);
+        if (pieces.length - 1 !== count) throw new Error('译文遗漏或重复了公式或引用标记，请重试本段。');
+        output = pieces.join(token);
       }
       if (/⟦KEEP_\d+⟧/u.test(output)) throw new Error('译文包含无法对应的公式标记，请重试本段。');
       return output;
@@ -109,10 +111,12 @@ export class PdfTranslationController {
     for (const [index, segment] of (source.segments || []).entries()) {
       const id = segment.id || `p${page}-s${index}`;
       const uid = `${page}:${id}`;
-      if (this.entries.get(uid)?.src === segment.src) continue;
+      const previous = this.entries.get(uid);
+      if (previous?.src === segment.src && previous.sourceNeedsReview === segment.sourceNeedsReview) continue;
       const entry = { ...segment, id, uid, index, page, status: 'checking', zh: '', cached: false };
       this.entries.set(uid, entry);
-      pending.push(entry);
+      if (segment.sourceNeedsReview) entry.status = 'source-review';
+      else pending.push(entry);
     }
     if (pending.length) {
       const token = Symbol();
@@ -202,10 +206,10 @@ export class PdfTranslationController {
       const source = this.sources.get(job.page)?.segments || [];
       const protectedEntries = job.entries.map(entry => protectPdfText(entry.src, entry.protectedTokens));
       const firstIndex = job.entries[0].index;
-      const neighbours = source.slice(Math.max(0, firstIndex - 1), firstIndex + job.entries.length + 1).map(segment => segment.src);
-      if (firstIndex === 0 && this.sources.get(job.page - 1)?.segments?.length) neighbours.unshift(this.sources.get(job.page - 1).segments.at(-1).src);
-      if (firstIndex + job.entries.length >= source.length && this.sources.get(job.page + 1)?.segments?.length) neighbours.push(this.sources.get(job.page + 1).segments[0].src);
-      const context = neighbours.join('\n').slice(0, 1200);
+      const neighbours = source.slice(Math.max(0, firstIndex - 1), firstIndex + job.entries.length + 1);
+      if (firstIndex === 0) neighbours.unshift(this.sources.get(job.page - 1)?.segments?.at(-1));
+      if (firstIndex + job.entries.length >= source.length) neighbours.push(this.sources.get(job.page + 1)?.segments?.[0]);
+      const context = neighbours.filter(segment => segment && !segment.sourceNeedsReview).map(segment => segment.src).join('\n').slice(0, 1200);
       const response = await this.translate(job.entries.map((entry, index) => ({ id: entry.id, text: protectedEntries[index].text })), {
         title: job.config.title, context, glossary: job.config.glossary,
         expectedModel: job.config.model, signal: job.controller.signal, includeMetadata: true,
@@ -238,7 +242,7 @@ export class PdfTranslationController {
   retry(page, id) {
     if (page === this.activePage) for (const job of [...this.jobs.values()]) if (job.page !== page) this.abortJob(job);
     for (const entry of this.entries.values()) if (entry.page === page && (id ? entry.id === id : entry.status === 'error')) {
-      if (entry.status === 'loading' || entry.status === 'checking') continue;
+      if (entry.status === 'loading' || entry.status === 'checking' || entry.sourceNeedsReview) continue;
       entry.status = 'queued'; entry.error = ''; entry.cached = false;
     }
     this.emit(); this.pump();

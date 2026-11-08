@@ -37,6 +37,24 @@ test('extensionOf normalises extensions', () => {
   assert.equal(extensionOf(null), '');
 });
 
+test('fixed-layout EPUB keeps text and spine order in the reflowable fallback', async () => {
+  const fixture = makeZip({
+    mimetype: 'application/epub+zip',
+    'META-INF/container.xml': '<container><rootfiles><rootfile full-path="book.opf"/></rootfiles></container>',
+    'book.opf': `<package version="3.0" xmlns="http://www.idpf.org/2007/opf">
+      <metadata><meta property="rendition:layout">pre-paginated</meta></metadata>
+      <manifest><item id="a" href="a.xhtml" media-type="application/xhtml+xml"/>
+        <item id="b" href="b.xhtml" media-type="application/xhtml+xml"/></manifest>
+      <spine><itemref idref="b"/><itemref idref="a"/></spine>
+    </package>`,
+    'a.xhtml': '<html><body><p style="position:absolute;left:400px">Last page text.</p></body></html>',
+    'b.xhtml': '<html><body><p style="position:absolute;left:200px">First page text.</p></body></html>',
+  });
+  const book = await parseBook(blobOf(fixture), { fileName: 'fixed-layout.epub' });
+  assert.deepEqual(book.chapters.map(chapter => chapter.blocks[0].text), ['First page text.', 'Last page text.']);
+  assert.ok(allBlocks(book).every(block => !/position\s*:\s*absolute/.test(block.html || '')));
+});
+
 test('EPUB3 nav: metadata, spine chapters, nested TOC, images and links', async () => {
   env.created.length = 0;
   env.revoked.length = 0;

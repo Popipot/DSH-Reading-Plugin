@@ -71,10 +71,17 @@ async function settled(expected) {
   } while (performance.now() < deadline);
   throw new Error(`navigation did not settle: wanted ${expected}, got ${page()} at ${scroll().scrollTop}`);
 }
-async function turn(direction = 1) {
+async function turn(direction = 1, input = 'button') {
   const before = scroll().scrollTop;
   const expected = page() + direction;
-  document.querySelector(direction > 0 ? '.dshr-paged-next' : '.dshr-paged-prev').click();
+  if (input === 'keyboard') {
+    scroll().dispatchEvent(new KeyboardEvent('keydown', { key: direction > 0 ? 'PageDown' : 'PageUp', bubbles: true, cancelable: true }));
+  } else if (input === 'wheel') {
+    await sleep(230);
+    scroll().dispatchEvent(new WheelEvent('wheel', { deltaY: direction * 60, bubbles: true, cancelable: true }));
+  } else {
+    document.querySelector(direction > 0 ? '.dshr-paged-next' : '.dshr-paged-prev').click();
+  }
   await settled(expected);
   assert(direction * (scroll().scrollTop - before) > 1, `${book.format} rolled back/stalled: ${before} -> ${scroll().scrollTop}`);
 }
@@ -112,7 +119,57 @@ try {
       assert(page() === start, `${format}/${effect} lost the current page`);
     }
     results.push({ check: 'all-animations-forward-backward', format });
+    const extraTurns = Math.max(18, 100 - turns - 24);
+    const inputs = ['button', 'keyboard', 'wheel'];
+    for (let index = 0; index < extraTurns; index += 1) {
+      await turn(index % 12 < 6 ? 1 : -1, inputs[index % inputs.length]);
+      const view = scroll().getBoundingClientRect();
+      const hasContent = [...stage().querySelectorAll('.dshr-block__body')].some(node => {
+        const rect = node.getBoundingClientRect();
+        return rect.height > 0 && rect.top < view.bottom - 56 && rect.bottom > view.top + 48;
+      });
+      assert(hasContent, `${format} displayed an empty page after a mixed input`);
+    }
+    results.push({ check: 'b1-navigation-stability', format, acceptedTurns: turns + 24 + extraTurns, mixedTurns: extraTurns, errors: 0 });
   }
+  const payload = 'window.b1PayloadCount += 1';
+  const safeUrl = 'https://example.org/b1-safe';
+  const hostile = `<p>Readable fixture</p><script>${payload}</script>
+    <img src="data:image/png;base64,AAAA" onerror="${payload}" />
+    <iframe srcdoc="&lt;script&gt;parent.b1PayloadCount += 1&lt;/script&gt;"></iframe>`;
+  const links = `<p><a href="javascript:${payload}" onclick="${payload}">unsafe link</a>
+    <a href="${safeUrl}">safe link</a></p>`;
+  window.b1PayloadCount = 0;
+  const securityFixtures = [
+    ['security.epub', epub([hostile + links])],
+    ['security.html', new Blob([hostile + links], { type: 'text/html' })],
+    ['security.md', new Blob([`Readable fixture\n\n${hostile}\n\n[unsafe link](javascript:window.b1PayloadCount%2B%3D1)\n\n[safe link](${safeUrl})`])],
+  ];
+  for (const [fileName, blob] of securityFixtures) {
+    root.render(null);
+    await sleep(25);
+    book = await parseBook(blob, { fileName });
+    chapterIndex = 0;
+    render();
+    await sleep(100);
+    assert(stage().textContent.includes('Readable fixture'), `${fileName} lost harmless text`);
+    const safe = stage().querySelector(`a[href="${safeUrl}"]`);
+    assert(safe, `${fileName} removed a safe link`);
+    const opened = [];
+    const openWindow = window.open;
+    try {
+      window.open = url => { opened.push(url); };
+      safe.click();
+      for (const link of stage().querySelectorAll('a[href^="javascript:"],a[onclick]')) link.click();
+    } finally {
+      window.open = openWindow;
+    }
+    await sleep(30);
+    assert(opened.length === 1 && opened[0] === safeUrl, `${fileName} produced an unsafe external action`);
+    assert(!stage().querySelector('script,iframe,[onerror],[onclick],a[href^="javascript:"]'), `${fileName} allowed executable markup`);
+    assert(window.b1PayloadCount === 0, `${fileName} ran an embedded payload`);
+  }
+  results.push({ check: 'b1-document-payload-isolation', formats: securityFixtures.length, successfulPayloads: 0 });
   // Adversarial changes during a real turn, with reading position pinned to a
   // character rather than a paragraph index or a transient scroll offset.
   root.render(null);

@@ -1,7 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { EventEmitter } from 'node:events';
-import { registerAiRoutes, buildTranslatePrompt, normalizeTranslateBody } from '../lib/ai.js';
+import { registerAiRoutes, STATUS_PATH, buildTranslatePrompt, normalizeTranslateBody } from '../lib/ai.js';
 
 function harness(stream) {
   const routes = new Map();
@@ -23,6 +23,38 @@ function harness(stream) {
     return { req, res, finished };
   };
 }
+
+test('the model status route requires the reader marker and a same-origin request', () => {
+  let handleStatus;
+  let modelLookups = 0;
+  const ctx = { get(name) {
+    if (name === 'agentDefaultModel') {
+      modelLookups++;
+      return { currentSelection: () => ({ provider: 'fixture', model: 'fixture-v1' }) };
+    }
+    return name === 'llm' ? {} : undefined;
+  } };
+  registerAiRoutes({ register(route) {
+    if (route.path === STATUS_PATH) handleStatus = route.handler;
+    return () => {};
+  } }, ctx);
+  function request(headers) {
+    const res = { setHeader() {}, end(body) { this.body = JSON.parse(body); } };
+    handleStatus({ method: 'GET', headers }, res);
+    return res;
+  }
+  const missing = request({ 'sec-fetch-site': 'same-origin' });
+  assert.equal(missing.statusCode, 403);
+  assert.equal(missing.body.error.code, 'MARKER');
+  const crossSite = request({ 'x-dsh-reader': '1', 'sec-fetch-site': 'cross-site' });
+  assert.equal(crossSite.statusCode, 403);
+  assert.equal(crossSite.body.error.code, 'CROSS_SITE');
+  assert.equal(modelLookups, 0);
+  const accepted = request({ 'x-dsh-reader': '1', 'sec-fetch-site': 'same-origin' });
+  assert.equal(accepted.statusCode, 200);
+  assert.equal(accepted.body.ready, true);
+  assert.equal(accepted.body.model, 'fixture-v1');
+});
 
 test('PDF request normalization and prompt carry bounded glossary and immutable markers as data', () => {
   const body = normalizeTranslateBody({ segments: [{ id: 'p1-s0', text: 'Energy ⟦KEEP_0⟧ [12]' }], glossary: 'gate = 栅极',

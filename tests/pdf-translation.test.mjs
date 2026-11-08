@@ -1,7 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { PdfTranslationController, translationCacheKey, protectPdfText } from '../web/src/pdf/translation-controller.js';
-import { extractPdfParagraphs } from '../web/src/pdf/text.js';
+import { extractPdfParagraphs, orderPdfTextItems } from '../web/src/pdf/text.js';
 
 const tick = () => new Promise(resolve => setTimeout(resolve, 10));
 const source = (page, count = 5) => ({ segments: Array.from({ length: count }, (_, index) => ({ id: `p${page}-s${index}`, src: `Page ${page} paragraph ${index}. Scientific prose.` })) });
@@ -40,6 +40,35 @@ test('formula, citation and DOI placeholders are restored and missing markers re
   assert.doesNotMatch(protectedText.text, /E=mc/);
   assert.equal(protectedText.restore(protectedText.text), text);
   assert.throws(() => protectedText.restore('Incomplete translation'), /遗漏/u);
+});
+
+test('a repeated formula must occur the same number of times in the model result', () => {
+  const original = 'Both O(N) and O(N) occur.';
+  const protectedText = protectPdfText(original, ['O(N)']);
+  const marker = '⟦KEEP_0⟧';
+  assert.equal(protectedText.restore(protectedText.text), original);
+  assert.throws(() => protectedText.restore(marker), /遗漏或重复/u);
+  assert.throws(() => protectedText.restore(protectedText.text + marker), /遗漏或重复/u);
+});
+
+test('unresolved PDF characters remain locatable without entering model input or context', async () => {
+  const h = harness();
+  try {
+    const parsed = extractPdfParagraphs([
+      { str: 'An unreadable formula has M\u00021.', transform: [12, 0, 0, 12, 50, 700], width: 200, height: 12, hasEOL: true },
+      { str: 'This paragraph is readable.', transform: [12, 0, 0, 12, 50, 650], width: 200, height: 12, hasEOL: true },
+    ], 1, 612);
+    assert.deepEqual(parsed.segments[0].itemIndices, [0]);
+    h.controller.registerPage(1, parsed);
+    await tick();
+    assert.equal(h.snapshot().pages[1][0].status, 'source-review');
+    assert.equal(h.calls.length, 1);
+    assert.deepEqual(h.calls[0].segments.map(segment => segment.id), ['p1-s1']);
+    assert.doesNotMatch(h.calls[0].options.context, /unreadable/u);
+    h.controller.retry(1, 'p1-s0');
+    await tick();
+    assert.equal(h.calls.length, 1);
+  } finally { h.controller.dispose(); }
 });
 
 test('paragraphs publish incrementally with bounded concurrency, before the whole page completes', async () => {
@@ -163,6 +192,19 @@ test('PDF text extraction retains original item indices and reads two columns in
   assert.ok(paragraphs.segments[0].itemIndices.every(index => items[index].str.startsWith('Left')));
   assert.equal(paragraphs.segments[1].id, 'p2-s1');
   assert.equal(JSON.stringify(items), before);
+});
+
+test('single-column math and font runs do not imply a two-column gutter', () => {
+  const items = [];
+  for (let row = 0; row < 6; row++) {
+    const y = 720 - row * 16;
+    items.push(
+      { str: 'Start of the scientific line', transform: [12, 0, 0, 12, 50, y], width: 222, height: 12 },
+      { str: 'intermediate', transform: [12, 0, 0, 12, 273, y], width: 58, height: 12 },
+      { str: 'end of the scientific line.', transform: [12, 0, 0, 12, 332, y], width: 180, height: 12, hasEOL: true },
+    );
+  }
+  assert.deepEqual(orderPdfTextItems(items, 612).map(item => item.__pdfItemIndex), items.map((_, index) => index));
 });
 
 test('a transport that ignores abort still times out without keeping the translation queue locked', async () => {

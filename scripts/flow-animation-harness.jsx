@@ -19,6 +19,7 @@ window.addEventListener('error', e => errors.push(e.message));
 window.addEventListener('unhandledrejection', e => errors.push(String(e.reason)));
 window.__pdfCheck = { state: 'running' };
 const nativeAnimate = Element.prototype.animate;
+const turnDurations = { slide: 250, cover: 300, flip: 500 };
 let pauseAnimations = true;
 Element.prototype.animate = function (frames, options) {
   const effect = nativeAnimate.call(this, frames, options);
@@ -58,15 +59,29 @@ async function capture(name) {
   for (let i = 0; i < 200 && window.__flowCapture; i++) await sleep(10);
   assert(!window.__flowCapture, 'Screenshot acknowledgement timed out');
 }
+function startFrameInspection(mode, direction) {
+  // A frozen animation can outlive its production watchdog while CDP takes
+  // screenshots. Only stretch the timer of this deliberately paused turn.
+  const schedule = window.setTimeout;
+  const watchdog = turnDurations[mode] + 300;
+  window.setTimeout = (callback, delay, ...args) => schedule.call(window, callback, delay === watchdog ? 6000 : delay, ...args);
+  try {
+    document.querySelector(direction > 0 ? '.dshr-paged-next' : '.dshr-paged-prev').click();
+  } finally {
+    window.setTimeout = schedule;
+  }
+}
 async function examine(mode, direction, screenshots, mixed = false) {
   animation = mode; render(); await sleep(25);
   const before = Number(scroll().dataset.readerPage);
-  document.querySelector(direction > 0 ? '.dshr-paged-next' : '.dshr-paged-prev').click();
+  startFrameInspection(mode, direction);
   const overlay = document.querySelector('.dshr-flow-transition');
   assert(overlay, `${book.format}/${mode}: no presentation layer`);
   assert(overlay.inert && overlay.getAttribute('aria-hidden') === 'true', 'snapshots must not capture selection, focus or accessibility');
   const effects = overlay.getAnimations({ subtree: true });
   assert(effects.length === (mode === 'slide' ? 2 : 1), 'paired slide / single cover / finite fold clock');
+  const duration = turnDurations[mode];
+  assert(effects.every(effect => effect.effect.getTiming().duration === duration), `${mode}: incorrect animation duration`);
   assert(Number(scroll().dataset.readerPage) === before + direction, 'cursor must commit exactly once');
   assert(Math.abs(scroll().scrollTop - Number(scroll().dataset.readerTarget)) < 1, 'live document must be at the accepted target');
   assert(overlay.querySelectorAll('[data-seg-id],[data-anno-block]').length === 0, 'snapshots duplicated live identities');
@@ -89,6 +104,7 @@ async function examine(mode, direction, screenshots, mixed = false) {
   for (const progress of [0.02, 0.25, 0.5, 0.75, 0.98]) {
     for (const effect of effects) effect.currentTime = effect.effect.getTiming().duration * progress;
     await raf(); await raf();
+    assert(overlay.isConnected, `${mode}: paused transition ended while inspecting a frame`);
     for (const page of overlay.querySelectorAll('.dshr-turn-page')) {
       assert(getComputedStyle(page).opacity === '1', `${mode}: a page faded to blank`);
       assert(page.querySelector('.dshr-block,.dshr-chapter__nav'), `${mode}: snapshot lost visible content`);
@@ -127,7 +143,7 @@ async function examineChapterControls(mode, direction, scenario) {
     return Object.fromEntries(properties.map(name => [name, style[name]]));
   });
   const before = Number(scroll().dataset.readerPage);
-  document.querySelector(direction > 0 ? '.dshr-paged-next' : '.dshr-paged-prev').click();
+  startFrameInspection(mode, direction);
   const overlay = document.querySelector('.dshr-flow-transition');
   assert(overlay, 'chapter control transition did not start');
   const copies = [...overlay.querySelectorAll('.dshr-chapter__nav button')];
@@ -249,12 +265,17 @@ try {
   window.matchMedia = query => query.includes('prefers-reduced-motion') ? { matches: true } : media.call(window, query);
   for (const mode of ['slide', 'cover', 'flip']) {
     animation = mode; render(); await sleep(20);
-    const page = Number(scroll().dataset.readerPage);
-    document.querySelector('.dshr-paged-next').click(); await settled();
-    assert(!document.querySelector('.dshr-flow-transition') && Number(scroll().dataset.readerPage) === page + 1, 'reduced motion blocked navigation');
+    for (let index = 0; index < 10; index++) {
+      const page = Number(scroll().dataset.readerPage);
+      const direction = index % 2 === 0 ? 1 : -1;
+      document.querySelector(direction === 1 ? '.dshr-paged-next' : '.dshr-paged-prev').click();
+      assert(!document.querySelector('.dshr-flow-transition'), 'reduced motion started a transition');
+      await settled();
+      assert(!document.querySelector('.dshr-flow-transition') && Number(scroll().dataset.readerPage) === page + direction, 'reduced motion blocked navigation');
+    }
   }
   window.matchMedia = media;
-  results.push({ check: 'active-fold-mode-cleanup-and-reduced-motion-all-styles' });
+  results.push({ check: 'active-fold-mode-cleanup-and-reduced-motion-all-styles', turnsPerStyle: 10, decorativeAnimations: 0 });
   // Resize while a soft page is active: its old viewport cannot cover the new
   // surface, so it must finish promptly and retain the accepted text position.
   document.querySelector('.dshr-paged-next').click();

@@ -1,6 +1,6 @@
 // Shared by the reader and cover generation: one versioned engine, real parsing
 // worker, optional renderer worker, and random-access local Blob transport.
-export const PDF_ASSET_VERSION = '6.5.438-reader3';
+export const PDF_ASSET_VERSION = '6.5.438-reader4';
 const BASE = '/dsh-reader-assets/';
 let enginePromise;
 function engineModuleUrl() { return `${BASE}pdf.bundle.js?v=${PDF_ASSET_VERSION}`; }

@@ -284,6 +284,24 @@ export const appearanceStyles = String.raw`
   animation: dshr-appearance-fade 0.16s ease-out;
 }
 
+.dshr-root.is-immersive .dshr-appearance-panel {
+  --dshr-appearance-surface: var(--dshr-immersive-surface, var(--dshr-layer-2));
+  --dshr-appearance-surface-2: color-mix(in srgb, var(--dshr-appearance-surface) 96%, var(--dshr-appearance-fg));
+  --dshr-appearance-surface-3: color-mix(in srgb, var(--dshr-appearance-surface) 90%, var(--dshr-appearance-fg));
+  --dshr-appearance-fg: var(--dshr-immersive-ink, var(--dshr-fg));
+  --dshr-appearance-fg-2: color-mix(in srgb, var(--dshr-appearance-fg) 82%, var(--dshr-appearance-surface));
+  --dshr-appearance-fg-3: color-mix(in srgb, var(--dshr-appearance-fg) 70%, var(--dshr-appearance-surface));
+  --dshr-appearance-border: color-mix(in srgb, var(--dshr-appearance-fg) 15%, transparent);
+  --dshr-appearance-border-strong: color-mix(in srgb, var(--dshr-appearance-fg) 27%, transparent);
+  --dshr-appearance-hover: var(--dshr-appearance-surface-2);
+  --dshr-appearance-brand: var(--dshr-appearance-fg-2);
+  color: var(--dshr-appearance-fg);
+}
+
+.dshr-root.is-immersive .dshr-appearance-panel button {
+  transition: none;
+}
+
 @keyframes dshr-appearance-fade {
   from { opacity: 0; }
 }
@@ -902,6 +920,17 @@ export const appearanceStyles = String.raw`
 .dshr-appearance-btn--primary:hover {
   background: color-mix(in srgb, var(--dshr-appearance-brand) 86%, #000000);
   color: var(--dshr-appearance-on-brand);
+}
+
+.dshr-root.is-immersive .dshr-appearance-btn--primary {
+  color: var(--dshr-appearance-fg);
+  background: var(--dshr-appearance-surface-2);
+  border-color: var(--dshr-appearance-border-strong);
+  box-shadow: none;
+}
+
+.dshr-root.is-immersive .dshr-appearance-btn--primary:hover {
+  background: var(--dshr-appearance-surface-3);
 }
 
 /* ------------------------------------------------------------------ footer */

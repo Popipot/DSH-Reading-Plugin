@@ -23,7 +23,10 @@ const CJK_RE =
   /[\u1100-\u11FF\u2E80-\u2EFF\u3000-\u303F\u3040-\u30FF\u3100-\u312F\u3130-\u318F\u3400-\u4DBF\u4E00-\u9FFF\uA960-\uA97F\uAC00-\uD7AF\uF900-\uFAFF\uFE30-\uFE4F\uFF00-\uFFEF]/;
 
 const SENTENCE_END_RE = /[.。！？!?；;…]$/;
+const EXPONENT_GLYPHS = "0123456789+−-";
+const SUPERSCRIPT_GLYPHS = "⁰¹²³⁴⁵⁶⁷⁸⁹⁺⁻⁻";
 const LONG_SEGMENT_LIMIT = 1400;
+const UNCERTAIN_GLYPH = /[\u0000-\u0008\u000b\u000c\u000e-\u001f\ufffd]/u;
 
 function isCjkChar(ch) {
   return !!ch && CJK_RE.test(ch);
@@ -82,9 +85,25 @@ function createLine(geometry) {
 }
 
 function appendRunToLine(line, raw, geometry) {
-  const text = clampTextWhitespace(raw);
+  let text = clampTextWhitespace(raw);
   if (!text) {
     return;
+  }
+
+  // Some scientific PDFs encode a raised digit as an ordinary digit in a
+  // smaller run. Preserve a clearly attached exponent in the translation
+  // text while leaving the PDF text layer and the item indices intact.
+  if (geometry?.height && line.hasGeometry && line.height && /^[+−-]?\d*$/.test(text)) {
+    const precedingLetter = line.text.codePointAt(line.text.length - 2);
+    const followsMath = precedingLetter >= 0x1d400 && precedingLetter <= 0x1d7cb;
+    const continuesExponent = /^[0-9]+$/.test(text) && line.text && SUPERSCRIPT_GLYPHS.includes(line.text.at(-1));
+    const rise = (geometry.y - line.y) / line.height;
+    const gap = (geometry.x - line.endX) / line.height;
+    if ((followsMath || continuesExponent)
+        && geometry.height <= line.height * 0.85 && rise >= 0.18 && rise <= 0.58
+        && gap >= -0.2 && gap <= 0.18) {
+      text = [...text].map(glyph => SUPERSCRIPT_GLYPHS[EXPONENT_GLYPHS.indexOf(glyph)]).join("");
+    }
   }
 
   let separator = "";
@@ -336,16 +355,29 @@ export function orderPdfTextItems(items, pageWidth) {
   }
   if (!pageWidth) return indexed;
   const long = indexed.filter(item => item.str.trim().length > 15 && item.width > pageWidth * 0.12);
-  const left = long.filter(item => item.transform?.[4] < pageWidth * 0.3 && item.transform[4] + item.width < pageWidth * 0.53);
-  const right = long.filter(item => item.transform?.[4] >= pageWidth * 0.48);
+  const left = long.filter(item => item.transform?.[4] < pageWidth * 0.3 && item.transform[4] + item.width < pageWidth * 0.5);
+  const right = long.filter(item => item.transform?.[4] >= pageWidth * 0.49 && item.transform[4] < pageWidth * 0.66);
   if (left.length < 4 || right.length < 4) return indexed;
+  // Inline math and font changes can split a single prose line into long runs
+  // on both sides. Require a repeated right margin of the gutter and paired
+  // baselines that no visible run crosses before reordering the page.
+  const crossing = indexed.filter(item => item.str.trim() && item.transform?.[4] < pageWidth * 0.48
+    && item.transform[4] + item.width > pageWidth * 0.52);
+  const paired = right.filter(item => {
+    const y = item.transform[5];
+    const tolerance = Math.max(2, (item.height || 10) * 0.55);
+    return left.some(other => Math.abs(other.transform[5] - y) < tolerance)
+      && !crossing.some(other => Math.abs(other.transform[5] - y) < tolerance);
+  });
+  const pairedStarts = paired.map(item => item.transform[4]).sort((a, b) => a - b);
+  if (!pairedStarts.some((start, i) => pairedStarts[i + 3] - start < pageWidth * 0.02)) return indexed;
   const wideYs = [...new Set(long.filter(item => item.transform?.[4] < pageWidth * 0.4 && item.transform[4] + item.width > pageWidth * 0.6)
     .map(item => Math.round(item.transform[5])))].sort((a, b) => b - a);
   const key = item => {
     const y = item.transform?.[5] || 0;
     const band = wideYs.filter(wideY => wideY > y + 3).length * 2;
     const wide = wideYs.some(wideY => Math.abs(wideY - y) <= 3);
-    return [band + (wide ? 1 : 0), wide ? 0 : item.transform?.[4] >= pageWidth * 0.48 ? 2 : 1, -y, item.transform?.[4] || 0];
+    return [band + (wide ? 1 : 0), wide ? 0 : item.transform?.[4] >= pageWidth * 0.48 ? 2 : 1];
   };
   return indexed.sort((a, b) => {
     const ka = key(a), kb = key(b);
@@ -354,11 +386,47 @@ export function orderPdfTextItems(items, pageWidth) {
   });
 }
 
+function restoreStackedReciprocals(items) {
+  for (let index = 1; index + 1 < items.length; index++) {
+    const radical = items[index];
+    if (radical.str !== "√") continue;
+    const numerator = items[index - 1], variable = items[index + 1], subscript = items[index + 2];
+    if (numerator.str !== "1" || !/^[A-Za-z]$/u.test(variable.str)) continue;
+    const top = readGeometry(numerator), root = readGeometry(radical), base = readGeometry(variable);
+    if (!top?.height || !root?.width || !base?.height || !base.width || !top.width) continue;
+    const center = top.x + top.width / 2;
+    const rise = (top.y - base.y) / base.height;
+    if (root.y >= top.y || root.y <= base.y || rise < 0.8 || rise > 1.8
+        || center < root.x || center > base.x + base.width
+        || Math.abs(base.x - root.x - root.width) > base.height * 0.25) continue;
+    // PDF text omits the painted fraction bar. The stacked numerator and
+    // denominator support a slash while each original run keeps its index.
+    radical.str = "/√";
+    if (!subscript || !/^[A-Za-z0-9]$/u.test(subscript.str)) continue;
+    const sub = readGeometry(subscript);
+    if (sub?.height && sub.height <= base.height * 0.85
+        && sub.y < base.y - base.height * 0.1 && sub.y > base.y - base.height * 0.55
+        && Math.abs(sub.x - base.x - base.width) <= base.height * 0.18) {
+      subscript.str = "_" + subscript.str;
+    }
+  }
+}
+
 export function extractPdfParagraphs(items, page, pageWidth) {
-  const grouped = groupPdfText(orderPdfTextItems(items, pageWidth), { metadata: true });
-  return { text: grouped.text, segments: grouped.segments.map((segment, index) => ({
-    ...segment, id: `p${page}-s${index}`,
-    protectedTokens: [...new Set(segment.itemIndices.map(itemIndex => items[itemIndex]?.str?.trim())
-      .filter(text => text && /[∑∫√≈≠≤≥∂∞]/u.test(text) && !/[A-Za-z]{4}|[\u3400-\u9fff]/u.test(text)))],
-  })) };
+  const ordered = orderPdfTextItems(items, pageWidth);
+  restoreStackedReciprocals(ordered);
+  const grouped = groupPdfText(ordered, { metadata: true });
+  return { text: grouped.text, segments: grouped.segments.map((segment, index) => {
+    const runs = segment.itemIndices.map(itemIndex => items[itemIndex]?.str?.trim() || "");
+    const complexity = (segment.src.match(/(?:\b[Oo]|[𝑂𝒪ΩΘ])\s*\((?:[^()\n]|\([^()\n]{1,40}\)){1,120}\)/gu) || [])
+      .filter(token => /[\u{1d400}-\u{1d7ff}⁰¹²³⁴⁵⁶⁷⁸⁹⁺⁻+×/]|\(\s*[A-Z]\s*\)/u.test(token));
+    const multipliers = segment.src.match(/(?<![\p{L}\p{N}.])\d+(?:[.,]\d+)?(?:\s*[-–—]\s*\d+(?:[.,]\d+)?)?\s*×(?!\s*\d)/gu) || [];
+    const reciprocals = segment.src.match(/\b1\/√[A-Za-z](?:_[A-Za-z0-9])?(?![\p{L}\p{N}_])/gu) || [];
+    const symbols = runs.filter(text => /[∑∫√≈≠≤≥∂∞]/u.test(text) && !/[A-Za-z]{4}|[\u3400-\u9fff]/u.test(text));
+    return {
+      ...segment, id: `p${page}-s${index}`,
+      protectedTokens: [...new Set([...complexity, ...multipliers, ...reciprocals, ...symbols])],
+      ...(runs.some(text => UNCERTAIN_GLYPH.test(text)) ? { sourceNeedsReview: true } : {}),
+    };
+  }) };
 }

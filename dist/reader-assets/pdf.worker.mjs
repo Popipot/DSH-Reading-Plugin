@@ -25202,10 +25202,7 @@ function adjustTrueTypeToUnicode(properties, isSymbolicFont, nameRecords) {
   properties.toUnicode.amend(toUnicode);
 }
 function adjustType1ToUnicode(properties, builtInEncoding) {
-  if (properties.isInternalFont) {
-    return;
-  }
-  if (properties.hasIncludedToUnicodeMap) {
+  if (properties.isInternalFont || (properties.composite && properties.hasIncludedToUnicodeMap)) {
     return;
   }
   if (builtInEncoding === properties.defaultEncoding) {
@@ -25217,6 +25214,9 @@ function adjustType1ToUnicode(properties, builtInEncoding) {
   const toUnicode = new CharCodeMap(),
     glyphsUnicodeMap = getGlyphsUnicode();
   for (const charCode in builtInEncoding) {
+    if (properties.hasIncludedToUnicodeMap && properties.toUnicode.has(+charCode)) {
+      continue;
+    }
     if (properties.hasEncoding) {
       if (properties.baseEncodingName || properties.differences.has(+charCode)) {
         continue;

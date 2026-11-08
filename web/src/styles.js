@@ -276,35 +276,26 @@ export const styles = String.raw`
 .dshr-root:fullscreen { width: 100vw; height: 100vh; border-radius: 0; }
 .dshr-root.is-immersive .dshr-topbar { display: none; }
 .dshr-immersive-controls {
-  position: absolute; z-index: 40; top: 12px; right: 12px;
-  display: flex; align-items: center; gap: 6px;
+  flex: 0 0 auto;
+  display: flex; align-items: center; justify-content: flex-end; gap: 4px;
+  padding: 0 10px; font-size: 12px;
+  color: var(--dshr-immersive-ink, var(--dshr-fg));
+  background: var(--dshr-immersive-surface, var(--dshr-layer));
+  border-bottom: 1px solid color-mix(in srgb, currentColor 12%, transparent);
 }
 .dshr-immersive-btn {
   display: inline-flex; align-items: center; justify-content: center; gap: 5px;
-  height: 32px; min-width: 32px; padding: 0 9px;
-  border: 1px solid var(--dshr-border); border-radius: 8px;
-  background: color-mix(in srgb, var(--dshr-layer) 82%, transparent); color: var(--dshr-fg-2);
-  backdrop-filter: blur(8px); font-size: 12px;
+  min-height: 34px; padding: 0 8px; white-space: nowrap;
+  border: 1px solid color-mix(in srgb, currentColor 15%, transparent); border-radius: 7px;
+  background: color-mix(in srgb, currentColor 4%, transparent);
 }
-.dshr-immersive-btn:hover { color: var(--dshr-fg); border-color: var(--dshr-border-strong); }
-.dshr-immersive-btn--exit { font-size: 11.5px; }
-.dshr-immersive-toc {
-  position: absolute; z-index: 40; top: 56px; left: 0;
-  display: grid; place-items: center; width: 32px; height: 42px; padding: 0;
-  border: 1px solid var(--dshr-immersive-border, var(--dshr-border)); border-left: 0;
-  border-radius: 0 9px 9px 0;
-  background: var(--dshr-immersive-chip, color-mix(in srgb, var(--dshr-layer) 72%, transparent));
-  color: var(--dshr-immersive-ink, var(--dshr-fg));
-  backdrop-filter: blur(10px);
-  box-shadow: 0 3px 14px rgba(0, 0, 0, .10);
-  transition: color .18s ease, background .18s ease, border-color .18s ease, transform .18s ease;
+.dshr-immersive-btn:hover, .dshr-immersive-btn[aria-pressed="true"], .dshr-immersive-btn[aria-expanded="true"] {
+  background: color-mix(in srgb, currentColor 10%, transparent);
+  border-color: color-mix(in srgb, currentColor 27%, transparent);
 }
-.dshr-immersive-toc svg { opacity: .92; }
-.dshr-immersive-toc:hover, .dshr-immersive-toc:focus-visible {
-  color: var(--dshr-immersive-ink, var(--dshr-fg));
-  background: var(--dshr-immersive-chip-hover, color-mix(in srgb, var(--dshr-layer) 90%, transparent));
-  border-color: var(--dshr-immersive-border, var(--dshr-border-strong));
-  transform: translateX(1px);
+.dshr-immersive-btn:focus-visible { outline: 2px solid currentColor; outline-offset: 1px; }
+@container (max-width: 300px) {
+  .dshr-immersive-btn svg { display: none; }
 }
 .dshr-paged-controls { position: absolute; inset: 0; z-index: 18; pointer-events: none; }
 .dshr-book-mask {
