@@ -14,6 +14,12 @@ A **DeepSeek Harness** plugin for reading papers and books. Organize your local 
 
 ![DSH Reader pixel-art banner featuring the whale girl reading a book](docs/images/dsh-reader-banner.png)
 
+## Development status
+
+**November 8, 2026 · B1 candidate · 39 of 40 checks passed.** The release gate is on hold. Appearance settings are unavailable from immersive mode, the remaining failed check.
+
+In 80 cold opens on DSH Desktop, the highest group P95 was **1,375 ms** for the reference paper and **2,426 ms** for the 1,029-page textbook. In 480 adjacent-page turns on DSH Web, the highest group P95 was **44 ms** with preloading and **259 ms** without it. These results describe the B1 validation candidate. The installation link above points to the current public build.
+
 ## Features
 
 | Feature | What you can do |

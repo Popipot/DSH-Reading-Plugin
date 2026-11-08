@@ -14,6 +14,12 @@ Ein Plugin für **DeepSeek Harness** zum Lesen von Fachliteratur und Büchern. O
 
 ![DSH-Reader-Banner in Pixeloptik mit einem lesenden Walmädchen](docs/images/dsh-reader-banner.png)
 
+## Entwicklungsstand
+
+**8. November 2026 · B1-Kandidat · 39 von 40 Prüfungen bestanden.** Die Freigabe steht aus. Im immersiven Modus fehlt der Zugang zu den Darstellungsoptionen.
+
+Bei 80 kalten Dokumentöffnungen in DSH Desktop lag der höchste P95 je Testgruppe bei **1.375 ms** für den Referenzartikel und **2.426 ms** für das Lehrbuch mit 1.029 Seiten. Bei 480 Seitenwechseln in DSH Web lag der höchste P95 bei **44 ms** mit und **259 ms** ohne Vorladen. Die Messwerte beziehen sich auf den B1-Prüfkandidaten. Der Installationslink oben verweist auf den aktuell öffentlich verfügbaren Stand.
+
 ## Funktionen
 
 | Funktion | Möglichkeiten |
