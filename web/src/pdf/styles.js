@@ -309,6 +309,7 @@ html[data-ds-dark-theme] .dshr-pdf-root {
   min-width: 100%;
   padding: 18px 16px 48px;
 }
+.dshr-pdf-scroll[data-pdf-page] .dshr-pdf-content { padding-inline: 24px; }
 
 /* Fit-width text layers use this variable; the per-page value is set inline on
    the frame so PDF.js can compute glyph boxes and the canvas size identically. */

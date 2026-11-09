@@ -1,3 +1,4 @@
+import { hoverPageGutter } from './page-gutter-input.mjs';
 import React from 'react';
 import { createRoot } from 'react-dom/client';
 import PdfViewer, { pdfStyles } from '../web/src/pdf/PdfViewer.jsx';
@@ -29,7 +30,7 @@ function render(patch = {}) {
   root.render(<div className="dshr-root" data-reading-mode={options.paged ? 'book' : 'scroll'}>
     <style>{styles + pdfStyles}</style><div className="dshr-reader"><div className="dshr-body">
       <PdfViewer {...options} onHideTranslations={() => render({ hideTranslations: true })} />
-    </div><PagedReader enabled={options.paged} bookMode pdfMode readerKey={options.documentId} /></div>
+    </div><PagedReader enabled={options.paged} bookMode readerKey={options.documentId} /></div>
   </div>);
 }
 const page = () => Number(document.querySelector('.dshr-pdf-page-input')?.value);
@@ -89,7 +90,9 @@ try {
   assert(frame().getBoundingClientRect().height === originalHeight, 'translated text changed original page height');
   assert(!document.querySelector('.dshr-pdf-page .dshr-pdf-translation'), 'inline translation card remains in PDF layout');
   assert(!list().textContent.includes('⟦KEEP_'), 'protected citation placeholders leaked into the reader');
-  assert(document.querySelector('.dshr-paged-next').getBoundingClientRect().right <= sourceScroll().getBoundingClientRect().right, 'page arrow overlaps translation pane');
+  hoverPageGutter(sourceScroll(), 1);
+  const gutterHint = () => document.querySelector('.dshr-page-gutter-hint');
+  assert(!gutterHint().hidden && gutterHint().getBoundingClientRect().right <= sourceScroll().getBoundingClientRect().right, 'page gutter overlaps translation pane');
   results.push({ check: 'incremental-single-paragraph-retry-independent-layout', paragraphs: done().length });
   const span = frame().querySelector('[data-pdf-segment="p2-s3"]');
   span.dispatchEvent(new PointerEvent('pointerover', { bubbles: true }));
@@ -166,7 +169,8 @@ try {
   await sleep(250);
   const panelRect = document.querySelector('.dshr-pdf-translation-panel').getBoundingClientRect();
   assert(panelRect.top >= sourceScroll().getBoundingClientRect().bottom - 1, 'narrow pane did not stack translation below PDF');
-  assert(document.querySelector('.dshr-paged-next').getBoundingClientRect().bottom <= panelRect.top, 'narrow page arrow overlaps translation pane');
+  hoverPageGutter(sourceScroll(), 1);
+  assert(!gutterHint().hidden && gutterHint().getBoundingClientRect().bottom <= panelRect.top, 'narrow page gutter overlaps translation pane');
   document.getElementById('app').style.width = '';
   await sleep(180);
   document.querySelector('button[aria-label="关闭译文侧栏"]').click();

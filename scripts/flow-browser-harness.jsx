@@ -1,3 +1,4 @@
+import { clickPageGutter } from './page-gutter-input.mjs';
 import React from 'react';
 import { createRoot } from 'react-dom/client';
 import { zipSync, strToU8 } from 'fflate';
@@ -56,7 +57,7 @@ function render() {
   root.render(strict ? <React.StrictMode>{view}</React.StrictMode> : view);
 }
 const scroll = () => document.querySelector('.dshr-content');
-const next = () => document.querySelector('.dshr-paged-next');
+const next = (detail) => clickPageGutter(scroll(), 1, detail);
 const page = () => Number(scroll().dataset.readerPage);
 const stage = () => scroll().querySelector('.dshr-content__inner');
 async function settled(expected) {
@@ -71,7 +72,7 @@ async function settled(expected) {
   } while (performance.now() < deadline);
   throw new Error(`navigation did not settle: wanted ${expected}, got ${page()} at ${scroll().scrollTop}`);
 }
-async function turn(direction = 1, input = 'button') {
+async function turn(direction = 1, input = 'gutter') {
   const before = scroll().scrollTop;
   const expected = page() + direction;
   if (input === 'keyboard') {
@@ -80,7 +81,7 @@ async function turn(direction = 1, input = 'button') {
     await sleep(230);
     scroll().dispatchEvent(new WheelEvent('wheel', { deltaY: direction * 60, bubbles: true, cancelable: true }));
   } else {
-    document.querySelector(direction > 0 ? '.dshr-paged-next' : '.dshr-paged-prev').click();
+    clickPageGutter(scroll(), direction);
   }
   await settled(expected);
   assert(direction * (scroll().scrollTop - before) > 1, `${book.format} rolled back/stalled: ${before} -> ${scroll().scrollTop}`);
@@ -104,8 +105,8 @@ try {
     render();
     await sleep(200);
     let turns = 0;
-    while (!next().disabled && turns < 250) { await turn(); turns += 1; }
-    assert(next().disabled, `${format} could not reach the chapter end`);
+    while (page() < Number(scroll().dataset.readerPages) && turns < 250) { await turn(); turns += 1; }
+    assert(page() === Number(scroll().dataset.readerPages), `${format} could not reach the chapter end`);
     assert(turns > 5, `${format} fixture did not exercise enough pages`);
     results.push({ check: 'complete-chapter', format, turns, pages: page() });
     for (let i = 0; i < 8; i += 1) await turn(-1);
@@ -120,7 +121,7 @@ try {
     }
     results.push({ check: 'all-animations-forward-backward', format });
     const extraTurns = Math.max(18, 100 - turns - 24);
-    const inputs = ['button', 'keyboard', 'wheel'];
+    const inputs = ['gutter', 'keyboard', 'wheel'];
     for (let index = 0; index < extraTurns; index += 1) {
       await turn(index % 12 < 6 ? 1 : -1, inputs[index % inputs.length]);
       const view = scroll().getBoundingClientRect();
@@ -183,7 +184,7 @@ try {
   scroll().dispatchEvent(new CustomEvent('dshr-flow-navigate', { cancelable: true, detail: { element: blocks[20] } }));
   await settled();
   let from = page();
-  for (let i = 0; i < 6; i += 1) next().click();
+  for (let i = 0; i < 6; i += 1) next();
   await settled(from + 6);
   results.push({ check: 'queued-rapid-clicks', pagesAdvanced: page() - from });
   const stableTop = scroll().scrollTop;
@@ -191,7 +192,7 @@ try {
   scroll().dispatchEvent(new Event('scroll'));
   await settled();
   assert(Math.abs(scroll().scrollTop - stableTop) < 1, 'native scroll overwrote the page cursor');
-  next().click();
+  next();
   await sleep(5);
   const translation = document.createElement('div');
   translation.className = 'dshr-translation';
@@ -232,7 +233,7 @@ try {
   for (let i = 0; i < 5; i += 1) await turn();
   results.push({ check: 'translation-image-font-width-reflow', page: page() });
   const beforeCancel = page();
-  next().click();
+  next();
   await sleep(5);
   for (const effect of document.querySelector('.dshr-flow-transition')?.getAnimations({ subtree: true }) || []) effect.cancel();
   await settled(beforeCancel + 1);
@@ -275,7 +276,7 @@ try {
   focusAnnotation = undefined;
   // A new chapter must reset once, and old animation promises cannot move it.
   book.chapters.push({ ...book.chapters[0], id: 'chapter-regression-2', title: 'Second chapter' });
-  next().click();
+  next();
   await sleep(5);
   chapterIndex = 1;
   chapterEntry = { edge: 'start' };
@@ -317,7 +318,7 @@ try {
     await until(() => document.querySelector('.dshr-book'), 'EPUB library did not load');
     document.querySelector('.dshr-book').click();
   };
-  const prev = () => document.querySelector('.dshr-paged-prev');
+  const prev = () => clickPageGutter(scroll(), -1);
   const key = value => scroll().dispatchEvent(new KeyboardEvent('keydown', { key: value, bubbles: true, cancelable: true }));
   const wheel = deltaY => scroll().dispatchEvent(new WheelEvent('wheel', { deltaY, bubbles: true, cancelable: true }));
   const jump = ratio => scroll().dispatchEvent(new CustomEvent('dshr-flow-navigate', { cancelable: true, detail: { ratio } }));
@@ -331,12 +332,12 @@ try {
     select.value = mode;
     select.dispatchEvent(new Event('change', { bubbles: true }));
     await sleep(25);
-    next().click();
+    next();
     await until(() => currentChapter() === 2 && document.querySelector(`.dshr-flow-transition.is-${mode}`), `cross-chapter ${mode} did not start`);
     const transition = document.querySelector('.dshr-flow-transition');
     assert(transition.querySelector('[data-turn-page="old"]').textContent.includes('End of chapter one.'), 'outgoing page did not come from the old chapter');
     assert(transition.querySelector('[data-turn-page="new"]').textContent.includes('Chapter 2'), 'incoming page did not start the new chapter');
-    next().click();
+    next();
     await at(2, 'start');
     assert(pages() > 1 && scroll().scrollTop === 0, 'double input skipped the next chapter first page');
     key('PageUp');
@@ -357,18 +358,20 @@ try {
   // A burst queued before the seam may reach the seam once. Its remainder
   // must not continue through the destination chapter after the handoff.
   jump(1);
-  prev().click(); await settled(originalEnd - 1);
-  for (let i = 0; i < 8; i += 1) next().click();
+  prev(); await settled(originalEnd - 1);
+  for (let i = 0; i < 8; i += 1) next();
   await at(2, 'start');
   jump(1); await settled(pages());
   key('PageDown'); await at(3, 'start');
   assert(pages() === 1, 'short EPUB chapter was not a single page');
   await sleep(230);
-  next().click(); await at(4, 'start');
-  assert(next().disabled === false, 'a long final chapter disabled navigation at its first page');
-  prev().click(); await at(3, 'end');
+  next(); await at(4, 'start');
   await sleep(230);
-  prev().click(); await at(2, 'end');
+  next(); await settled(2);
+  prev(); await settled(1);
+  prev(); await at(3, 'end');
+  await sleep(230);
+  prev(); await at(2, 'end');
   const oldCount = pages();
   const lastBlock = [...stage().querySelectorAll('[data-anno-block]')].at(-1);
   const lateImage = new Image();
@@ -388,9 +391,9 @@ try {
   // Directory jumps still open at the chapter start. Reopen immediately after
   // a cross-chapter turn to verify that its progress was committed even at top 0.
   document.querySelectorAll('.dshr-toc__item')[0].click(); await at(1, 'start');
-  assert(prev().disabled, 'previous is enabled at the start of the book');
+  prev(); await at(1, 'start');
   jump(1); await settled(originalEnd);
-  next().click(); await until(() => currentChapter() === 2 && page() === 1, 'first page was not committed');
+  next(); await until(() => currentChapter() === 2 && page() === 1, 'first page was not committed');
   document.querySelector('button[aria-label="返回书架"]').click();
   await until(async () => {
     const progress = (await getBook(savedBook.id))?.progress;
@@ -399,20 +402,20 @@ try {
   await open(); await at(2, 'start');
   document.querySelectorAll('.dshr-toc__item')[3].click(); await at(4, 'start');
   jump(1); await settled(pages());
-  assert(next().disabled, 'next is enabled at the end of the book');
+  next(); await at(4, 'end');
   results.push({ check: 'directory-book-ends-and-persisted-cross-chapter-progress' });
 
   const originalMatchMedia = window.matchMedia;
   window.matchMedia = query => query.includes('prefers-reduced-motion') ? { matches: true } : originalMatchMedia.call(window, query);
   document.querySelectorAll('.dshr-toc__item')[0].click(); await at(1, 'start');
   jump(1); await settled(originalEnd);
-  next().dispatchEvent(new MouseEvent('click', { bubbles: true, detail: 1 }));
+  next(1);
   await at(2, 'start');
   await sleep(250);
-  next().dispatchEvent(new MouseEvent('click', { bubbles: true, detail: 2 }));
+  next(2);
   await at(2, 'start');
   assert(!document.querySelector('.dshr-flow-transition'), 'reduced motion still ran a seam animation');
-  next().dispatchEvent(new MouseEvent('click', { bubbles: true, detail: 1 }));
+  next(1);
   await settled(2);
   window.matchMedia = originalMatchMedia;
   document.querySelector('button[title="连续滚动阅读"]').click();

@@ -1234,31 +1234,18 @@ export function PdfViewer({
     scheduleMeasure();
   }
 
-  function goToPreviousPage() {
-    jumpToPage(Math.max(1, lastPageRef.current - 1), "smooth");
-  }
-
-  // Book-mode page turn fallback owned by the PDF viewer itself. PagedReader
-  // normally scrolls to the measured page row; if a PDF remeasure clamps that
-  // target, this event guarantees the page still changes.
+  // PagedReader supplies the input; the PDF viewer owns the physical page.
   useEffect(() => {
     const element = scrollRef.current;
     if (!element || status !== "ready") return undefined;
     const onPagedTurn = (event) => {
-      const direction = Number(event.detail) || 1;
-      if (direction > 0) goToNextPage();
-      else goToPreviousPage();
+      const direction = event.detail < 0 ? -1 : 1;
+      const target = clamp(lastPageRef.current + direction, 1, pageCountRef.current);
+      if (target !== lastPageRef.current) jumpToPage(target);
     };
     element.addEventListener("dshr-pdf-page-turn", onPagedTurn);
     return () => element.removeEventListener("dshr-pdf-page-turn", onPagedTurn);
   }, [status, pageCount, currentPage]);
-
-  function goToNextPage() {
-    jumpToPage(
-      Math.min(pageCountRef.current || 1, lastPageRef.current + 1),
-      "smooth"
-    );
-  }
 
   /* --------------------------------------------------------------- selection */
 
@@ -1720,7 +1707,7 @@ export function PdfViewer({
       viewportHeightRef.current = scrollElement.clientHeight;
       setViewportHeight(scrollElement.clientHeight);
     }
-  }, [status, pageCount]);
+  }, [status, pageCount, paged]);
 
   useEffect(() => {
     if (paged) setFitPage(true);
@@ -1757,7 +1744,7 @@ export function PdfViewer({
   }, [paged, status, currentPage, pageCount, fitPage, mode, scale, viewportWidth, viewportHeight]);
 
   // Book mode keeps its page in PdfViewer state instead of DOM scroll offsets.
-  // Let PagedReader mirror this state so its counter and buttons stay in sync.
+  // Let PagedReader mirror this state so its counter stays in sync.
   useEffect(() => {
     if (!paged || status !== "ready") return;
     const element = scrollRef.current;
@@ -2111,18 +2098,6 @@ export function PdfViewer({
       {integratedToolbar || fitPage ? "整页" : "适宽"}
     </button>
   );
-  const previousPage = (
-    <button
-      type="button"
-      className={toolButtonClass}
-      title="上一页（PageUp）"
-      aria-label="上一页"
-      disabled={currentPage <= 1}
-      onClick={goToPreviousPage}
-    >
-      ‹
-    </button>
-  );
   const pageInputControl = (
     <div className="dshr-pdf-pager">
       <input
@@ -2138,18 +2113,6 @@ export function PdfViewer({
       <span aria-hidden="true">/ {pageCount}</span>
     </div>
   );
-  const nextPage = (
-    <button
-      type="button"
-      className={toolButtonClass}
-      title="下一页（PageDown）"
-      aria-label="下一页"
-      disabled={currentPage >= pageCount}
-      onClick={goToNextPage}
-    >
-      ›
-    </button>
-  );
   const pdfTools = status === "ready" ? (
     <>
       <div className="dshr-pdf-tool-group" role="group" aria-label="PDF 缩放">
@@ -2159,27 +2122,17 @@ export function PdfViewer({
         {fitButton}
       </div>
       {renderImmersiveToolbar ? null : <span className="dshr-pdf-toolbar-sep" aria-hidden="true" />}
-      <div className="dshr-pdf-tool-group" role="group" aria-label="PDF 翻页">
-        {previousPage}
-        {pageInputControl}
-        {nextPage}
-      </div>
+      {pageInputControl}
     </>
   ) : null;
 
   const standardTools = renderTopbar && status === "ready" ? {
     iconTools: (
-      <>
-        <div className="dshr-pdf-tool-group" role="group" aria-label="PDF 翻页">
-          {previousPage}
-          {nextPage}
-        </div>
-        <div className="dshr-pdf-tool-group" role="group" aria-label="PDF 缩放">
-          {zoomOut}
-          {zoomDisplay}
-          {zoomIn}
-        </div>
-      </>
+      <div className="dshr-pdf-tool-group" role="group" aria-label="PDF 缩放">
+        {zoomOut}
+        {zoomDisplay}
+        {zoomIn}
+      </div>
     ),
     textTools: (
       <div className="dshr-pdf-tool-group" role="group" aria-label="PDF 页码与视图">

@@ -314,18 +314,15 @@ export const styles = String.raw`
 }
 .dshr-book-mask--top { top: var(--dshr-book-frame-top, 52px); height: var(--dshr-book-top-cover, 48px); }
 .dshr-book-mask--bottom { bottom: 0; height: var(--dshr-book-bottom-cover, 56px); }
-.dshr-root[data-reading-mode="book"] .dshr-content__inner { padding-top: 48px; padding-bottom: 240px; }
-.dshr-paged-btn {
-  position: absolute; top: var(--dshr-paged-top, 50%); transform: translateY(-50%); pointer-events: auto; z-index: 2;
-  display: grid; place-items: center; width: 36px; height: 62px;
-  border: 1px solid var(--dshr-border); border-radius: 10px;
-  background: color-mix(in srgb, var(--dshr-bg) 78%, transparent); color: var(--dshr-fg-3);
-  opacity: .38; backdrop-filter: blur(8px); transition: opacity .18s ease, color .18s ease, border-color .18s ease;
+.dshr-root[data-reading-mode="book"] .dshr-content__inner {
+  width: min(var(--dshr-reader-width, 760px), calc(100% - 2 * clamp(24px, 6%, 64px)));
+  padding-top: 48px; padding-bottom: 240px;
 }
-.dshr-paged-btn:hover:not(:disabled), .dshr-paged-controls:hover .dshr-paged-btn:not(:disabled) { opacity: 1; color: var(--dshr-brand); border-color: var(--dshr-brand); }
-.dshr-paged-btn:disabled { opacity: .12; cursor: default; }
-.dshr-paged-prev { left: var(--dshr-paged-left, 12px); }
-.dshr-paged-next { right: var(--dshr-paged-right, 12px); }
+.dshr-page-gutter-hint {
+  position: absolute; z-index: 2; pointer-events: none;
+  border-radius: 8px; background: color-mix(in srgb, var(--dshr-reader-ink, var(--dshr-fg)) 5%, transparent);
+}
+.dshr-paged-scroll[data-page-gutter-hover] { cursor: pointer; }
 .dshr-paged-status {
   position: absolute; bottom: var(--dshr-paged-bottom, 14px); left: var(--dshr-paged-center, 50%); transform: translateX(-50%); pointer-events: auto; z-index: 2;
   display: inline-flex; align-items: baseline; gap: 3px; padding: 4px 10px;

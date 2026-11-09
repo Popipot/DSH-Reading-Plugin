@@ -1,3 +1,4 @@
+import { clickPageGutter } from '../scripts/page-gutter-input.mjs';
 import { test, after } from 'node:test';
 import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
@@ -35,6 +36,7 @@ Object.defineProperties(HTMLElement.prototype, {
   scrollHeight: { get() { return 5000 + (this.querySelector('.dshr-page-tail')?.offsetHeight || 0); } },
 });
 HTMLElement.prototype.getBoundingClientRect = function () {
+  if (this.classList.contains('dshr-content__inner')) return new DOMRect(48, 0, 704, 600);
   if (this.classList.contains('paragraph')) return new DOMRect(0, -(this.closest('.dshr-content')?.scrollTop || 0), 800, 4500);
   return new DOMRect(0, 0, 800, 600);
 };
@@ -69,7 +71,7 @@ async function mount(count = 1) {
   const containers = [...document.querySelectorAll('.dshr-reader')];
   const scroll = (index = 0) => containers[index].querySelector('.dshr-content');
   const page = (index = 0) => Number(scroll(index).dataset.readerPage);
-  const next = (index = 0) => containers[index].querySelector('.dshr-paged-next');
+  const next = (index = 0) => clickPageGutter(scroll(index), 1);
   return { page, scroll, next,
     async animation(value) { animation = value; await render(); await pause(); },
     async close() { await act(() => root.unmount()); await pause(30); },
@@ -80,7 +82,7 @@ test('repeated turns, scroll events and resize notifications cannot roll back an
   const view = await mount();
   try {
     for (let i = 0; i < 6; i += 1) {
-      await act(() => view.next().click());
+      await act(() => view.next());
       await pause();
       assert.equal(view.page(), i + 2);
       const target = view.scroll().scrollTop;
@@ -101,13 +103,13 @@ test('repeated turns, scroll events and resize notifications cannot roll back an
 test('rapid clicks queue turns and cancelled animations release navigation', async () => {
   const view = await mount();
   try {
-    await act(() => { for (let i = 0; i < 5; i += 1) view.next().click(); });
+    await act(() => { for (let i = 0; i < 5; i += 1) view.next(); });
     await pause(260);
     assert.equal(view.page(), 6);
-    await act(() => { view.next().click(); for (const effect of effects) effect.cancel(); });
+    await act(() => { view.next(); for (const effect of effects) effect.cancel(); });
     await pause();
     assert.equal(view.page(), 7);
-    await act(() => view.next().click());
+    await act(() => view.next());
     await pause();
     assert.equal(view.page(), 8);
   } finally { await view.close(); }
@@ -117,7 +119,7 @@ test('accepted navigation advances the live document underneath an isolated opaq
   const view = await mount();
   try {
     hangNextAnimation = true;
-    await act(() => view.next().click());
+    await act(() => view.next());
     const overlay = document.querySelector('.dshr-flow-transition');
     assert.ok(overlay, 'must exercise a real transition rather than the instant fallback');
     assert.equal(overlay.querySelectorAll('.dshr-turn-page').length, 2);
@@ -133,25 +135,25 @@ test('accepted navigation advances the live document underneath an isolated opaq
   } finally { await view.close(); }
 });
 
-test('simultaneous reader instances receive only their own button navigation', async () => {
+test('simultaneous reader instances receive only their own gutter navigation', async () => {
   const view = await mount(2);
   try {
-    await act(() => view.next(1).click());
+    await act(() => view.next(1));
     await pause();
     assert.equal(view.page(0), 1);
     assert.equal(view.page(1), 2);
   } finally { await view.close(); }
 });
 
-test('a host animation that never finishes cannot keep the next-page button locked', async () => {
+test('a host animation that never finishes cannot keep the next-page gutter locked', async () => {
   const view = await mount();
   try {
     hangNextAnimation = true;
-    await act(() => view.next().click());
+    await act(() => view.next());
     await pause(620);
     assert.equal(view.page(), 2);
     assert.equal(view.scroll().scrollTop, Number(view.scroll().dataset.readerTarget));
-    await act(() => view.next().click());
+    await act(() => view.next());
     await pause();
     assert.equal(view.page(), 3);
   } finally { await view.close(); }
@@ -161,15 +163,15 @@ test('an explicit restore/jump supersedes queued animation work', async () => {
   const view = await mount();
   try {
     await act(() => {
-      view.next().click();
-      view.next().click();
+      view.next();
+      view.next();
       view.scroll().dispatchEvent(new CustomEvent('dshr-flow-navigate', { cancelable: true, detail: { top: 2000 } }));
     });
     const page = view.page();
     await pause(150);
     assert.equal(view.page(), page);
     assert.ok(page > 3);
-    await act(() => view.next().click());
+    await act(() => view.next());
     await pause();
     assert.equal(view.page(), page + 1);
   } finally { await view.close(); }

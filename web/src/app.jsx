@@ -1297,10 +1297,8 @@ export function ReaderPage() {
               animation={settings.bookAnimation}
               bookMode
               bookFrame={current.kind === 'flow'}
-              pdfMode={current.kind === 'pdf'}
               frameTop={immersive ? IMMERSIVE_BAR_HEIGHT : 52}
               frameLeft={current.kind === 'flow' && tocOpen ? settings.tocWidth : 0}
-              leftOffset={current.kind === 'flow' && tocOpen ? settings.tocWidth + 12 : 12}
               readerKey={`${current.record.id}:${current.kind}:${chapterIndex}`}
               canPrevChapter={current.kind === 'flow' && chapterIndex > 0}
               canNextChapter={current.kind === 'flow' && chapterIndex < (current.book?.chapters?.length || 1) - 1}

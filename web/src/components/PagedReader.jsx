@@ -1,6 +1,6 @@
 import React from 'react';
 import { captureDepartingPage, createFlowTransition, indexFlowSnapshots } from './flow-transition.js';
-import { IconChevronLeft, IconChevronRight } from './icons.jsx';
+import { bindPageGutters, hasReadingSelection } from './page-gutters.js';
 import {
   BOOK_PADDING_TOP, BOOK_PADDING_BOTTOM, buildFlowPageStarts, createPageCursor,
   collectFlowLines, captureFlowAnchor, resolveFlowAnchor, flowScrollRatio,
@@ -14,15 +14,15 @@ const TURN_BURST_MS = 220;
 let activeReader = null;
 
 export function PagedReader({
-  enabled, animation, bookMode = false, bookFrame = false, pdfMode = false,
-  frameTop = 52, frameLeft = 0, leftOffset, readerKey,
+  enabled, animation, bookMode = false, bookFrame = false,
+  frameTop = 52, frameLeft = 0, readerKey,
   canPrevChapter, canNextChapter, chapterEntry, onChapterTurn, onChapterEntered,
 }) {
   const [pageState, setPageState] = React.useState({ page: 1, pages: 1 });
   const [frameCovers, setFrameCovers] = React.useState({ top: BOOK_PADDING_TOP, bottom: BOOK_PADDING_BOTTOM });
   const [controlBounds, setControlBounds] = React.useState(null);
   const controlsRef = React.useRef(null);
-  const turnRef = React.useRef(null);
+  const gutterHintRef = React.useRef(null);
   const departureRef = React.useRef(null);
   const navigationId = React.useRef(0);
   const lastWheelAt = React.useRef(-Infinity);
@@ -224,7 +224,17 @@ export function PagedReader({
       publish();
       void animateTurn(from, direction);
     };
-    turnRef.current = turn;
+    const gutters = bindPageGutters({
+      scroll, reader, stage, hint: gutterHintRef.current, turn,
+      canTurn: direction => {
+        if (isPdf) {
+          const page = Number(scroll.dataset.pdfPage);
+          return direction < 0 ? page > 1 : page > 0 && page < Number(scroll.dataset.pdfPages);
+        }
+        return direction < 0 ? cursor.page > 1 || callbacks.current.canPrevChapter
+          : cursor.page < cursor.pages || callbacks.current.canNextChapter;
+      },
+    });
     const onScroll = () => {
       if (isPdf || busy || chapterPending || dirty || scrollFrame) return;
       scrollFrame = requestAnimationFrame(() => {
@@ -267,8 +277,7 @@ export function PagedReader({
       if (targetRoot && !targetRoot.contains(reader)) return;
       if (!targetRoot && (activeReader?.isConnected ? activeReader !== reader
         : [...document.querySelectorAll('.dshr-reader')].find(element => element.getBoundingClientRect().height > 0) !== reader)) return;
-      const selection = window.getSelection?.();
-      if (selection && !selection.isCollapsed) return;
+      if (hasReadingSelection(scroll)) return;
       const forward = ['ArrowDown', 'ArrowRight', 'PageDown', ' '].includes(event.key);
       const backward = ['ArrowUp', 'ArrowLeft', 'PageUp'].includes(event.key);
       if (!forward && !backward) return;
@@ -276,6 +285,7 @@ export function PagedReader({
       void turn(forward ? 1 : -1);
     };
     const onPdfState = event => {
+      gutters.hide();
       const { page, pages } = event.detail || {};
       if (Number.isFinite(page) && page >= 1 && Number.isFinite(pages) && pages >= 1) setPageState({ page, pages });
     };
@@ -293,10 +303,10 @@ export function PagedReader({
     let boundsObserver;
     const measureBounds = () => {
       if (disposed) return;
+      gutters.hide();
       const rect = scroll.getBoundingClientRect();
       const parent = reader.getBoundingClientRect();
-      const next = { right: Math.max(0, parent.right - rect.right), center: rect.left - parent.left + rect.width / 2,
-        top: rect.top - parent.top + rect.height / 2, bottom: Math.max(0, parent.bottom - rect.bottom) };
+      const next = { center: rect.left - parent.left + rect.width / 2, bottom: Math.max(0, parent.bottom - rect.bottom) };
       setControlBounds(previous => previous && Object.keys(next).every(key => Math.abs(previous[key] - next[key]) < 0.5) ? previous : next);
     };
     measureBounds();
@@ -346,26 +356,19 @@ export function PagedReader({
       Object.assign(scroll.style, originalStyle);
       for (const name of ['readerPage', 'readerPages', 'readerTarget', 'readerNavigation', 'readerTurning']) delete scroll.dataset[name];
       tail?.remove();
-      turnRef.current = null;
+      gutters.dispose();
     };
   }, [enabled, bookMode, readerKey]);
 
   if (!enabled) return null;
   const { page, pages } = pageState;
-  const atStart = page <= 1 && !canPrevChapter;
-  // When a PDF viewer is still delivering its page rows, keep the arrow usable
-  // so the first click can rebuild the real page list instead of being stuck.
-  const atEnd = page >= pages && !canNextChapter && !(pdfMode && pages <= 1);
   return (
     <div
       ref={controlsRef}
       className={`dshr-paged-controls${bookMode ? ' is-book' : ''}${bookFrame ? ' has-book-frame' : ''}`}
       style={{
-        '--dshr-paged-left': `${Math.max(10, Number(leftOffset) || 10)}px`,
         ...(controlBounds ? {
-          '--dshr-paged-right': `${controlBounds.right + 12}px`,
           '--dshr-paged-center': `${controlBounds.center}px`,
-          '--dshr-paged-top': `${controlBounds.top}px`,
           '--dshr-paged-bottom': `${controlBounds.bottom + 14}px`,
         } : {}),
         '--dshr-book-frame-top': `${Math.max(0, Number(frameTop) || 0)}px`,
@@ -381,27 +384,8 @@ export function PagedReader({
           <div className="dshr-book-mask dshr-book-mask--bottom" aria-hidden="true" />
         </>
       ) : null}
-      <button
-        type="button"
-        className="dshr-paged-btn dshr-paged-prev"
-        onClick={event => { if (!atStart) turnRef.current?.(-1, event.detail > 1); }}
-        disabled={atStart}
-        title="上一页（← / ↑ / PageUp）"
-        aria-label="上一页"
-      >
-        <IconChevronLeft size={20} />
-      </button>
-      <button
-        type="button"
-        className="dshr-paged-btn dshr-paged-next"
-        onClick={event => { if (!atEnd) turnRef.current?.(1, event.detail > 1); }}
-        disabled={atEnd}
-        title="下一页（→ / ↓ / PageDown / 空格）"
-        aria-label="下一页"
-      >
-        <IconChevronRight size={20} />
-      </button>
-      <div className="dshr-paged-status" title="翻页进度">
+      <div ref={gutterHintRef} className="dshr-page-gutter-hint" hidden aria-hidden="true" />
+      <div className="dshr-paged-status" title="点击左右留白或按方向键翻页">
         <b>{page}</b><span>/</span><em>{pages}</em>
       </div>
     </div>

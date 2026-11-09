@@ -250,7 +250,17 @@ export function FlowReader({
   }
 
   return (
-    <div className="dshr-content" ref={contentRef} onScroll={handleScroll} onMouseUp={handleTextSelection} onKeyUp={handleTextSelection} onClick={handleClick}>
+    <div
+      className="dshr-content"
+      ref={contentRef}
+      role="region"
+      aria-label="正文阅读区"
+      tabIndex={settings.readingMode === 'book' ? 0 : undefined}
+      onScroll={handleScroll}
+      onMouseUp={handleTextSelection}
+      onKeyUp={handleTextSelection}
+      onClick={handleClick}
+    >
       <div className="dshr-content__inner">
         <article className="dshr-chapter">
           <div className="dshr-chapter__kicker">

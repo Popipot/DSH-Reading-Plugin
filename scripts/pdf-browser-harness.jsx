@@ -1,3 +1,4 @@
+import { clickPageGutter } from './page-gutter-input.mjs';
 import React from 'react';
 import { createRoot } from 'react-dom/client';
 import PdfViewer, { pdfStyles } from '../web/src/pdf/PdfViewer.jsx';
@@ -24,7 +25,7 @@ function render(patch = {}) {
     <style>{styles + pdfStyles}</style>
     <div className="dshr-reader"><div className="dshr-body">
       <PdfViewer {...options} />
-    </div><PagedReader enabled={options.paged} bookMode pdfMode readerKey="browser-regression" /></div>
+    </div><PagedReader enabled={options.paged} bookMode readerKey="browser-regression" /></div>
   </div>);
 }
 const input = () => document.querySelector('.dshr-pdf-page-input');
@@ -67,8 +68,7 @@ try {
   for (let i = 0; i < 12; i += 1) {
     const target = page() + 1;
     const start = performance.now();
-    const selector = i % 2 ? '.dshr-paged-next' : '.dshr-pdf-toolbar button[aria-label="下一页"]';
-    document.querySelector(selector).click();
+    clickPageGutter(scroller(), 1);
     await until(() => page() === target && ready(), `turn to ${target}`);
     timings.push(Math.round(performance.now() - start));
     // Browser-generated layout and delayed scroll events must not roll it back.
@@ -79,7 +79,7 @@ try {
   }
   await sleep(400);
   assert(page() === 512, 'page rolled back after render settled');
-  results.push({ check: 'toolbar-and-side-turns', page: page(), timings });
+  results.push({ check: 'page-gutter-turns', page: page(), timings });
   document.querySelector('.dshr-pdf-root').focus();
   document.activeElement.dispatchEvent(new KeyboardEvent('keydown', { key: 'PageDown', bubbles: true }));
   await until(() => page() === 513 && ready(), 'keyboard PageDown');
@@ -101,7 +101,7 @@ try {
       await sleep(230);
       scroller().dispatchEvent(new WheelEvent('wheel', { deltaY: direction * 60, bubbles: true, cancelable: true }));
     } else {
-      document.querySelector(direction > 0 ? '.dshr-paged-next' : '.dshr-paged-prev').click();
+      clickPageGutter(scroller(), direction);
     }
     await until(() => page() === target && ready(), `mixed PDF turn to ${target}`);
     scroller().dispatchEvent(new Event('scroll'));

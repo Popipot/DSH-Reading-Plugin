@@ -1,3 +1,4 @@
+import { clickPageGutter } from './page-gutter-input.mjs';
 import React from 'react';
 import { createRoot } from 'react-dom/client';
 import { zipSync, strToU8 } from 'fflate';
@@ -66,7 +67,7 @@ function startFrameInspection(mode, direction) {
   const watchdog = turnDurations[mode] + 300;
   window.setTimeout = (callback, delay, ...args) => schedule.call(window, callback, delay === watchdog ? 6000 : delay, ...args);
   try {
-    document.querySelector(direction > 0 ? '.dshr-paged-next' : '.dshr-paged-prev').click();
+    clickPageGutter(scroll(), direction);
   } finally {
     window.setTimeout = schedule;
   }
@@ -255,7 +256,7 @@ try {
   results.push({ check: 'dark-paper-brightness-image-translation-highlight-and-offset-viewport' });
   // A mode change unmounts an active fold and must release its finite clock.
   animation = 'flip'; render(); await sleep(25);
-  document.querySelector('.dshr-paged-next').click();
+  clickPageGutter(scroll(), 1);
   assert(document.querySelector('.dshr-flow-transition'), 'fold did not start');
   enabled = false; render(); await sleep(35);
   assert(!document.querySelector('.dshr-flow-transition') && !scroll().dataset.readerTurning, 'mode change leaked active fold');
@@ -268,7 +269,7 @@ try {
     for (let index = 0; index < 10; index++) {
       const page = Number(scroll().dataset.readerPage);
       const direction = index % 2 === 0 ? 1 : -1;
-      document.querySelector(direction === 1 ? '.dshr-paged-next' : '.dshr-paged-prev').click();
+      clickPageGutter(scroll(), direction);
       assert(!document.querySelector('.dshr-flow-transition'), 'reduced motion started a transition');
       await settled();
       assert(!document.querySelector('.dshr-flow-transition') && Number(scroll().dataset.readerPage) === page + direction, 'reduced motion blocked navigation');
@@ -278,13 +279,13 @@ try {
   results.push({ check: 'active-fold-mode-cleanup-and-reduced-motion-all-styles', turnsPerStyle: 10, decorativeAnimations: 0 });
   // Resize while a soft page is active: its old viewport cannot cover the new
   // surface, so it must finish promptly and retain the accepted text position.
-  document.querySelector('.dshr-paged-next').click();
+  clickPageGutter(scroll(), 1);
   const accepted = scroll().dataset.readerNavigation;
   document.getElementById('app').style.width = '900px';
   await sleep(120); await settled();
   assert(!document.querySelector('.dshr-flow-transition') && scroll().dataset.readerNavigation === accepted, 'resize replayed/corrupted the accepted turn');
   results.push({ check: 'active-fold-resize-commits-without-replaying-navigation' });
-  document.querySelector('.dshr-paged-next').click();
+  clickPageGutter(scroll(), 1);
   const frozen = document.querySelector('.dshr-flow-transition');
   const originalSize = getComputedStyle(frozen).getPropertyValue('--dshr-font-size');
   const navigation = scroll().dataset.readerNavigation;
@@ -303,7 +304,7 @@ try {
   scroll().dispatchEvent(new CustomEvent('dshr-flow-navigate', { cancelable: true, detail: { top: 0 } }));
   await settled();
   const from = Number(scroll().dataset.readerPage);
-  document.querySelector('.dshr-paged-next').click(); await settled();
+  clickPageGutter(scroll(), 1); await settled();
   assert(Number(scroll().dataset.readerPage) === from + 1 && !document.querySelector('.dshr-flow-transition'), 'large-block fallback stalled navigation');
   results.push({ check: 'bounded-large-block-fallback-and-live-node-preservation' });
   assert(!errors.length, errors.join('; '));
