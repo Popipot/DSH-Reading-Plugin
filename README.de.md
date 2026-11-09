@@ -18,6 +18,8 @@ Ein Plugin für **DeepSeek Harness** zum Lesen von Fachliteratur und Büchern. O
 
 **9. November 2026 · B1 freigegeben · Alle 40 Prüfungen bestanden.** Im immersiven Modus bleiben beschriftete Schaltflächen für Darstellung, Vollbild und Beenden sichtbar. Bei E-Books lässt sich auch das Inhaltsverzeichnis ein- und ausblenden. Leiste und Einstellungsfenster übernehmen das Lesefarbschema. Die Einstellungen bleiben beim Neustart erhalten.
 
+**B1-Update für die PDF-Werkzeugleiste.** Dokumenttitel, Zoom, Ganzseitenansicht und Seitennavigation sind jetzt in die farblich abgestimmte Leiste des immersiven Modus integriert. Bei 540 CSS-Pixeln bleiben die Bedienelemente in einer Zeile. In schmaleren Fenstern werden sie gruppenweise umgebrochen. Build `fed3d4f` hat die gezielten Prüfungen für PDF-Navigation, Darstellung und Tastaturbedienung nach der B1-Baseline bestanden.
+
 Im früheren B1-Leistungstest mit 80 kalten Dokumentöffnungen in DSH Desktop lag der höchste P95 je Testgruppe bei **1.375 ms** für den Referenzartikel und **2.426 ms** für das Lehrbuch mit 1.029 Seiten. Bei 480 Seitenwechseln in DSH Web lag der höchste P95 bei **44 ms** mit und **259 ms** ohne Vorladen. Der finale Build bestand die Desktop-Prüfung der Darstellung und sechs Browser-Regressionsreihen.
 
 ## Funktionen

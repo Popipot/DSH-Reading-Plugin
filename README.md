@@ -18,6 +18,8 @@ A **DeepSeek Harness** plugin for reading papers and books. Organize your local 
 
 **November 9, 2026 · B1 released · 40 of 40 checks passed.** Immersive reading now has an always-visible row of labeled controls for appearance, fullscreen, and exit. Ebooks also have a contents toggle. The toolbar and appearance panel follow the reading theme, and settings persist across restarts.
 
+**B1 PDF toolbar update.** PDF titles, zoom, whole-page view, and page navigation now share the themed immersive toolbar. Controls fit on one row at 540 CSS px and wrap into visible groups in smaller windows. Build `fed3d4f` passed the targeted PDF navigation, appearance, and keyboard checks against the B1 baseline.
+
 In B1's earlier performance run, 80 cold opens on DSH Desktop had a highest group P95 of **1,375 ms** for the reference paper and **2,426 ms** for the 1,029-page textbook. For 480 adjacent-page turns on DSH Web, the highest group P95 was **44 ms** with preloading and **259 ms** without it. The final build passed the desktop appearance check and six browser regression suites.
 
 ## Features
