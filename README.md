@@ -20,6 +20,8 @@ A **DeepSeek Harness** plugin for reading papers and books. Organize your local 
 
 **B1 PDF toolbar update.** PDF titles, zoom, whole-page view, and page navigation now share the themed immersive toolbar. Controls fit on one row at 540 CSS px and wrap into visible groups in smaller windows. Build `fed3d4f` passed the targeted PDF navigation, appearance, and keyboard checks against the B1 baseline.
 
+**Standard PDF reading.** A single header shows the document title on the left, icon actions in the center, and labeled controls and page entry on the right. Narrow windows wrap the groups. Build `09fb67e` passed the targeted B1 checks for PDF navigation, appearance, and keyboard access.
+
 In B1's earlier performance run, 80 cold opens on DSH Desktop had a highest group P95 of **1,375 ms** for the reference paper and **2,426 ms** for the 1,029-page textbook. For 480 adjacent-page turns on DSH Web, the highest group P95 was **44 ms** with preloading and **259 ms** without it. The final build passed the desktop appearance check and six browser regression suites.
 
 ## Features
