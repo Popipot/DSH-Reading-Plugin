@@ -374,6 +374,7 @@ export function PdfViewer({
     onSelection,
     onRetryTranslation,
     onOpenAnnotation,
+    focusEvidence,
   };
 
   const rootRef = useRef(null);
@@ -1948,7 +1949,10 @@ export function PdfViewer({
         return;
       }
       measureLayout();
-      jumpToPage(target, "auto");
+      // A verified evidence jump may have arrived while the PDF was opening.
+      const evidencePage = propsRef.current.focusEvidence?.anchor?.page;
+      const validEvidencePage = Number.isInteger(evidencePage) && evidencePage >= 1 && evidencePage <= pageCount;
+      jumpToPage(validEvidencePage ? evidencePage : target);
     }, 0);
     return () => clearTimeout(timer);
     // eslint-disable-next-line react-hooks/exhaustive-deps
