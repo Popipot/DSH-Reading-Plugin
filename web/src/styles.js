@@ -369,10 +369,27 @@ export const styles = String.raw`
   border-bottom: 1px solid var(--dshr-border); background: color-mix(in srgb, var(--dshr-bg) 88%, transparent);
   backdrop-filter: blur(12px); flex: 0 0 auto; min-height: 52px;
 }
+.dshr-topbar__identity { display: flex; align-items: center; gap: 10px; flex: 1; min-width: 0; }
+.dshr-topbar__identity > button { flex: none; }
 .dshr-topbar__title { min-width: 0; flex: 1; display: flex; flex-direction: column; gap: 2px; }
 .dshr-topbar__title strong { font-size: 13.5px; font-weight: 650; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .dshr-topbar__title span { color: var(--dshr-fg-3); font-size: 11px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .dshr-topbar__tools { display: flex; align-items: center; gap: 4px; }
+.dshr-topbar--pdf {
+  display: grid; grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+  column-gap: 12px; padding-inline: 12px; font-family: var(--dshr-sans);
+}
+.dshr-topbar__icons { justify-content: center; }
+.dshr-topbar__labels { justify-content: flex-end; }
+.dshr-topbar__icons, .dshr-topbar__labels { min-width: 0; flex-wrap: wrap; }
+.dshr-topbar__icons > *, .dshr-topbar__labels > * { flex: none; }
+@container (max-width: 1360px) {
+  .dshr-topbar--pdf { row-gap: 4px; }
+  .dshr-topbar__labels { grid-column: 1 / -1; }
+}
+@container (max-width: 430px) {
+  .dshr-topbar--pdf { grid-template-columns: minmax(0, 1fr); }
+}
 .dshr-topbar__mode {
   display: flex; align-items: center; gap: 2px; padding: 2px;
   border: 1px solid var(--dshr-border); border-radius: 8px; background: var(--dshr-layer-2);
@@ -680,7 +697,7 @@ export const styles = String.raw`
   .dshr-content__inner { width: calc(100% - 48px); }
   .dshr-library__bar { flex-wrap: wrap; gap: 9px; }
   .dshr-library__search { order: 3; flex-basis: 100%; max-width: none; margin-left: 0; }
-  .dshr-topbar .dshr-switch > span:last-child { display: none; }
+  .dshr-topbar:not(.dshr-topbar--pdf) .dshr-switch > span:last-child { display: none; }
   .dshr-topbar__tools { gap: 2px; }
 }
 @container (max-width: 600px) {

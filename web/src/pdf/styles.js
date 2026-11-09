@@ -231,6 +231,18 @@ html[data-ds-dark-theme] .dshr-pdf-root {
   background: var(--dshr-pdf-border);
 }
 
+.dshr-topbar--pdf {
+  --dshr-pdf-fg: var(--dshr-fg);
+  --dshr-pdf-fg-secondary: var(--dshr-fg-2);
+  --dshr-pdf-fg-tertiary: var(--dshr-fg-2);
+  --dshr-pdf-border: var(--dshr-border);
+  --dshr-pdf-hover: var(--dshr-hover);
+  --dshr-pdf-accent: var(--dshr-brand);
+}
+.dshr-topbar--pdf .dshr-pdf-page-input { width: 50px; background: var(--dshr-layer-2); }
+.dshr-topbar__icons .dshr-pdf-tbtn { width: 30px; height: 32px; font-size: 16px; }
+.dshr-topbar__icons .dshr-pdf-tool-group { gap: 0; }
+
 .dshr-immersive-controls--pdf .dshr-pdf-tool-group { gap: 3px; }
 .dshr-immersive-controls--pdf .dshr-immersive-btn { min-width: 30px; }
 .dshr-immersive-controls--pdf .dshr-pdf-zoom-percent,
@@ -758,7 +770,9 @@ export default pdfStyles;
 
 
 export const translationPanelStyles = String.raw`
-.dshr-pdf-root { container-type: inline-size; container-name: pdf-reader; }
+.dshr-pdf-root { container-type: inline-size; }
+.dshr-pdf-body { display: flex; flex: 1 1 auto; min-height: 0; position: relative; overflow: hidden; }
+.dshr-pdf-area { display: flex; flex: 1 1 0; min-width: 0; container: pdf-reader / inline-size; }
 .dshr-pdf-workspace { display: flex; flex: 1 1 auto; min-height: 0; min-width: 0; overflow: hidden; }
 .dshr-pdf-workspace > .dshr-pdf-scroll { flex: 1 1 0; }
 .dshr-pdf-translation-panel { flex: 0 0 clamp(300px, 32%, 440px); width: 32%; min-width: 260px; min-height: 0; display: flex; flex-direction: column; background: var(--dshr-pdf-panel); border-left: 1px solid var(--dshr-pdf-border); overflow: hidden; color: var(--dshr-pdf-fg); }

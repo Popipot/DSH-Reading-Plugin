@@ -303,7 +303,7 @@ export function ReaderPage() {
     const onKey = (event) => {
       if (event.defaultPrevented || event.repeat || event.ctrlKey || event.metaKey || event.altKey) return;
       if (!['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown'].includes(event.key)) return;
-      if (event.target instanceof Element && event.target.closest('input, textarea, select, [contenteditable="true"], .dshr-immersive-controls, .dshr-modal-mask, .dshr-appearance-panel, .dshr-anno-panel, .dshr-ai, .dshr-selection, .dshr-anno-composer, .dshr-pdf-translation-panel')) return;
+      if (event.target instanceof Element && event.target.closest('input, textarea, select, [contenteditable="true"], .dshr-topbar--pdf, .dshr-immersive-controls, .dshr-modal-mask, .dshr-appearance-panel, .dshr-anno-panel, .dshr-ai, .dshr-selection, .dshr-anno-composer, .dshr-pdf-translation-panel')) return;
       const selection = window.getSelection?.();
       if (selection && !selection.isCollapsed) return;
       const scrollElement = document.querySelector('.dshr-root .dshr-content')
@@ -934,16 +934,167 @@ export function ReaderPage() {
 
   const currentBookTitle = current?.book?.title || current?.record?.title || current?.record?.blob?.name || current?.record?.blobName || '';
   const currentAuthor = current?.book?.author || current?.record?.author || '';
-  const progressLabel = current
-    ? (current.kind === 'pdf'
-      ? (progress.pages ? `第 ${progress.page || 1} / ${progress.pages} 页` : 'PDF 文档')
-      : `第 ${(chapterIndex || 0) + 1} / ${current.book.chapters.length} 章`)
+  const progressLabel = current?.kind === 'flow'
+    ? `第 ${(chapterIndex || 0) + 1} / ${current.book.chapters.length} 章`
     : '';
   const progressPercent = current
     ? (current.kind === 'pdf'
       ? (progress.pages > 0 ? ((progress.page || 1) / progress.pages) * 100 : 0)
       : (((chapterIndex + 1) / Math.max(1, current.book.chapters.length)) * 100))
     : 0;
+
+  function renderTopbar({ iconTools, textTools } = {}) {
+    const isPdf = current.kind === 'pdf';
+    const readingMode = (
+      <div className="dshr-topbar__mode" role="group" aria-label="翻书方式">
+        <button
+          type="button"
+          className={`dshr-topbar__mode-btn${settings.readingMode !== 'book' ? ' is-active' : ''}`}
+          onClick={() => setSettings((value) => ({ ...value, readingMode: 'scroll' }))}
+          aria-pressed={settings.readingMode !== 'book'}
+          title="连续滚动阅读"
+        >
+          <span>滚动</span>
+        </button>
+        <button
+          type="button"
+          className={`dshr-topbar__mode-btn${settings.readingMode === 'book' ? ' is-active' : ''}`}
+          onClick={() => setSettings((value) => ({ ...value, readingMode: 'book' }))}
+          aria-pressed={settings.readingMode === 'book'}
+          title="横版纸质书翻页"
+        >
+          <span>横版</span>
+        </button>
+        {settings.readingMode === 'book' ? (
+          <select
+            className="dshr-topbar__animation"
+            aria-label="翻页动画"
+            value={settings.bookAnimation || 'slide'}
+            onChange={(event) => setSettings((value) => ({ ...value, bookAnimation: event.target.value }))}
+          >
+            {BOOK_ANIMATIONS.map((animation) => (
+              <option key={animation.id} value={animation.id}>{animation.label}</option>
+            ))}
+          </select>
+        ) : null}
+      </div>
+    );
+    const immersiveButton = (
+      <button
+        type="button"
+        className="dshr-btn dshr-btn--icon"
+        onClick={() => void toggleImmersive()}
+        title="切换到沉浸阅读"
+        aria-label="进入沉浸模式"
+      >
+        <IconMaximize size={16} />
+      </button>
+    );
+    const translationSwitch = (
+      <button
+        type="button"
+        className="dshr-switch"
+        role="switch"
+        aria-checked={settings.autoTranslate}
+        onClick={() => setSettings((value) => ({ ...value, autoTranslate: !value.autoTranslate,
+          ...(current.kind === 'pdf' && !value.autoTranslate ? { hideTranslations: false } : {}) }))}
+        title="实时对照翻译"
+        aria-label="实时翻译"
+      >
+        <span className="dshr-switch__track" />
+        <span style={{ whiteSpace: 'nowrap' }}>实时翻译</span>
+      </button>
+    );
+    const iconActions = (
+      <>
+        <button
+          type="button"
+          className={`dshr-btn dshr-btn--icon ${settings.hideTranslations ? 'dshr-btn--outline' : ''}`}
+          onClick={() => setSettings((value) => ({ ...value, hideTranslations: !value.hideTranslations }))}
+          title={settings.hideTranslations ? '显示中文译文' : '只看原文（隐藏已翻译内容）'}
+          aria-label={settings.hideTranslations ? '显示中文译文' : '只看原文，隐藏译文'}
+          aria-pressed={settings.hideTranslations}
+        >
+          {settings.hideTranslations ? <IconEyeOff size={16} /> : <IconEye size={16} />}
+        </button>
+        <button
+          type="button"
+          className="dshr-btn dshr-btn--icon"
+          onClick={() => { setAppearanceOpen(true); setSelection(null); }}
+          title="字体、背景与留白"
+          aria-label="阅读外观"
+        >
+          <IconPalette size={16} />
+        </button>
+        <button
+          type="button"
+          className={`dshr-btn dshr-btn--icon ${annotationsOpen ? 'dshr-btn--outline' : ''}`}
+          onClick={() => {
+            setAnnotationsOpen((value) => !value);
+            setAiOpen(false);
+            setSelection(null);
+          }}
+          title="批注与便签"
+          aria-label={`批注与便签，共 ${annotations.length} 条`}
+        >
+          <IconHighlighter size={16} />
+          {annotations.length > 0 ? <span className="dshr-count-badge">{annotations.length > 99 ? '99+' : annotations.length}</span> : null}
+        </button>
+      </>
+    );
+    const aiButton = (
+      <button type="button" className="dshr-btn dshr-btn--primary dshr-btn--sm" onClick={() => openAi('', '')} title="打开 AI 阅读助手">
+        <IconSparkles size={14} /> AI
+      </button>
+    );
+    const settingsButton = (
+      <button type="button" className="dshr-btn dshr-btn--icon dshr-btn--ghost" onClick={() => setSettingsOpen(true)} title="阅读设置" aria-label="阅读设置">
+        <IconSettings size={16} />
+      </button>
+    );
+    return (
+      <div className={`dshr-topbar${isPdf ? ' dshr-topbar--pdf' : ''}`} style={{ position: 'relative' }}>
+        <div className="dshr-progress" aria-hidden="true"><i style={{ '--p': `${Math.min(100, progressPercent)}%` }} /></div>
+        <div className="dshr-topbar__identity">
+          <button type="button" className="dshr-btn dshr-btn--icon dshr-btn--ghost" onClick={closeBook} title="返回书架" aria-label="返回书架">
+            <IconArrowLeft size={17} />
+          </button>
+          <div className="dshr-topbar__title">
+            <strong title={currentBookTitle}>{currentBookTitle}</strong>
+            <span>{[currentAuthor, formatLabel(current.record?.format), progressLabel].filter(Boolean).join(' · ')}</span>
+          </div>
+        </div>
+        {isPdf ? (
+          <>
+            <div className="dshr-topbar__tools dshr-topbar__icons" role="group" aria-label="阅读快捷操作">
+              {iconTools}
+              {immersiveButton}
+              {iconActions}
+              {settingsButton}
+            </div>
+            <div className="dshr-topbar__tools dshr-topbar__labels">
+              {textTools}
+              {readingMode}
+              {translationSwitch}
+              {aiButton}
+            </div>
+          </>
+        ) : (
+          <div className="dshr-topbar__tools">
+            <button type="button" className={`dshr-btn dshr-btn--icon ${tocOpen ? 'dshr-btn--outline' : ''}`} onClick={() => setTocOpen((value) => !value)} title="目录" aria-label="目录" aria-pressed={tocOpen}>
+              <IconList size={16} />
+            </button>
+            {readingMode}
+            {immersiveButton}
+            {translationSwitch}
+            {iconActions}
+            {aiButton}
+            {settingsButton}
+          </div>
+        )}
+      </div>
+    );
+  }
 
   function renderImmersiveToolbar(pdfTools) {
     const isPdf = current.kind === 'pdf';
@@ -999,6 +1150,31 @@ export function ReaderPage() {
     );
   }
 
+  const sidePanels = current ? (
+    <>
+      {aiOpen ? (
+        <AiPanel
+          open={aiOpen}
+          onClose={() => setAiOpen(false)}
+          seed={aiSeed}
+          onGoogle={handleGoogle}
+          onToast={showToast}
+        />
+      ) : null}
+      {annotationsOpen ? (
+        <AnnotationsPanel
+          open={annotationsOpen}
+          annotations={annotations}
+          book={current.book || current.record}
+          onClose={() => setAnnotationsOpen(false)}
+          onOpenAnnotation={openAnnotationById}
+          onJump={handleJumpAnnotation}
+          onDelete={(annotation) => void handleDeleteAnnotation(annotation)}
+        />
+      ) : null}
+    </>
+  ) : null;
+
   return (
     <ReaderErrorBoundary onReset={closeBook}>
       <div
@@ -1029,115 +1205,7 @@ export function ReaderPage() {
         />
         {current ? (
           <div className="dshr-reader">
-            <div className="dshr-topbar" style={{ position: 'relative' }}>
-              <div className="dshr-progress" aria-hidden="true"><i style={{ '--p': `${Math.min(100, progressPercent)}%` }} /></div>
-              <button type="button" className="dshr-btn dshr-btn--icon dshr-btn--ghost" onClick={closeBook} title="返回书架" aria-label="返回书架">
-                <IconArrowLeft size={17} />
-              </button>
-              <div className="dshr-topbar__title">
-                <strong title={currentBookTitle}>{currentBookTitle}</strong>
-                <span>{[currentAuthor, formatLabel(current.record?.format), progressLabel].filter(Boolean).join(' · ')}</span>
-              </div>
-              <div className="dshr-topbar__tools">
-                {current.kind === 'flow' ? (
-                  <button type="button" className={`dshr-btn dshr-btn--icon ${tocOpen ? 'dshr-btn--outline' : ''}`} onClick={() => setTocOpen((value) => !value)} title="目录" aria-label="目录" aria-pressed={tocOpen}>
-                    <IconList size={16} />
-                  </button>
-                ) : null}
-                <div className="dshr-topbar__mode" role="group" aria-label="翻书方式">
-                  <button
-                    type="button"
-                    className={`dshr-topbar__mode-btn${settings.readingMode !== 'book' ? ' is-active' : ''}`}
-                    onClick={() => setSettings((value) => ({ ...value, readingMode: 'scroll' }))}
-                    aria-pressed={settings.readingMode !== 'book'}
-                    title="连续滚动阅读"
-                  >
-                    <span>滚动</span>
-                  </button>
-                  <button
-                    type="button"
-                    className={`dshr-topbar__mode-btn${settings.readingMode === 'book' ? ' is-active' : ''}`}
-                    onClick={() => setSettings((value) => ({ ...value, readingMode: 'book' }))}
-                    aria-pressed={settings.readingMode === 'book'}
-                    title="横版纸质书翻页"
-                  >
-                    <span>横版</span>
-                  </button>
-                  {settings.readingMode === 'book' ? (
-                    <select
-                      className="dshr-topbar__animation"
-                      aria-label="翻页动画"
-                      value={settings.bookAnimation || 'slide'}
-                      onChange={(event) => setSettings((value) => ({ ...value, bookAnimation: event.target.value }))}
-                    >
-                      {BOOK_ANIMATIONS.map((animation) => (
-                        <option key={animation.id} value={animation.id}>{animation.label}</option>
-                      ))}
-                    </select>
-                  ) : null}
-                </div>
-                <button
-                  type="button"
-                  className="dshr-btn dshr-btn--icon"
-                  onClick={() => void toggleImmersive()}
-                  title="沉浸模式（隐藏工具栏与侧边目录）"
-                  aria-label="进入沉浸模式"
-                >
-                  <IconMaximize size={16} />
-                </button>
-                <button
-                  type="button"
-                  className="dshr-switch"
-                  role="switch"
-                  aria-checked={settings.autoTranslate}
-                  onClick={() => setSettings((value) => ({ ...value, autoTranslate: !value.autoTranslate,
-                    ...(current.kind === 'pdf' && !value.autoTranslate ? { hideTranslations: false } : {}) }))}
-                  title="实时对照翻译"
-                >
-                  <span className="dshr-switch__track" />
-                  <span style={{ whiteSpace: 'nowrap' }}>实时翻译</span>
-                </button>
-                <button
-                  type="button"
-                  className={`dshr-btn dshr-btn--icon ${settings.hideTranslations ? 'dshr-btn--outline' : ''}`}
-                  onClick={() => setSettings((value) => ({ ...value, hideTranslations: !value.hideTranslations }))}
-                  title={settings.hideTranslations ? '显示中文译文' : '只看原文（隐藏已翻译内容）'}
-                  aria-label={settings.hideTranslations ? '显示中文译文' : '只看原文，隐藏译文'}
-                  aria-pressed={settings.hideTranslations}
-                >
-                  {settings.hideTranslations ? <IconEyeOff size={16} /> : <IconEye size={16} />}
-                </button>
-                <button
-                  type="button"
-                  className="dshr-btn dshr-btn--icon"
-                  onClick={() => { setAppearanceOpen(true); setSelection(null); }}
-                  title="字体、背景与留白"
-                  aria-label="阅读外观"
-                >
-                  <IconPalette size={16} />
-                </button>
-                <button
-                  type="button"
-                  className={`dshr-btn dshr-btn--icon ${annotationsOpen ? 'dshr-btn--outline' : ''}`}
-                  onClick={() => {
-                    setAnnotationsOpen((value) => !value);
-                    setAiOpen(false);
-                    setSelection(null);
-                  }}
-                  title="批注与便签"
-                  aria-label={`批注与便签，共 ${annotations.length} 条`}
-                >
-                  <IconHighlighter size={16} />
-                  {annotations.length > 0 ? <span className="dshr-count-badge">{annotations.length > 99 ? '99+' : annotations.length}</span> : null}
-                </button>
-                <button type="button" className="dshr-btn dshr-btn--primary dshr-btn--sm" onClick={() => openAi('', '')} title="打开 AI 阅读助手">
-                  <IconSparkles size={14} /> AI
-                </button>
-                <button type="button" className="dshr-btn dshr-btn--icon dshr-btn--ghost" onClick={() => setSettingsOpen(true)} title="阅读设置" aria-label="阅读设置">
-                  <IconSettings size={16} />
-                </button>
-              </div>
-            </div>
+            {!immersive && current.kind === 'flow' ? renderTopbar() : null}
             {immersive && current.kind === 'flow' ? renderImmersiveToolbar() : null}
             <div className="dshr-body">
               {current.kind === 'flow' ? (
@@ -1177,7 +1245,9 @@ export function ReaderPage() {
                   data={current.data}
                   documentId={current.record.id}
                   fileName={currentBookTitle}
-                  renderToolbar={immersive ? renderImmersiveToolbar : undefined}
+                  renderImmersiveToolbar={immersive ? renderImmersiveToolbar : undefined}
+                  renderTopbar={immersive ? undefined : renderTopbar}
+                  sidePanels={sidePanels}
                   initialPage={current.record.progress?.page || 1}
                   autoTranslate={settings.autoTranslate}
                   hideTranslations={settings.hideTranslations}
@@ -1220,26 +1290,7 @@ export function ReaderPage() {
                 />
               )}
 
-              {aiOpen ? (
-                <AiPanel
-                  open={aiOpen}
-                  onClose={() => setAiOpen(false)}
-                  seed={aiSeed}
-                  onGoogle={handleGoogle}
-                  onToast={showToast}
-                />
-              ) : null}
-              {annotationsOpen ? (
-                <AnnotationsPanel
-                  open={annotationsOpen}
-                  annotations={annotations}
-                  book={current.book || current.record}
-                  onClose={() => setAnnotationsOpen(false)}
-                  onOpenAnnotation={openAnnotationById}
-                  onJump={handleJumpAnnotation}
-                  onDelete={(annotation) => void handleDeleteAnnotation(annotation)}
-                />
-              ) : null}
+              {current.kind === 'flow' ? sidePanels : null}
             </div>
             <PagedReader
               enabled={settings.readingMode === 'book'}

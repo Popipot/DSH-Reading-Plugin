@@ -336,7 +336,9 @@ export function PdfViewer({
   data,
   documentId = "",
   fileName = "",
-  renderToolbar,
+  renderImmersiveToolbar,
+  renderTopbar,
+  sidePanels,
   initialPage = 1,
   autoTranslate = false,
   pageTranslations,
@@ -1417,7 +1419,7 @@ export function PdfViewer({
       return;
     }
     const target = event.target;
-    if (target?.closest?.('.dshr-pdf-translation-panel, .dshr-immersive-controls')) return;
+    if (target?.closest?.('.dshr-pdf-translation-panel, .dshr-topbar--pdf, .dshr-immersive-controls, .dshr-ai, .dshr-anno-panel')) return;
     const tagName = target && target.tagName ? target.tagName.toLowerCase() : "";
     if (
       tagName === "input" ||
@@ -2061,88 +2063,131 @@ export function PdfViewer({
   }
 
   const pageInputValue = pageInputFocused ? pageInput : String(currentPage);
-  const toolButtonClass = renderToolbar ? "dshr-immersive-btn" : "dshr-pdf-tbtn";
-  const zoomPercent = `${Math.round((renderToolbar ? effectiveScaleFor(currentPage) : scale) * 100)}%`;
+  const toolButtonClass = renderImmersiveToolbar ? "dshr-immersive-btn" : "dshr-pdf-tbtn";
+  const integratedToolbar = renderImmersiveToolbar || renderTopbar;
+  const zoomPercent = `${Math.round((integratedToolbar ? effectiveScaleFor(currentPage) : scale) * 100)}%`;
+  const zoomOut = (
+    <button
+      type="button"
+      className={toolButtonClass}
+      title="缩小"
+      aria-label="缩小"
+      disabled={!canZoomOut}
+      onClick={() => zoomBy(1 / ZOOM_FACTOR)}
+    >
+      −
+    </button>
+  );
+  const zoomDisplay = (
+    <span
+      className="dshr-pdf-zoom-percent"
+      data-scale={fitPage ? "page" : mode === "fit" ? "fit" : scale}
+      title={fitPage ? "当前为整页显示" : mode === "fit" ? "当前为适合宽度" : "当前缩放比例"}
+    >
+      {integratedToolbar ? zoomPercent : fitPage ? "整页" : mode === "fit" ? "适宽" : zoomPercent}
+    </span>
+  );
+  const zoomIn = (
+    <button
+      type="button"
+      className={toolButtonClass}
+      title="放大"
+      aria-label="放大"
+      disabled={!canZoomIn}
+      onClick={() => zoomBy(ZOOM_FACTOR)}
+    >
+      ＋
+    </button>
+  );
+  const fitButton = (
+    <button
+      type="button"
+      className={`${toolButtonClass} dshr-pdf-tbtn-wide`}
+      data-active={fitPage ? "true" : "false"}
+      aria-pressed={fitPage}
+      title={fitPage ? "当前整页显示；点击回到适合宽度" : "点击切换为整页显示；再次点击回到适合宽度"}
+      onClick={toggleWholePage}
+    >
+      {integratedToolbar || fitPage ? "整页" : "适宽"}
+    </button>
+  );
+  const previousPage = (
+    <button
+      type="button"
+      className={toolButtonClass}
+      title="上一页（PageUp）"
+      aria-label="上一页"
+      disabled={currentPage <= 1}
+      onClick={goToPreviousPage}
+    >
+      ‹
+    </button>
+  );
+  const pageInputControl = (
+    <div className="dshr-pdf-pager">
+      <input
+        className="dshr-pdf-page-input"
+        inputMode="numeric"
+        aria-label="页码"
+        value={pageInputValue}
+        onChange={handlePageInputChange}
+        onFocus={handlePageInputFocus}
+        onBlur={handlePageInputBlur}
+        onKeyDown={handlePageInputKeyDown}
+      />
+      <span aria-hidden="true">/ {pageCount}</span>
+    </div>
+  );
+  const nextPage = (
+    <button
+      type="button"
+      className={toolButtonClass}
+      title="下一页（PageDown）"
+      aria-label="下一页"
+      disabled={currentPage >= pageCount}
+      onClick={goToNextPage}
+    >
+      ›
+    </button>
+  );
   const pdfTools = status === "ready" ? (
     <>
       <div className="dshr-pdf-tool-group" role="group" aria-label="PDF 缩放">
-        <button
-          type="button"
-          className={toolButtonClass}
-          title="缩小"
-          aria-label="缩小"
-          disabled={!canZoomOut}
-          onClick={() => zoomBy(1 / ZOOM_FACTOR)}
-        >
-          −
-        </button>
-        <span
-          className="dshr-pdf-zoom-percent"
-          data-scale={fitPage ? "page" : mode === "fit" ? "fit" : scale}
-          title={fitPage ? "当前为整页显示" : mode === "fit" ? "当前为适合宽度" : "当前缩放比例"}
-        >
-          {renderToolbar ? zoomPercent : fitPage ? "整页" : mode === "fit" ? "适宽" : zoomPercent}
-        </span>
-        <button
-          type="button"
-          className={toolButtonClass}
-          title="放大"
-          aria-label="放大"
-          disabled={!canZoomIn}
-          onClick={() => zoomBy(ZOOM_FACTOR)}
-        >
-          ＋
-        </button>
-        <button
-          type="button"
-          className={`${toolButtonClass} dshr-pdf-tbtn-wide`}
-          data-active={fitPage ? "true" : "false"}
-          aria-pressed={fitPage}
-          title={fitPage ? "当前整页显示；点击回到适合宽度" : "点击切换为整页显示；再次点击回到适合宽度"}
-          onClick={toggleWholePage}
-        >
-          {renderToolbar || fitPage ? "整页" : "适宽"}
-        </button>
+        {zoomOut}
+        {zoomDisplay}
+        {zoomIn}
+        {fitButton}
       </div>
-
-      {renderToolbar ? null : <span className="dshr-pdf-toolbar-sep" aria-hidden="true" />}
+      {renderImmersiveToolbar ? null : <span className="dshr-pdf-toolbar-sep" aria-hidden="true" />}
       <div className="dshr-pdf-tool-group" role="group" aria-label="PDF 翻页">
-        <button
-          type="button"
-          className={toolButtonClass}
-          title="上一页（PageUp）"
-          aria-label="上一页"
-          disabled={currentPage <= 1}
-          onClick={goToPreviousPage}
-        >
-          ‹
-        </button>
-        <div className="dshr-pdf-pager">
-          <input
-            className="dshr-pdf-page-input"
-            inputMode="numeric"
-            aria-label="页码"
-            value={pageInputValue}
-            onChange={handlePageInputChange}
-            onFocus={handlePageInputFocus}
-            onBlur={handlePageInputBlur}
-            onKeyDown={handlePageInputKeyDown}
-          />
-          <span aria-hidden="true">/ {pageCount}</span>
-        </div>
-        <button
-          type="button"
-          className={toolButtonClass}
-          title="下一页（PageDown）"
-          aria-label="下一页"
-          disabled={currentPage >= pageCount}
-          onClick={goToNextPage}
-        >
-          ›
-        </button>
+        {previousPage}
+        {pageInputControl}
+        {nextPage}
       </div>
     </>
   ) : null;
+
+  const standardTools = renderTopbar && status === "ready" ? {
+    iconTools: (
+      <>
+        <div className="dshr-pdf-tool-group" role="group" aria-label="PDF 翻页">
+          {previousPage}
+          {nextPage}
+        </div>
+        <div className="dshr-pdf-tool-group" role="group" aria-label="PDF 缩放">
+          {zoomOut}
+          {zoomIn}
+        </div>
+      </>
+    ),
+    textTools: (
+      <div className="dshr-pdf-tool-group" role="group" aria-label="PDF 页码与视图">
+        {pageInputControl}
+        {zoomDisplay}
+        {fitButton}
+      </div>
+    ),
+  } : undefined;
 
   return (
     <div
@@ -2154,7 +2199,7 @@ export function PdfViewer({
       aria-label={fileName ? `PDF 阅读器：${fileName}` : "PDF 阅读器"}
       onKeyDown={handleKeyDown}
     >
-      {renderToolbar ? renderToolbar(pdfTools) : pdfTools && (
+      {renderTopbar ? renderTopbar(standardTools) : renderImmersiveToolbar ? renderImmersiveToolbar(pdfTools) : pdfTools && (
         <div className="dshr-pdf-toolbar" role="toolbar" aria-label="PDF 阅读工具栏">
           <span className="dshr-pdf-title" title={fileName || undefined}>{fileName}</span>
           <span className="dshr-pdf-toolbar-spacer" />
@@ -2162,6 +2207,8 @@ export function PdfViewer({
         </div>
       )}
 
+      <div className="dshr-pdf-body">
+      <div className="dshr-pdf-area">
       <div className="dshr-pdf-workspace">
       <div
         className="dshr-pdf-scroll"
@@ -2245,6 +2292,9 @@ export function PdfViewer({
         onActivate={(id, options) => activateParagraph(id, options, currentPage)}
         onClose={() => { setPanelDismissed(true); onHideTranslations?.(); }}
       /> : null}
+      </div>
+      </div>
+      {sidePanels}
       </div>
     </div>
   );

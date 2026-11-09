@@ -260,7 +260,7 @@ export function PagedReader({
     };
     const onKey = event => {
       if (event.defaultPrevented || event.repeat || event.ctrlKey || event.metaKey || event.altKey || !scroll.isConnected) return;
-      if (event.target instanceof Element && event.target.closest(FORM_SELECTOR + ',' + PANEL_SELECTOR + ',.dshr-immersive-controls')) return;
+      if (event.target instanceof Element && event.target.closest(FORM_SELECTOR + ',' + PANEL_SELECTOR + ',.dshr-topbar--pdf,.dshr-immersive-controls')) return;
       const targetRoot = event.target instanceof Element && event.target.closest('.dshr-root');
       const targetReader = event.target instanceof Element && event.target.closest('.dshr-reader');
       if (targetReader && targetReader !== reader) return;
