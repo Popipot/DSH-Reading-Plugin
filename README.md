@@ -24,6 +24,8 @@ A **DeepSeek Harness** plugin for reading papers and books. Organize your local 
 
 **PDF zoom display.** The zoom percentage now sits between the minus and plus controls in standard reading. Build `a4ad96f` passed the targeted desktop and PDF browser checks.
 
+**Page turns from the margins.** In paged mode, click the left or right blank margin to turn a page. The clickable strip adapts to the reading pane and stays outside the document. Ebooks keep side margins in narrow windows, and PDF keeps its page field and keyboard controls. Build `ed9970d` passed targeted desktop checks and the six-format page-turn regression.
+
 In B1's earlier performance run, 80 cold opens on DSH Desktop had a highest group P95 of **1,375 ms** for the reference paper and **2,426 ms** for the 1,029-page textbook. For 480 adjacent-page turns on DSH Web, the highest group P95 was **44 ms** with preloading and **259 ms** without it. The final build passed the desktop appearance check and six browser regression suites.
 
 ## Features

@@ -24,6 +24,8 @@ Ein Plugin für **DeepSeek Harness** zum Lesen von Fachliteratur und Büchern. O
 
 **PDF-Zoomanzeige.** In der regulären PDF-Ansicht steht der Zoomwert jetzt zwischen Minus und Plus. Build `a4ad96f` hat die gezielten Desktop- und PDF-Browserprüfungen bestanden.
 
+**Umblättern am Seitenrand.** Im Seitenmodus blättert ein Klick auf den freien linken oder rechten Rand zurück oder vor. Der Klickbereich passt sich der Lesefläche an und liegt außerhalb des Inhalts. E-Books behalten in schmalen Fenstern seitliche Ränder. Bei PDFs stehen Seitenfeld und Tastatur weiterhin zur Verfügung. Build `ed9970d` hat die gezielten Desktop-Prüfungen und den Umblättertest für sechs Formate bestanden.
+
 Im früheren B1-Leistungstest mit 80 kalten Dokumentöffnungen in DSH Desktop lag der höchste P95 je Testgruppe bei **1.375 ms** für den Referenzartikel und **2.426 ms** für das Lehrbuch mit 1.029 Seiten. Bei 480 Seitenwechseln in DSH Web lag der höchste P95 bei **44 ms** mit und **259 ms** ohne Vorladen. Der finale Build bestand die Desktop-Prüfung der Darstellung und sechs Browser-Regressionsreihen.
 
 ## Funktionen
