@@ -2176,6 +2176,7 @@ export function PdfViewer({
         </div>
         <div className="dshr-pdf-tool-group" role="group" aria-label="PDF 缩放">
           {zoomOut}
+          {zoomDisplay}
           {zoomIn}
         </div>
       </>
@@ -2183,7 +2184,6 @@ export function PdfViewer({
     textTools: (
       <div className="dshr-pdf-tool-group" role="group" aria-label="PDF 页码与视图">
         {pageInputControl}
-        {zoomDisplay}
         {fitButton}
       </div>
     ),
