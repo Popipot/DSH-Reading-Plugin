@@ -945,6 +945,60 @@ export function ReaderPage() {
       : (((chapterIndex + 1) / Math.max(1, current.book.chapters.length)) * 100))
     : 0;
 
+  function renderImmersiveToolbar(pdfTools) {
+    const isPdf = current.kind === 'pdf';
+    return (
+      <div
+        className={`dshr-immersive-controls${isPdf ? ' dshr-immersive-controls--pdf' : ''}`}
+        role="group"
+        aria-label="沉浸阅读控件"
+        style={isPdf ? undefined : { height: IMMERSIVE_BAR_HEIGHT }}
+      >
+        {isPdf ? <span className="dshr-immersive-title" title={currentBookTitle}>{currentBookTitle}</span> : null}
+        {pdfTools}
+        <div className="dshr-immersive-actions">
+          {!isPdf ? (
+            <button
+              type="button"
+              className="dshr-immersive-btn"
+              onClick={() => setTocOpen((value) => !value)}
+              title={tocOpen ? '收起目录' : '打开目录'}
+              aria-pressed={tocOpen}
+            >
+              <IconList size={15} /> 目录
+            </button>
+          ) : null}
+          <button
+            type="button"
+            className="dshr-immersive-btn"
+            onClick={() => { setAppearanceOpen(true); setSelection(null); }}
+            title="阅读外观"
+            aria-label="阅读外观"
+            aria-haspopup="dialog"
+            aria-expanded={appearanceOpen}
+            autoFocus
+          >
+            <IconPalette size={15} /> 外观
+          </button>
+          <button
+            type="button"
+            className="dshr-immersive-btn"
+            onClick={() => void toggleFullscreen()}
+            title={fullscreen ? '退出全屏' : '进入全屏'}
+            aria-label={fullscreen ? '退出全屏' : '进入全屏'}
+            aria-pressed={fullscreen}
+          >
+            {fullscreen ? <IconMinimize size={15} /> : <IconMaximize size={15} />}
+            {fullscreen ? '还原' : '全屏'}
+          </button>
+          <button type="button" className="dshr-immersive-btn" onClick={() => void exitImmersive()} title="退出沉浸模式（Esc）">
+            <IconX size={15} /> 退出沉浸
+          </button>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <ReaderErrorBoundary onReset={closeBook}>
       <div
@@ -1084,47 +1138,7 @@ export function ReaderPage() {
                 </button>
               </div>
             </div>
-            {immersive ? (
-              <div className="dshr-immersive-controls" role="group" aria-label="沉浸阅读控件" style={{ height: IMMERSIVE_BAR_HEIGHT }}>
-                {current.kind === 'flow' ? (
-                  <button
-                    type="button"
-                    className="dshr-immersive-btn"
-                    onClick={() => setTocOpen((value) => !value)}
-                    title={tocOpen ? '收起目录' : '打开目录'}
-                    aria-pressed={tocOpen}
-                  >
-                    <IconList size={15} /> 目录
-                  </button>
-                ) : null}
-                <button
-                  type="button"
-                  className="dshr-immersive-btn"
-                  onClick={() => { setAppearanceOpen(true); setSelection(null); }}
-                  title="阅读外观"
-                  aria-label="阅读外观"
-                  aria-haspopup="dialog"
-                  aria-expanded={appearanceOpen}
-                  autoFocus
-                >
-                  <IconPalette size={15} /> 外观
-                </button>
-                <button
-                  type="button"
-                  className="dshr-immersive-btn"
-                  onClick={() => void toggleFullscreen()}
-                  title={fullscreen ? '退出全屏' : '进入全屏'}
-                  aria-label={fullscreen ? '退出全屏' : '进入全屏'}
-                  aria-pressed={fullscreen}
-                >
-                  {fullscreen ? <IconMinimize size={15} /> : <IconMaximize size={15} />}
-                  {fullscreen ? '还原' : '全屏'}
-                </button>
-                <button type="button" className="dshr-immersive-btn" onClick={() => void exitImmersive()} title="退出沉浸模式（Esc）">
-                  <IconX size={15} /> 退出沉浸
-                </button>
-              </div>
-            ) : null}
+            {immersive && current.kind === 'flow' ? renderImmersiveToolbar() : null}
             <div className="dshr-body">
               {current.kind === 'flow' ? (
                 <aside className={`dshr-toc${tocOpen ? '' : ' is-closed'}`} aria-label="目录">
@@ -1163,6 +1177,7 @@ export function ReaderPage() {
                   data={current.data}
                   documentId={current.record.id}
                   fileName={currentBookTitle}
+                  renderToolbar={immersive ? renderImmersiveToolbar : undefined}
                   initialPage={current.record.progress?.page || 1}
                   autoTranslate={settings.autoTranslate}
                   hideTranslations={settings.hideTranslations}

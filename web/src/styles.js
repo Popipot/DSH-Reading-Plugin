@@ -283,17 +283,27 @@ export const styles = String.raw`
   background: var(--dshr-immersive-surface, var(--dshr-layer));
   border-bottom: 1px solid color-mix(in srgb, currentColor 12%, transparent);
 }
+.dshr-immersive-actions { display: flex; align-items: center; gap: 4px; }
+.dshr-immersive-controls--pdf { flex-wrap: wrap; gap: 4px 12px; min-height: 44px; padding-block: 4px; }
+.dshr-immersive-title {
+  flex: 1 1 0; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
 .dshr-immersive-btn {
   display: inline-flex; align-items: center; justify-content: center; gap: 5px;
   min-height: 34px; padding: 0 8px; white-space: nowrap;
   border: 1px solid color-mix(in srgb, currentColor 15%, transparent); border-radius: 7px;
   background: color-mix(in srgb, currentColor 4%, transparent);
 }
-.dshr-immersive-btn:hover, .dshr-immersive-btn[aria-pressed="true"], .dshr-immersive-btn[aria-expanded="true"] {
+.dshr-immersive-btn:hover:not(:disabled), .dshr-immersive-btn[aria-pressed="true"], .dshr-immersive-btn[aria-expanded="true"] {
   background: color-mix(in srgb, currentColor 10%, transparent);
   border-color: color-mix(in srgb, currentColor 27%, transparent);
 }
+.dshr-immersive-btn:disabled { opacity: .4; cursor: default; }
 .dshr-immersive-btn:focus-visible { outline: 2px solid currentColor; outline-offset: 1px; }
+@container (max-width: 640px) {
+  .dshr-immersive-controls--pdf { justify-content: center; column-gap: 8px; }
+  .dshr-immersive-controls--pdf .dshr-immersive-btn svg, .dshr-immersive-title { display: none; }
+}
 @container (max-width: 300px) {
   .dshr-immersive-btn svg { display: none; }
 }

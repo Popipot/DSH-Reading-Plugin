@@ -122,6 +122,9 @@ html[data-ds-dark-theme] .dshr-pdf-root {
   min-width: 0;
 }
 
+.dshr-pdf-tool-group { flex: none; display: flex; align-items: center; gap: 4px; }
+.dshr-pdf-toolbar .dshr-pdf-tool-group { gap: inherit; }
+
 .dshr-pdf-tbtn {
   flex: none;
   display: inline-flex;
@@ -226,6 +229,28 @@ html[data-ds-dark-theme] .dshr-pdf-root {
   height: 16px;
   margin: 0 4px;
   background: var(--dshr-pdf-border);
+}
+
+.dshr-immersive-controls--pdf .dshr-pdf-tool-group { gap: 3px; }
+.dshr-immersive-controls--pdf .dshr-immersive-btn { min-width: 30px; }
+.dshr-immersive-controls--pdf .dshr-pdf-zoom-percent,
+.dshr-immersive-controls--pdf .dshr-pdf-pager { color: inherit; }
+.dshr-immersive-controls--pdf .dshr-pdf-zoom-percent { min-width: 36px; }
+.dshr-immersive-controls--pdf .dshr-pdf-page-input {
+  height: 34px;
+  width: 50px;
+  border: 1px solid color-mix(in srgb, currentColor 15%, transparent);
+  border-radius: 7px;
+  background: color-mix(in srgb, currentColor 4%, transparent);
+  color: inherit;
+  box-shadow: none;
+}
+.dshr-immersive-controls--pdf .dshr-pdf-page-input:hover {
+  border-color: color-mix(in srgb, currentColor 27%, transparent);
+}
+.dshr-immersive-controls--pdf .dshr-pdf-page-input:focus-visible {
+  outline: 2px solid currentColor;
+  outline-offset: 1px;
 }
 
 /* --------------------------------------------------------------- scroll area */
