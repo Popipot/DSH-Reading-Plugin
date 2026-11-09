@@ -22,6 +22,8 @@ Ein Plugin für **DeepSeek Harness** zum Lesen von Fachliteratur und Büchern. O
 
 **Reguläre PDF-Ansicht.** Eine gemeinsame Leiste zeigt links den Dokumenttitel, mittig die Symbolschaltflächen und rechts die beschrifteten Bedienelemente und das Seitenfeld. In schmalen Fenstern werden die Gruppen umgebrochen. Build `09fb67e` hat die gezielten B1-Prüfungen für PDF-Navigation, Darstellung und Tastaturbedienung bestanden.
 
+**PDF-Zoomanzeige.** In der regulären PDF-Ansicht steht der Zoomwert jetzt zwischen Minus und Plus. Build `a4ad96f` hat die gezielten Desktop- und PDF-Browserprüfungen bestanden.
+
 Im früheren B1-Leistungstest mit 80 kalten Dokumentöffnungen in DSH Desktop lag der höchste P95 je Testgruppe bei **1.375 ms** für den Referenzartikel und **2.426 ms** für das Lehrbuch mit 1.029 Seiten. Bei 480 Seitenwechseln in DSH Web lag der höchste P95 bei **44 ms** mit und **259 ms** ohne Vorladen. Der finale Build bestand die Desktop-Prüfung der Darstellung und sechs Browser-Regressionsreihen.
 
 ## Funktionen

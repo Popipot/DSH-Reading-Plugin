@@ -22,6 +22,8 @@ A **DeepSeek Harness** plugin for reading papers and books. Organize your local 
 
 **Standard PDF reading.** A single header shows the document title on the left, icon actions in the center, and labeled controls and page entry on the right. Narrow windows wrap the groups. Build `09fb67e` passed the targeted B1 checks for PDF navigation, appearance, and keyboard access.
 
+**PDF zoom display.** The zoom percentage now sits between the minus and plus controls in standard reading. Build `a4ad96f` passed the targeted desktop and PDF browser checks.
+
 In B1's earlier performance run, 80 cold opens on DSH Desktop had a highest group P95 of **1,375 ms** for the reference paper and **2,426 ms** for the 1,029-page textbook. For 480 adjacent-page turns on DSH Web, the highest group P95 was **44 ms** with preloading and **259 ms** without it. The final build passed the desktop appearance check and six browser regression suites.
 
 ## Features
