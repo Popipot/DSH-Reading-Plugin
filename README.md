@@ -16,9 +16,9 @@ A **DeepSeek Harness** plugin for reading papers and books. Organize your local 
 
 ## Development status
 
-**November 8, 2026 · B1 candidate · 39 of 40 checks passed.** The release gate is on hold. Appearance settings are unavailable from immersive mode, the remaining failed check.
+**November 9, 2026 · B1 released · 40 of 40 checks passed.** Immersive reading now has an always-visible row of labeled controls for appearance, fullscreen, and exit. Ebooks also have a contents toggle. The toolbar and appearance panel follow the reading theme, and settings persist across restarts.
 
-In 80 cold opens on DSH Desktop, the highest group P95 was **1,375 ms** for the reference paper and **2,426 ms** for the 1,029-page textbook. In 480 adjacent-page turns on DSH Web, the highest group P95 was **44 ms** with preloading and **259 ms** without it. These results describe the B1 validation candidate. The installation link above points to the current public build.
+In B1's earlier performance run, 80 cold opens on DSH Desktop had a highest group P95 of **1,375 ms** for the reference paper and **2,426 ms** for the 1,029-page textbook. For 480 adjacent-page turns on DSH Web, the highest group P95 was **44 ms** with preloading and **259 ms** without it. The final build passed the desktop appearance check and six browser regression suites.
 
 ## Features
 
