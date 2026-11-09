@@ -13,6 +13,7 @@ import { appearanceVars, autoInk, BOOK_ANIMATIONS } from './appearance/appearanc
 import { AnnotationsPanel } from './annotations/AnnotationsPanel.jsx';
 import { AnnotationComposer } from './annotations/AnnotationComposer.jsx';
 import { EvidenceComposer, EvidenceLibrary } from './evidence/EvidenceDialogs.jsx';
+import { CitationForm } from './evidence/ResearchDialogs.jsx';
 import { useEvidence } from './evidence/useEvidence.js';
 import {
   IconArrowLeft, IconList, IconSettings, IconSparkles, IconTranslate,
@@ -24,7 +25,7 @@ import {
   loadSettings, saveSettings, extensionOf, formatLabel, looksForeign,
   categoryLabel, setBookCategory, autoOrganizeLibrary, listAnnotations, saveAnnotation,
   updateAnnotation, deleteAnnotation, getReaderBackground, saveReaderBackground, deleteReaderBackground,
-  listEvidence,
+  listEvidence, savePaperCitation, saveTopicResearch,
 } from './storage.js';
 import { translateSegments, isAbortError, fetchRemoteBook } from './ai-client.js';
 import { generateCover } from './cover.js';
@@ -145,6 +146,7 @@ function useToast() {
 export function ReaderPage() {
   const [books, setBooks] = React.useState([]);
   const [collections, setCollections] = React.useState([]);
+  const [citationBook, setCitationBook] = React.useState(null);
   const collectionRevision = React.useRef(0);
   const [loadingBooks, setLoadingBooks] = React.useState(true);
   const [importing, setImporting] = React.useState(false);
@@ -281,10 +283,10 @@ export function ReaderPage() {
           if (controller.signal.aborted) break;
           runner.attempted.add(summary.id);
           if (result.cover || result.title || result.author || result.language) {
-            await updateBook(record.id, result);
-            setBooks((previous) => previous.map((book) => (
-              book.id === record.id ? { ...book, ...result } : book
-            )));
+            const updated = await updateBook(record.id, result, { preserveCitation: true });
+            if (updated) setBooks(previous => previous.map(book => book.id === record.id ? {
+              ...book, title: updated.title, author: updated.author, cover: updated.cover, language: updated.language,
+            } : book));
           }
         } catch (error) {
           if (controller.signal.aborted) break;
@@ -693,6 +695,16 @@ export function ReaderPage() {
     }
   }, [refreshBooks, reloadAnnotations, showToast]);
   const evidence = useEvidence({ currentRef, navigation: openRevision, openBook, refreshBooks, showToast });
+  async function saveCitation(id, fields) {
+    const saved = await savePaperCitation(id, fields);
+    setBooks(previous => previous.map(book => book.id === id ? { ...book, ...saved } : book));
+    showToast('论文出处已保存。');
+  }
+  async function saveResearch(topic, draft) {
+    const saved = await saveTopicResearch(topic, draft);
+    updateCollections(previous => previous.map(collection => collection.id === saved.id ? saved : collection));
+    showToast('专题已保存。');
+  }
 
   React.useEffect(() => {
     if (loadingBooks || current || autoReopenRef.current || booksRef.current.length === 0) return;
@@ -1357,7 +1369,8 @@ export function ReaderPage() {
             onCycleCategory={(book, next) => void handleCycleCategory(book, next)}
             onSettings={() => setSettingsOpen(true)}
             onOnlineImport={() => setOnlineOpen(true)}
-            onEvidence={() => evidence.show()}
+            onEvidence={topicId => evidence.show('', topicId)}
+            onEditCitation={setCitationBook}
           />
         )}
 
@@ -1417,7 +1430,8 @@ export function ReaderPage() {
           <ConfirmDeleteDialog book={deleteTarget} onCancel={() => setDeleteTarget(null)}
             onConfirm={(deleteEvidence) => void handleDelete(deleteEvidence)} />
         ) : null}
-        {evidence.panel ? <EvidenceLibrary evidence={evidence} books={books} collections={collections} /> : null}
+        {citationBook ? <CitationForm key={citationBook.id} book={citationBook} close={() => setCitationBook(null)} save={saveCitation} /> : null}
+        {evidence.panel ? <EvidenceLibrary evidence={evidence} books={books} collections={collections} saveResearch={saveResearch} /> : null}
         {evidence.draft ? <EvidenceComposer key={evidence.draft.id} evidence={evidence} /> : null}
         {annotationComposerOpen && annotationDraft ? (
           <AnnotationComposer

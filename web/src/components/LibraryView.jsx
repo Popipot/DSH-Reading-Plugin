@@ -25,7 +25,7 @@ function progressPercent(book) {
 
 const NEXT_CATEGORY = { book: 'paper', paper: 'document', document: 'book' };
 
-function BookCard({ book, onOpen, onDelete, onCycleCategory, onAdd, onRemove, selection, onToggle }) {
+function BookCard({ book, onOpen, onDelete, onCycleCategory, onAdd, onRemove, onEditCitation, selection, onToggle }) {
   const percent = progressPercent(book);
   const meta = [formatLabel(book.format), book.author || '', formatBytes(book.size)].filter(Boolean).join(' · ');
   return (
@@ -59,6 +59,8 @@ function BookCard({ book, onOpen, onDelete, onCycleCategory, onAdd, onRemove, se
         >
           <IconTag size={11} /> {categoryLabel(book.category)}
         </button>
+        {book.format === 'pdf' && onEditCitation ? <button type="button" className="dshr-btn dshr-btn--sm dshr-btn--ghost"
+          aria-label={`编辑论文出处 ${bookTitle(book)}`} onClick={() => onEditCitation(book)}>出处</button> : null}
         <button type="button" className="dshr-btn dshr-btn--sm dshr-btn--ghost dshr-book__add" aria-label={`将 ${bookTitle(book)} 加入书单`} onClick={() => onAdd([book.id])}>
           <IconPlus size={13} /> 加入书单
         </button>
@@ -79,7 +81,7 @@ function BookCard({ book, onOpen, onDelete, onCycleCategory, onAdd, onRemove, se
 
 export function LibraryView({
   books, collections, onCollectionsChange, loading, resumeBook, onResume, importing, organizing, categoryFilter, onCategoryFilter,
-  onAutoOrganize, onImport, onOpen, onDelete, onCycleCategory, onSettings, onOnlineImport, onEvidence,
+  onAutoOrganize, onImport, onOpen, onDelete, onCycleCategory, onSettings, onOnlineImport, onEvidence, onEditCitation,
 }) {
   const inputRef = React.useRef(null);
   const [over, setOver] = React.useState(false);
@@ -199,7 +201,7 @@ export function LibraryView({
             <button type="button" className="dshr-btn dshr-btn--outline" onClick={onSettings} title="阅读与书架设置">
               <IconSettings size={15} /> 设置
             </button>
-            <button type="button" className="dshr-btn dshr-btn--outline" onClick={onEvidence}>证据库</button>
+            <button type="button" className="dshr-btn dshr-btn--outline" onClick={() => onEvidence()}>证据库</button>
           </div>
         </header>
 
@@ -272,6 +274,7 @@ export function LibraryView({
               <span ref={headingRef} tabIndex={-1} aria-current="page"><IconFolder size={16} /> {active.name}</span>
             </nav>
             {!active.system && <div className="dshr-collection-context__actions">
+              <button type="button" className="dshr-btn dshr-btn--outline" onClick={() => onEvidence(active.id)}>专题与证据</button>
               <button type="button" className="dshr-btn dshr-btn--outline" onClick={() => setAction({ kind: 'edit', collection: active })}>编辑书单</button>
               <button type="button" className="dshr-btn dshr-btn--ghost" onClick={() => setAction({ kind: 'delete', collection: active })}><IconTrash size={15} /> 删除书单</button>
             </div>}
@@ -326,6 +329,7 @@ export function LibraryView({
                 book={book}
                 onOpen={onOpen}
                 onDelete={onDelete}
+                onEditCitation={onEditCitation}
                 onCycleCategory={(item) => onCycleCategory(item, NEXT_CATEGORY[item.category || 'document'])}
                 onAdd={addToFolder}
                 onRemove={active && !active.system ? removeFromFolder : undefined}

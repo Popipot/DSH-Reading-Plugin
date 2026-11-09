@@ -608,7 +608,7 @@ export const styles = String.raw`
 .dshr-modal__actions { display: flex; justify-content: flex-end; gap: 8px; }
 .dshr-evidence-dialog { width: min(680px, 100%); max-height: 88vh; overflow: auto; }
 .dshr-evidence-dialog label { display: grid; gap: 4px; margin-block: 7px; }
-.dshr-evidence-dialog textarea, .dshr-evidence-dialog select {
+.dshr-evidence-dialog textarea, .dshr-evidence-dialog select, .dshr-evidence-dialog input:not([type=checkbox]) {
   padding: 6px 8px; border: 1px solid var(--dshr-border); border-radius: 6px;
   background: var(--dshr-layer-2); color: var(--dshr-fg);
 }
@@ -622,6 +622,9 @@ export const styles = String.raw`
 .dshr-evidence-note { white-space: pre-wrap; overflow-wrap: anywhere; }
 .dshr-evidence-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 4px; }
 .dshr-evidence-dialog .dshr-evidence-checkbox { display: flex; align-items: center; }
+.dshr-topic-summary, .dshr-topic-form fieldset { border: 1px solid var(--dshr-border); border-radius: 8px; padding: 8px; margin-block: 8px; }
+.dshr-topic-summary p { white-space: pre-wrap; overflow-wrap: anywhere; }
+.dshr-topic-form li button { margin-inline-start: 4px; }
 .dshr-collection-dialog { width: min(480px, calc(100% - 24px)); max-height: calc(100dvh - 32px); overflow: auto; color: var(--dshr-fg); }
 .dshr-collection-dialog::backdrop { background: var(--dsw-alias-bg-mask-1, rgba(15, 23, 42, .45)); }
 .dshr-collection-dialog__field { display: grid; gap: 6px; margin: 12px 0; font-size: 13px; }

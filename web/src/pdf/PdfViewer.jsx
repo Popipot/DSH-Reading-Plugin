@@ -394,6 +394,7 @@ export function PdfViewer({
 
   const engineRef = useRef(null);
   const documentRef = useRef(null);
+  const pageLabelsRef = useRef(null);
   const sessionRef = useRef(null);
   const bitmapCacheRef = useRef(new PageBitmapCache());
   const generationRef = useRef(0);
@@ -1351,6 +1352,9 @@ export function PdfViewer({
       const layer = frame.querySelector('.dshr-pdf-text-layer');
       payload.evidenceAnchor = capturePdfAnchor(range, layer, frame, page);
       if (payload.evidenceAnchor) {
+        const pdf = documentRef.current;
+        if (!pageLabelsRef.current && pdf?.getPageLabels) pageLabelsRef.current = pdf.getPageLabels().catch(() => null);
+        payload.printLabelRequest = pageLabelsRef.current?.then(labels => labels?.[page - 1] || '');
         const segmentIds = node => (node.nodeType === 1 ? node : node.parentElement)
           ?.closest('[data-pdf-segments]')?.dataset.pdfSegments.split('|') || [];
         const ends = segmentIds(range.endContainer);
@@ -1531,6 +1535,7 @@ export function PdfViewer({
     geometryAnchorRef.current = null;
     navigationRef.current++;
     initialPageAppliedRef.current = false;
+    pageLabelsRef.current = null;
 
     setStatus("loading");
     setError(null);

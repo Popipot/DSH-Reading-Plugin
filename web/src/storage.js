@@ -1,4 +1,5 @@
 import { validFingerprint } from './evidence/identity.js';
+import { normalizeResearch } from './evidence/research.js';
 
 /*
  * dsh-reader local library.
@@ -204,6 +205,9 @@ export async function listBooks() {
           id: row.id,
           title: row.title,
           author: row.author,
+          year: row.year ?? '',
+          doi: row.doi ?? '',
+          citationConfirmed: Boolean(row.citationConfirmed),
           format: row.format,
           size: row.size,
           addedAt: row.addedAt,
@@ -253,36 +257,40 @@ export async function saveBook(file, { title, author, language, fingerprint } = 
     throw new Error('PDF 文件摘要无效。');
   }
   const identity = fingerprint ? `pdf-sha256-${fingerprint.sha256}-${fingerprint.bytes}` : await fileIdentity(file);
-  const existing = await getBook(identity);
   const now = Date.now();
-  const id = existing?.id ?? identity;
-  const format = extensionOf(file.name) === 'markdown' ? 'md' : extensionOf(file.name);
-  const candidate = {
-    title: String(title ?? existing?.title ?? file.name.replace(/\.[^.]+$/u, '')).trim() || '未命名文档',
-    author: String(author ?? existing?.author ?? '').trim(),
-    language: String(language ?? existing?.language ?? ''),
-    format,
-    size: file.size,
-  };
-  const row = {
-    id,
-    ...candidate,
-    category: existing?.category && CATEGORY_IDS.has(existing.category)
-      ? existing.category
-      : inferCategory(candidate),
-    categoryManual: Boolean(existing?.categoryManual),
-    cover: typeof existing?.cover === 'string' ? existing.cover : '',
-    addedAt: existing?.addedAt ?? now,
-    lastOpenedAt: now,
-    progress: existing?.progress ?? null,
-    fileRevision: newId(),
-    blob: file,
-  };
   const db = await openDatabase();
   try {
     const tx = db.transaction(BOOKS, 'readwrite');
-    tx.objectStore(BOOKS).put(row);
-    await txDone(tx);
+    const done = txDone(tx);
+    void done.catch(() => {});
+    const store = tx.objectStore(BOOKS);
+    const existing = await requestValue(store.get(identity));
+    const id = existing?.id ?? identity;
+    const format = extensionOf(file.name) === 'markdown' ? 'md' : extensionOf(file.name);
+    const candidate = {
+      title: String((existing?.citationConfirmed ? existing.title : title) ?? existing?.title ?? file.name.replace(/\.[^.]+$/u, '')).trim() || '未命名文档',
+      author: String((existing?.citationConfirmed ? existing.author : author) ?? existing?.author ?? '').trim(),
+      language: String(language ?? existing?.language ?? '').trim(),
+      format,
+      size: file.size,
+    };
+    const row = {
+      id,
+      ...candidate,
+      ...(existing?.citationConfirmed ? { citationConfirmed: true, year: existing.year, doi: existing.doi } : {}),
+      category: existing?.category && CATEGORY_IDS.has(existing.category)
+        ? existing.category
+        : inferCategory(candidate),
+      categoryManual: Boolean(existing?.categoryManual),
+      cover: typeof existing?.cover === 'string' ? existing.cover : '',
+      addedAt: existing?.addedAt ?? now,
+      lastOpenedAt: now,
+      progress: existing?.progress ?? null,
+      fileRevision: newId(),
+      blob: file,
+    };
+    store.put(row);
+    await done;
     return row;
   } catch (error) {
     if (error?.name === 'QuotaExceededError') {
@@ -294,7 +302,7 @@ export async function saveBook(file, { title, author, language, fingerprint } = 
   }
 }
 
-export async function updateBook(id, patch) {
+export async function updateBook(id, patch, { preserveCitation = false } = {}) {
   const db = await openDatabase();
   try {
     const tx = db.transaction(BOOKS, 'readwrite');
@@ -303,7 +311,9 @@ export async function updateBook(id, patch) {
     let next = null;
     request.onsuccess = () => {
       if (!request.result) return;
-      next = { ...request.result, ...patch, ...('blob' in patch ? { fileRevision: newId() } : {}) };
+      const previous = request.result;
+      const protectedFields = preserveCitation && previous.citationConfirmed ? { title: previous.title, author: previous.author } : {};
+      next = { ...previous, ...patch, ...protectedFields, ...('blob' in patch ? { fileRevision: newId() } : {}) };
       store.put(next);
     };
     await txDone(tx);
@@ -311,6 +321,39 @@ export async function updateBook(id, patch) {
   } finally {
     db.close();
   }
+}
+
+export async function savePaperCitation(id, { title, author, year, doi }) {
+  const fields = {
+    title: String(title ?? '').trim(),
+    author: String(author ?? '').trim(),
+    year: String(year ?? '').trim(),
+    doi: String(doi ?? '').trim().replace(/^https?:\/\/(?:dx\.)?doi\.org\//iu, ''),
+  };
+  if (!fields.title || fields.title.length > 300 || fields.author.length > 500) throw new Error('请输入有效的题名和作者。');
+  if (fields.year && !/^[1-9]\d{3}$/u.test(fields.year)) throw new Error('年份须为四位数字。');
+  if (fields.doi && (fields.doi.length > 400 || !/^10\.\d{4,}\/\S+$/u.test(fields.doi))) throw new Error('请输入有效的 DOI。');
+  const db = await openDatabase();
+  try {
+    const tx = db.transaction([BOOKS, ASSETS], 'readwrite');
+    const done = txDone(tx);
+    void done.catch(() => {});
+    const books = tx.objectStore(BOOKS);
+    const book = await requestValue(books.get(id));
+    if (book?.format !== 'pdf') throw new Error('找不到这份 PDF。');
+    books.put({ ...book, ...fields, citationConfirmed: true });
+    const records = tx.objectStore(ASSETS).openCursor(evidenceRange());
+    records.onsuccess = () => {
+      const cursor = records.result;
+      if (!cursor) return;
+      if (cursor.value.value.bookId === id) {
+        cursor.update({ ...cursor.value, value: { ...cursor.value.value, ...fields } });
+      }
+      cursor.continue();
+    };
+    await done;
+    return { ...fields, citationConfirmed: true };
+  } finally { db.close(); }
 }
 
 export async function setBookCategory(id, category, { manual = true } = {}) {
@@ -392,6 +435,7 @@ export async function saveBookCollection({ id, name, add = [], remove = [] }) {
       name: nextName,
       bookIds: [...new Set([...(existing?.bookIds ?? []), ...existingKeys])].filter(bookId => !removed.has(bookId)),
       createdAt: existing?.createdAt ?? Date.now(),
+      ...(existing?.research ? { research: existing.research, researchRevision: existing.researchRevision } : {}),
     };
     assets.put(row);
     await done;
@@ -399,6 +443,43 @@ export async function saveBookCollection({ id, name, add = [], remove = [] }) {
   } finally {
     db.close();
   }
+}
+
+export async function saveTopicResearch(topic, draft) {
+  const db = await openDatabase();
+  try {
+    const tx = db.transaction(ASSETS, 'readwrite');
+    const done = txDone(tx);
+    void done.catch(() => {});
+    const store = tx.objectStore(ASSETS);
+    const [existing, evidence] = await Promise.all([
+      requestValue(store.get(collectionKey(topic.id))),
+      requestValue(store.getAll(evidenceRange())),
+    ]);
+    if (!existing) throw new Error('该专题已删除。');
+    if ((existing.researchRevision ?? 0) !== (topic.researchRevision ?? 0)) throw new Error('该专题已变化，请重新打开后编辑。');
+    const ids = new Set(evidence.filter(row => row.value.topicIds?.includes(topic.id)).map(row => row.value.id));
+    const research = normalizeResearch(draft, ids);
+    if (research.groups.some(group => !group.name)) throw new Error('请填写分组名称。');
+    const saved = { ...existing, research, researchRevision: (existing.researchRevision ?? 0) + 1 };
+    store.put(saved);
+    await done;
+    return saved;
+  } finally { db.close(); }
+}
+
+function removeFromTopicGroups(store, evidenceIds, topicIds) {
+  const request = store.openCursor(collectionRange());
+  request.onsuccess = () => {
+    const cursor = request.result;
+    if (!cursor) return;
+    const topic = cursor.value;
+    if ((!topicIds || topicIds.has(topic.id)) && topic.research?.groups.some(group => group.ids.some(id => evidenceIds.has(id)))) {
+      const groups = topic.research.groups.map(group => ({ ...group, ids: group.ids.filter(id => !evidenceIds.has(id)) }));
+      cursor.update({ ...topic, research: { ...topic.research, groups }, researchRevision: (topic.researchRevision ?? 0) + 1 });
+    }
+    cursor.continue();
+  };
 }
 
 export async function deleteBookCollection(id) {
@@ -433,16 +514,24 @@ export async function deleteBook(id, { deleteEvidence = false } = {}) {
     const tx = db.transaction([BOOKS, ANNOTATIONS, TRANSLATIONS, ASSETS], 'readwrite');
     tx.objectStore(BOOKS).delete(id);
     tx.objectStore(ASSETS).delete(`pdf-translation:${id}`);
+    const assets = tx.objectStore(ASSETS);
+    const deletedIds = new Set();
     if (deleteEvidence) {
-      const evidence = tx.objectStore(ASSETS).openCursor(evidenceRange());
+      const evidence = assets.openCursor(evidenceRange());
       evidence.onsuccess = () => {
         const cursor = evidence.result;
-        if (!cursor) return;
-        if (cursor.value.value.bookId === id) cursor.delete();
+        if (!cursor) {
+          if (deletedIds.size) removeFromTopicGroups(assets, deletedIds);
+          return;
+        }
+        if (cursor.value.value.bookId === id) {
+          deletedIds.add(cursor.value.value.id);
+          cursor.delete();
+        }
         cursor.continue();
       };
     }
-    const memberships = tx.objectStore(ASSETS).openCursor(collectionRange());
+    const memberships = assets.openCursor(collectionRange());
     memberships.onsuccess = () => {
       const cursor = memberships.result;
       if (!cursor) return;
@@ -504,13 +593,24 @@ export async function reviseEvidence(id, changes, expectedSourceRevision) {
     const key = evidenceKey(id);
     const request = store.get(key);
     let updated = null;
-    const update = () => {
+    const update = (memberships = {}) => {
       const record = request.result?.value;
       if (!record || (expectedSourceRevision && record.sourceRevision !== expectedSourceRevision)) return;
-      updated = { ...record, ...changes, updatedAt: Date.now() };
+      updated = { ...record, ...changes, ...memberships, updatedAt: Date.now() };
       store.put({ key, value: updated });
     };
     request.onsuccess = () => {
+      if (changes.topicIds) {
+        const topics = store.getAll(collectionRange());
+        topics.onsuccess = () => {
+          const available = new Set(topics.result.map(topic => topic.id));
+          const topicIds = [...new Set(changes.topicIds)].filter(topicId => available.has(topicId));
+          update({ topicIds });
+          const detached = new Set((request.result?.value.topicIds ?? []).filter(topicId => !topicIds.includes(topicId)));
+          if (updated && detached.size) removeFromTopicGroups(store, new Set([id]), detached);
+        };
+        return;
+      }
       if (!changes.bookId) { update(); return; }
       const book = tx.objectStore(BOOKS).get(changes.bookId);
       book.onsuccess = () => {
@@ -526,7 +626,9 @@ export async function removeEvidence(id) {
   const db = await openDatabase();
   try {
     const tx = db.transaction(ASSETS, 'readwrite');
-    tx.objectStore(ASSETS).delete(evidenceKey(id));
+    const store = tx.objectStore(ASSETS);
+    store.delete(evidenceKey(id));
+    removeFromTopicGroups(store, new Set([id]));
     await txDone(tx);
   } finally { db.close(); }
 }

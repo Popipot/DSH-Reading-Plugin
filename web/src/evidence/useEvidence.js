@@ -4,7 +4,7 @@ import { fingerprintPdf, sameFingerprint, validFingerprint } from './identity.js
 
 const uuid = () => crypto.randomUUID();
 const sourceOf = ({ record, anchor, quote }) => ({
-  bookId: record.id, title: record.title, author: record.author,
+  bookId: record.id, title: record.title, author: record.author, year: record.year || '', doi: record.doi || '',
   fileRevision: record.fileRevision ?? null, anchor, quote, sourceRevision: uuid(),
 });
 
@@ -36,8 +36,8 @@ export function useEvidence({ currentRef, navigation, openBook, refreshBooks, sh
     finally { busyRef.current = false; setBusy(false); }
   }
 
-  function show(bookId = '') {
-    setPanel({ bookId });
+  function show(bookId = '', topicId = '') {
+    setPanel({ bookId, topicId });
     setMismatch(null);
     void action(refresh);
   }
@@ -62,14 +62,15 @@ export function useEvidence({ currentRef, navigation, openBook, refreshBooks, sh
       id: old?.id || uuid(), old, blob: current.data,
       source: sourceOf({ record: current.record, anchor: selection.evidenceAnchor, quote: selection.text }),
       options, note: old?.note || '', translation: options[0] || null,
+      printLabelRequest: selection.printLabelRequest,
     });
   }
 
-  function saveDraft({ note, translation }) {
+  function saveDraft({ note, translation, printLabel }) {
     if (!draft) return;
     void action(async () => {
       const { old, blob, source, id } = draft;
-      const changes = { ...source, note, translation, identity: null, identityError: '' };
+      const changes = { ...source, note, translation, printLabel: printLabel.trim().slice(0, 80), identity: null, identityError: '' };
       const record = old
         ? await reviseEvidence(id, changes, old.sourceRevision)
         : { id, ...changes, topicIds: [], createdAt: Date.now(), updatedAt: Date.now() };
@@ -179,7 +180,7 @@ export function useEvidence({ currentRef, navigation, openBook, refreshBooks, sh
       if (!await reviseEvidence(record.id, changes, record.sourceRevision)) {
         throw new Error('证据已变化，请重新打开后重试。');
       }
-      await refresh();
+      await Promise.all([refresh(), changes.topicIds ? refreshBooks() : undefined]);
       showToast('证据已更新。');
     });
   }
@@ -187,7 +188,7 @@ export function useEvidence({ currentRef, navigation, openBook, refreshBooks, sh
   function remove(record) {
     void action(async () => {
       await removeEvidence(record.id);
-      await refresh();
+      await Promise.all([refresh(), refreshBooks()]);
       showToast('证据已删除，相关书单引用已移除。');
     });
   }
