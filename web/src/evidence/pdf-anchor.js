@@ -50,6 +50,12 @@ function rangeAtOffsets(layer, start, end) {
   return null;
 }
 
+function rangeQuote(range) {
+  const content = range.cloneContents();
+  for (const breakElement of content.querySelectorAll('br')) breakElement.replaceWith('\n');
+  return normalizeQuote(content.textContent);
+}
+
 export function resolvePdfAnchor(anchor, quote, frame) {
   if (!frame || anchor?.version !== 1 || anchor.page !== Number(frame.dataset.page)
     || !Number.isSafeInteger(anchor.start) || !Number.isSafeInteger(anchor.end)
@@ -57,7 +63,7 @@ export function resolvePdfAnchor(anchor, quote, frame) {
   const layer = frame.querySelector('.dshr-pdf-text-layer');
   const range = layer && rangeAtOffsets(layer, anchor.start, anchor.end);
   if (!range) return null;
-  const selected = normalizeQuote(range.toString());
+  const selected = rangeQuote(range);
   if (!selected || selected !== normalizeQuote(quote)) return null;
   const rects = normalizedRectsForSelection(range, frame);
   return geometryMatches(anchor.rects, rects) ? rects : null;
