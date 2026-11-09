@@ -28,6 +28,8 @@ Ein Plugin für **DeepSeek Harness** zum Lesen von Fachliteratur und Büchern. O
 
 **B2 zur Belegerfassung für einen Artikel ist freigegeben.** Eine Textauswahl auf einer PDF-Seite lässt sich als eigenständiger Beleg speichern, auf Wunsch mit bestätigter Übersetzung. Nach Prüfung der vollständigen PDF-Datei führt die Belegsammlung zur Auswahl zurück. Bei fehlender Quelldatei bleibt der Beleg lesbar und exportierbar. Revision `bce3e2b` bestand alle neun Prüfungen. Alle 20 Zielstellen wurden präzise gefunden. In zehn Ausnahmefällen gab es keine fälschlich als exakt gemeldete Fundstelle. Bei 20 Speichervorgängen in DSH Desktop lag das P95 bei 14,4 ms.
 
+**Die Freigabe von B3 für Themen und Export ist ausgesetzt.** Revision `7981ddf` wurde mit drei Artikeln und neun Belegen geprüft. Artikelübergreifende Verweise und einzelne Markdown-Exporte funktionierten. Die Prüfungen zur Bearbeitung von Metadaten, zu Vergleichsgruppen sowie zum Export ausgewählter Belege und ganzer Themen sind offen. Der installierbare Stand entspricht B2.
+
 Im früheren B1-Leistungstest mit 80 kalten Dokumentöffnungen in DSH Desktop lag der höchste P95 je Testgruppe bei **1.375 ms** für den Referenzartikel und **2.426 ms** für das Lehrbuch mit 1.029 Seiten. Bei 480 Seitenwechseln in DSH Web lag der höchste P95 bei **44 ms** mit und **259 ms** ohne Vorladen. Der finale Build bestand die Desktop-Prüfung der Darstellung und sechs Browser-Regressionsreihen.
 
 ## Funktionen
