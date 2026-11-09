@@ -733,6 +733,10 @@ export function ReaderPage() {
   }, [flushProgress]);
 
   async function requestDelete(book) {
+    if (book.format !== 'pdf') {
+      setDeleteTarget(book);
+      return;
+    }
     try {
       const count = (await listEvidence()).filter(record => record.bookId === book.id).length;
       setDeleteTarget({ ...book, evidenceCount: count });
