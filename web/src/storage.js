@@ -1,3 +1,5 @@
+import { validFingerprint } from './evidence/identity.js';
+
 /*
  * dsh-reader local library.
  *
@@ -15,6 +17,7 @@ const ASSETS = 'assets';
 const TRANSLATIONS = 'pdfTranslations';
 const BACKGROUND_KEY = 'reader-background';
 const COLLECTION_PREFIX = 'book-collection:';
+const EVIDENCE_PREFIX = 'pdf-evidence:';
 const SETTINGS_KEY = 'dsh-reader:settings:v1';
 const MAX_BYTES = 320 * 1024 * 1024;
 const MAX_BACKGROUND_BYTES = 16 * 1024 * 1024;
@@ -109,6 +112,8 @@ function requestValue(request) {
 
 const collectionRange = () => IDBKeyRange.bound(COLLECTION_PREFIX, `${COLLECTION_PREFIX}\uffff`);
 const collectionKey = id => `${COLLECTION_PREFIX}${id}`;
+const evidenceRange = () => IDBKeyRange.bound(EVIDENCE_PREFIX, `${EVIDENCE_PREFIX}\uffff`);
+const evidenceKey = id => EVIDENCE_PREFIX + id;
 
 export function extensionOf(fileName) {
   const match = /\.([^./\\]+)$/u.exec(String(fileName ?? ''));
@@ -237,14 +242,17 @@ export async function getBook(id) {
  * Persist one picked file. Re-importing the same file updates metadata and
  * keeps its existing progress and manual category.
  */
-export async function saveBook(file, { title, author, language } = {}) {
+export async function saveBook(file, { title, author, language, fingerprint } = {}) {
   if (!isSupportedFile(file.name)) {
     throw new Error(`暂不支持 .${extensionOf(file.name) || '未知'} 文件。请选择 PDF / EPUB / MOBI / TXT / Markdown / HTML。`);
   }
   if (file.size > MAX_BYTES) {
     throw new Error(`文件超过 ${Math.round(MAX_BYTES / 1024 / 1024)} MB，浏览器书架无法容纳。`);
   }
-  const identity = await fileIdentity(file);
+  if (fingerprint && (!validFingerprint(fingerprint) || fingerprint.bytes !== file.size || extensionOf(file.name) !== 'pdf')) {
+    throw new Error('PDF 文件摘要无效。');
+  }
+  const identity = fingerprint ? `pdf-sha256-${fingerprint.sha256}-${fingerprint.bytes}` : await fileIdentity(file);
   const existing = await getBook(identity);
   const now = Date.now();
   const id = existing?.id ?? identity;
@@ -267,6 +275,7 @@ export async function saveBook(file, { title, author, language } = {}) {
     addedAt: existing?.addedAt ?? now,
     lastOpenedAt: now,
     progress: existing?.progress ?? null,
+    fileRevision: newId(),
     blob: file,
   };
   const db = await openDatabase();
@@ -294,7 +303,7 @@ export async function updateBook(id, patch) {
     let next = null;
     request.onsuccess = () => {
       if (!request.result) return;
-      next = { ...request.result, ...patch };
+      next = { ...request.result, ...patch, ...('blob' in patch ? { fileRevision: newId() } : {}) };
       store.put(next);
     };
     await txDone(tx);
@@ -396,19 +405,43 @@ export async function deleteBookCollection(id) {
   const db = await openDatabase();
   try {
     const tx = db.transaction(ASSETS, 'readwrite');
-    tx.objectStore(ASSETS).delete(collectionKey(id));
+    const store = tx.objectStore(ASSETS);
+    store.delete(collectionKey(id));
+    removeEvidenceCollectionReferences(store, id);
     await txDone(tx);
   } finally {
     db.close();
   }
 }
 
-export async function deleteBook(id) {
+function removeEvidenceCollectionReferences(store, id) {
+  const request = store.openCursor(evidenceRange());
+  request.onsuccess = () => {
+    const cursor = request.result;
+    if (!cursor) return;
+    const row = cursor.value;
+    const ids = row.value.topicIds || [];
+    const topicIds = id ? ids.filter(topicId => topicId !== id) : [];
+    if (topicIds.length !== ids.length) cursor.update({ ...row, value: { ...row.value, topicIds } });
+    cursor.continue();
+  };
+}
+
+export async function deleteBook(id, { deleteEvidence = false } = {}) {
   const db = await openDatabase();
   try {
     const tx = db.transaction([BOOKS, ANNOTATIONS, TRANSLATIONS, ASSETS], 'readwrite');
     tx.objectStore(BOOKS).delete(id);
     tx.objectStore(ASSETS).delete(`pdf-translation:${id}`);
+    if (deleteEvidence) {
+      const evidence = tx.objectStore(ASSETS).openCursor(evidenceRange());
+      evidence.onsuccess = () => {
+        const cursor = evidence.result;
+        if (!cursor) return;
+        if (cursor.value.value.bookId === id) cursor.delete();
+        cursor.continue();
+      };
+    }
     const memberships = tx.objectStore(ASSETS).openCursor(collectionRange());
     memberships.onsuccess = () => {
       const cursor = memberships.result;
@@ -437,6 +470,67 @@ export async function deleteBook(id) {
   }
 }
 
+export async function listEvidence() {
+  const db = await openDatabase();
+  try {
+    const rows = await requestValue(db.transaction(ASSETS, 'readonly').objectStore(ASSETS).getAll(evidenceRange()));
+    return rows.map(row => row.value).sort((a, b) => b.createdAt - a.createdAt || b.id.localeCompare(a.id));
+  } finally { db.close(); }
+}
+
+export async function createEvidence(record) {
+  const db = await openDatabase();
+  try {
+    const tx = db.transaction([BOOKS, ASSETS], 'readwrite');
+    const done = txDone(tx);
+    const store = tx.objectStore(ASSETS);
+    const book = tx.objectStore(BOOKS).get(record.bookId);
+    book.onsuccess = () => {
+      if (!book.result?.blob || (book.result.fileRevision ?? null) !== record.fileRevision) { tx.abort(); return; }
+      const key = evidenceKey(record.id);
+      const existing = store.get(key);
+      existing.onsuccess = () => { if (!existing.result) store.add({ key, value: record }); };
+    };
+    await done;
+  } finally { db.close(); }
+}
+
+// Merge just the intended fields. Late hashing cannot overwrite a new source.
+export async function reviseEvidence(id, changes, expectedSourceRevision) {
+  const db = await openDatabase();
+  try {
+    const tx = db.transaction([ASSETS, BOOKS], 'readwrite');
+    const store = tx.objectStore(ASSETS);
+    const key = evidenceKey(id);
+    const request = store.get(key);
+    let updated = null;
+    const update = () => {
+      const record = request.result?.value;
+      if (!record || (expectedSourceRevision && record.sourceRevision !== expectedSourceRevision)) return;
+      updated = { ...record, ...changes, updatedAt: Date.now() };
+      store.put({ key, value: updated });
+    };
+    request.onsuccess = () => {
+      if (!changes.bookId) { update(); return; }
+      const book = tx.objectStore(BOOKS).get(changes.bookId);
+      book.onsuccess = () => {
+        if (book.result?.blob && (book.result.fileRevision ?? null) === changes.fileRevision) update();
+      };
+    };
+    await txDone(tx);
+    return updated;
+  } finally { db.close(); }
+}
+
+export async function removeEvidence(id) {
+  const db = await openDatabase();
+  try {
+    const tx = db.transaction(ASSETS, 'readwrite');
+    tx.objectStore(ASSETS).delete(evidenceKey(id));
+    await txDone(tx);
+  } finally { db.close(); }
+}
+
 export async function clearLibrary() {
   const db = await openDatabase();
   try {
@@ -444,12 +538,14 @@ export async function clearLibrary() {
     tx.objectStore(BOOKS).clear();
     tx.objectStore(ANNOTATIONS).clear();
     tx.objectStore(TRANSLATIONS).clear();
-    const preferences = tx.objectStore(ASSETS).openKeyCursor();
+    const store = tx.objectStore(ASSETS);
+    removeEvidenceCollectionReferences(store);
+    const preferences = store.openKeyCursor();
     preferences.onsuccess = () => {
       const cursor = preferences.result;
       if (cursor) {
         const key = String(cursor.key);
-        if (key.startsWith('pdf-translation:') || key.startsWith(COLLECTION_PREFIX)) tx.objectStore(ASSETS).delete(cursor.primaryKey);
+        if (key.startsWith('pdf-translation:') || key.startsWith(COLLECTION_PREFIX)) store.delete(cursor.primaryKey);
         cursor.continue();
       }
     };

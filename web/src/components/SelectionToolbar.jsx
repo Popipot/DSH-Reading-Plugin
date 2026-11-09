@@ -5,12 +5,12 @@ import { IconTranslate, IconSparkles, IconGoogle, IconGoogleScholar, IconCopy, I
  * Floating actions for a text selection. It is positioned from the DOMRect the
  * reader captured, clamped so it never leaves the viewport.
  */
-export function SelectionToolbar({ selection, translation, onTranslate, onAnnotate, onExplain, onGoogle, onCopy, onClose, onRetry }) {
+export function SelectionToolbar({ selection, translation, onTranslate, onAnnotate, onExplain, onGoogle, onCopy, onClose, onRetry, onEvidence, replacingEvidence }) {
   if (!selection?.text?.trim()) return null;
   const rect = selection.rect;
-  const width = 476;
-  const half = width / 2;
   const viewportWidth = typeof window !== 'undefined' ? window.innerWidth : 1200;
+  const width = Math.min(onEvidence ? 560 : 476, Math.max(1, viewportWidth - 20));
+  const half = width / 2;
   const viewportHeight = typeof window !== 'undefined' ? window.innerHeight : 800;
   const center = rect ? rect.left + rect.width / 2 : viewportWidth / 2;
   const left = Math.max(half + 10, Math.min(viewportWidth - half - 10, center));
@@ -21,7 +21,7 @@ export function SelectionToolbar({ selection, translation, onTranslate, onAnnota
     <>
       <div
         className="dshr-selection"
-        style={{ left, top: Math.max(8, top) }}
+        style={{ left, top: Math.max(8, top), maxWidth: width }}
         role="toolbar"
         aria-label="选中文字操作"
         onMouseDown={(event) => event.preventDefault()}
@@ -32,6 +32,9 @@ export function SelectionToolbar({ selection, translation, onTranslate, onAnnota
         <button type="button" className="dshr-selection__btn dshr-selection__btn--mark" onClick={() => onAnnotate(selection)} title="荧光笔、下划线、便签或备注">
           <IconHighlighter size={14} /> 标记
         </button>
+        {onEvidence ? <button type="button" className="dshr-selection__btn dshr-selection__btn--accent" onClick={onEvidence}>
+          {replacingEvidence ? '重新关联此选区' : '保存证据'}
+        </button> : null}
         <button type="button" className="dshr-selection__btn" onClick={() => onExplain(selection)}>
           <IconSparkles size={14} /> AI 解释
         </button>

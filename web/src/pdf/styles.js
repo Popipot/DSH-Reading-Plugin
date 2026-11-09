@@ -327,6 +327,11 @@ html[data-ds-dark-theme] .dshr-pdf-root {
   box-shadow: var(--dshr-pdf-page-shadow);
   isolation: isolate;
 }
+.dshr-pdf-evidence-mark { position: absolute; inset: 0; pointer-events: none; z-index: 5; }
+.dshr-pdf-evidence-mark > i {
+  position: absolute; border: 1px solid #25756d; border-radius: 2px;
+  background: rgba(62, 194, 176, .28);
+}
 
 .dshr-pdf-page {
   display: flex;

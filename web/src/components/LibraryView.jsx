@@ -79,7 +79,7 @@ function BookCard({ book, onOpen, onDelete, onCycleCategory, onAdd, onRemove, se
 
 export function LibraryView({
   books, collections, onCollectionsChange, loading, resumeBook, onResume, importing, organizing, categoryFilter, onCategoryFilter,
-  onAutoOrganize, onImport, onOpen, onDelete, onCycleCategory, onSettings, onOnlineImport,
+  onAutoOrganize, onImport, onOpen, onDelete, onCycleCategory, onSettings, onOnlineImport, onEvidence,
 }) {
   const inputRef = React.useRef(null);
   const [over, setOver] = React.useState(false);
@@ -199,6 +199,7 @@ export function LibraryView({
             <button type="button" className="dshr-btn dshr-btn--outline" onClick={onSettings} title="阅读与书架设置">
               <IconSettings size={15} /> 设置
             </button>
+            <button type="button" className="dshr-btn dshr-btn--outline" onClick={onEvidence}>证据库</button>
           </div>
         </header>
 

@@ -88,7 +88,7 @@ export function SettingsDialog({ settings, onChange, onClose, onClearLibrary, on
         <div className="dshr-settings-row dshr-settings-row--danger">
           <div>
             <div className="dshr-settings-row__title">清空本地书架</div>
-            <div className="dshr-settings-row__hint">删除已导入的所有文档、书单、批注和阅读进度，无法撤销。</div>
+            <div className="dshr-settings-row__hint">删除已导入的所有文档、书单、批注和阅读进度。已保存的证据保留并标为原文缺失。</div>
           </div>
           {confirmClear ? (
             <div style={{ display: 'flex', gap: 6 }}>
@@ -109,6 +109,8 @@ export function SettingsDialog({ settings, onChange, onClose, onClearLibrary, on
 }
 
 export function ConfirmDeleteDialog({ book, onCancel, onConfirm }) {
+  const [confirmEvidence, setConfirmEvidence] = React.useState(false);
+  const hasEvidence = book?.evidenceCount > 0;
   React.useEffect(() => {
     const onKey = (event) => { if (event.key === 'Escape') onCancel(); };
     window.addEventListener('keydown', onKey);
@@ -119,9 +121,16 @@ export function ConfirmDeleteDialog({ book, onCancel, onConfirm }) {
       <div className="dshr-modal" role="dialog" aria-modal="true" aria-label="删除文档">
         <h3>从书架删除？</h3>
         <p>《{book?.title || '未命名文档'}》及其阅读进度会从本机删除。原始文件不受影响。</p>
+        {hasEvidence ? <p>关联了 {book.evidenceCount} 条证据。保留后可查看和导出，原文会标记为缺失。</p> : null}
         <div className="dshr-modal__actions">
           <button type="button" className="dshr-btn" onClick={onCancel}>取消</button>
-          <button type="button" className="dshr-btn dshr-btn--danger" onClick={onConfirm}><IconTrash size={14} /> 删除</button>
+          {hasEvidence ? <>
+            <button type="button" className="dshr-btn" onClick={() => onConfirm(false)}>删除原文并保留证据</button>
+            <button type="button" className="dshr-btn dshr-btn--danger"
+              onClick={() => confirmEvidence ? onConfirm(true) : setConfirmEvidence(true)}>
+              {confirmEvidence ? '确认同时删除证据' : '一并删除证据'}
+            </button>
+          </> : <button type="button" className="dshr-btn dshr-btn--danger" onClick={() => onConfirm(false)}><IconTrash size={14} /> 删除</button>}
         </div>
       </div>
     </div>

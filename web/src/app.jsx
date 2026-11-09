@@ -12,16 +12,19 @@ import { AppearancePanel } from './appearance/AppearancePanel.jsx';
 import { appearanceVars, autoInk, BOOK_ANIMATIONS } from './appearance/appearance.js';
 import { AnnotationsPanel } from './annotations/AnnotationsPanel.jsx';
 import { AnnotationComposer } from './annotations/AnnotationComposer.jsx';
+import { EvidenceComposer, EvidenceLibrary } from './evidence/EvidenceDialogs.jsx';
+import { useEvidence } from './evidence/useEvidence.js';
 import {
   IconArrowLeft, IconList, IconSettings, IconSparkles, IconTranslate,
   IconPlus, IconX, IconPalette, IconHighlighter, IconEye, IconEyeOff,
-  IconMaximize, IconMinimize,
+  IconMaximize, IconMinimize, IconBookOpen,
 } from './components/icons.jsx';
 import {
   listBooks, listBookCollections, getBook, saveBook, deleteBook, touchBook, updateBook, clearLibrary,
   loadSettings, saveSettings, extensionOf, formatLabel, looksForeign,
   categoryLabel, setBookCategory, autoOrganizeLibrary, listAnnotations, saveAnnotation,
   updateAnnotation, deleteAnnotation, getReaderBackground, saveReaderBackground, deleteReaderBackground,
+  listEvidence,
 } from './storage.js';
 import { translateSegments, isAbortError, fetchRemoteBook } from './ai-client.js';
 import { generateCover } from './cover.js';
@@ -183,6 +186,7 @@ export function ReaderPage() {
   const progressSaveRef = React.useRef({ timer: 0, latest: null });
   const selectionRequestRef = React.useRef({ token: 0, controller: null });
   const currentRef = React.useRef(null);
+  const openRevision = React.useRef(0);
   const settingsRef = React.useRef(settings);
   const booksRef = React.useRef(books);
   const coverRunRef = React.useRef({ running: false, attempted: new Set() });
@@ -586,6 +590,8 @@ export function ReaderPage() {
   }, [immersive, appearanceOpen, exitImmersive]);
 
   const closeBook = React.useCallback(() => {
+    openRevision.current += 1;
+    setOpening(false);
     try { localStorage.removeItem(LAST_BOOK_KEY); } catch { /* storage unavailable */ }
     try { sessionStorage.removeItem(SESSION_BOOK_KEY); } catch { /* storage unavailable */ }
     setLastBookSummary(null);
@@ -614,11 +620,14 @@ export function ReaderPage() {
     setFlowLocation({ index: 0, entry: null });
   }, [flushProgress]);
 
-  const openBook = React.useCallback(async (summary) => {
+  const openBook = React.useCallback(async (summary, { verifiedRecord, token } = {}) => {
+    const revision = token ?? ++openRevision.current;
+    if (revision !== openRevision.current) return false;
     setOpening(true);
     setOpeningLabel(`正在打开《${summary.title || '文档'}》…`);
     try {
-      const record = await getBook(summary.id);
+      const record = verifiedRecord ?? await getBook(summary.id);
+      if (revision !== openRevision.current) return false;
       if (!record?.blob) throw new Error('书架中找不到这个文件，可能已被清理。请重新导入。');
       setLastBookSummary(null);
       try { localStorage.setItem(LAST_BOOK_KEY, record.id); } catch { /* storage unavailable */ }
@@ -642,18 +651,20 @@ export function ReaderPage() {
         setAnnotationsOpen(false);
         setFocusPdfAnnotation(null);
         await reloadAnnotations(record.id);
-        setOpening(false);
+        if (revision === openRevision.current) setOpening(false);
         await touchBook(record.id);
         await refreshBooks();
-        return;
+        return revision === openRevision.current;
       }
       const { parseBook } = await import('./formats/index.js');
       const parsed = await parseBook(record.blob, { fileName: record.title ?? summary.title, mime: record.blob.type });
+      if (revision !== openRevision.current) { parsed.dispose?.(); return false; }
       const merged = { ...record, title: parsed.title || record.title, author: parsed.author || record.author, language: parsed.language || record.language };
       if (merged.title !== record.title || merged.author !== record.author || merged.language !== record.language) {
         await updateBook(record.id, { title: merged.title, author: merged.author, language: merged.language });
         await refreshBooks();
       }
+      if (revision !== openRevision.current) { parsed.dispose?.(); return false; }
       const saved = record.progress || {};
       const restoreChapter = clamp(Number(saved.chapter) || 0, 0, Math.max(0, parsed.chapters.length - 1));
       setCurrent({ kind: 'flow', record: merged, book: parsed });
@@ -667,16 +678,21 @@ export function ReaderPage() {
       setAnnotationsOpen(false);
       setFocusAnnotation(null);
       await reloadAnnotations(record.id);
+      if (revision !== openRevision.current) return false;
       setOpening(false);
       if (looksForeign(parsed.chapters.slice(0, 3).map((chapter) => chapter.blocks.map((block) => block.text || '').join(' ')).join(' '))
         && !settingsRef.current.autoTranslate) {
         showToast('检测到外文内容。顶部「实时翻译」可以随时开启。', 4200);
       }
+      return true;
     } catch (error) {
+      if (revision !== openRevision.current) return false;
       setOpening(false);
       showToast(error?.message || '打开文档失败。', 5000);
+      return false;
     }
   }, [refreshBooks, reloadAnnotations, showToast]);
+  const evidence = useEvidence({ currentRef, navigation: openRevision, openBook, refreshBooks, showToast });
 
   React.useEffect(() => {
     if (loadingBooks || current || autoReopenRef.current || booksRef.current.length === 0) return;
@@ -716,12 +732,19 @@ export function ReaderPage() {
     return () => document.removeEventListener('visibilitychange', onVisibility);
   }, [flushProgress]);
 
-  const handleDelete = React.useCallback(async () => {
+  async function requestDelete(book) {
+    try {
+      const count = (await listEvidence()).filter(record => record.bookId === book.id).length;
+      setDeleteTarget({ ...book, evidenceCount: count });
+    } catch (error) { showToast(error?.message || '读取证据关联失败。'); }
+  }
+
+  const handleDelete = React.useCallback(async (deleteEvidence = false) => {
     const target = deleteTarget;
     if (!target) return;
     try {
       if (currentRef.current?.record?.id === target.id) closeBook();
-      await deleteBook(target.id);
+      await deleteBook(target.id, { deleteEvidence });
       setDeleteTarget(null);
       await refreshBooks();
       showToast('已从书架删除。');
@@ -1070,6 +1093,8 @@ export function ReaderPage() {
               {iconTools}
               {immersiveButton}
               {iconActions}
+              <button type="button" className="dshr-btn dshr-btn--icon" aria-label="证据库" title="当前论文的证据"
+                onClick={() => evidence.show(current.record.id)}><IconBookOpen size={16} /></button>
               {settingsButton}
             </div>
             <div className="dshr-topbar__tools dshr-topbar__labels">
@@ -1256,6 +1281,8 @@ export function ReaderPage() {
                   annotations={annotations}
                   onOpenAnnotation={openAnnotationById}
                   focusAnnotation={focusPdfAnnotation}
+                  focusEvidence={evidence.focus?.blob === current.data && evidence.focus?.token === openRevision.current ? evidence.focus : undefined}
+                  onEvidenceLocated={evidence.located}
                   onReady={({ pageCount }) => setProgress((value) => ({
                     ...value,
                     page: value.page || 1,
@@ -1322,10 +1349,11 @@ export function ReaderPage() {
             onAutoOrganize={() => void handleAutoOrganize()}
             onImport={handleImport}
             onOpen={(book) => void openBook(book)}
-            onDelete={(book) => setDeleteTarget(book)}
+            onDelete={(book) => void requestDelete(book)}
             onCycleCategory={(book, next) => void handleCycleCategory(book, next)}
             onSettings={() => setSettingsOpen(true)}
             onOnlineImport={() => setOnlineOpen(true)}
+            onEvidence={() => evidence.show()}
           />
         )}
 
@@ -1338,12 +1366,15 @@ export function ReaderPage() {
           </div>
         ) : null}
 
-        {selection && !aiOpen && !annotationComposerOpen ? (
+        {selection && !aiOpen && !annotationComposerOpen && !evidence.draft && !evidence.panel ? (
           <SelectionToolbar
             selection={selection}
             translation={selectionTranslation}
             onTranslate={(picked) => void translateSelection(picked)}
             onAnnotate={openAnnotationForSelection}
+            onEvidence={selection.source === 'pdf' && selection.evidenceAnchor
+              ? () => evidence.createDraft(selection, selectionTranslation) : undefined}
+            replacingEvidence={evidence.replacement?.blob === current?.data}
             onExplain={(picked) => openAi(picked.text, picked.context)}
             onGoogle={handleGoogle}
             onCopy={handleCopy}
@@ -1379,8 +1410,11 @@ export function ReaderPage() {
           />
         ) : null}
         {deleteTarget ? (
-          <ConfirmDeleteDialog book={deleteTarget} onCancel={() => setDeleteTarget(null)} onConfirm={() => void handleDelete()} />
+          <ConfirmDeleteDialog book={deleteTarget} onCancel={() => setDeleteTarget(null)}
+            onConfirm={(deleteEvidence) => void handleDelete(deleteEvidence)} />
         ) : null}
+        {evidence.panel ? <EvidenceLibrary evidence={evidence} books={books} collections={collections} /> : null}
+        {evidence.draft ? <EvidenceComposer key={evidence.draft.id} evidence={evidence} /> : null}
         {annotationComposerOpen && annotationDraft ? (
           <AnnotationComposer
             open={annotationComposerOpen}

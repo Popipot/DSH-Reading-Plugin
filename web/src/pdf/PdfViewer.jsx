@@ -30,6 +30,7 @@ import { TranslationPanel } from "./TranslationPanel.jsx";
 import { usePdfTranslation } from "./usePdfTranslation.js";
 import { PdfAnnotationLayer } from "../annotations/PdfAnnotationLayer.jsx";
 import { normalizedRectsForSelection } from "../annotations/model.js";
+import { capturePdfAnchor, resolvePdfAnchor } from "../evidence/pdf-anchor.js";
 
 const pdfStyles = basePdfStyles + translationPanelStyles;
 export { groupPdfText, pdfStyles };
@@ -271,6 +272,7 @@ const PdfPageRow = React.memo(function PdfPageRow({
   registerFrameElement,
   annotations,
   onOpenAnnotation,
+  evidenceRects,
 }) {
   const box = computePageBox(dim, mode, scale, viewportWidth, viewportHeight);
   // Stable callback identities are essential here: an inline ref callback is
@@ -317,6 +319,12 @@ const PdfPageRow = React.memo(function PdfPageRow({
           <canvas className="dshr-pdf-canvas" width={1} height={1} />
           <div className="dshr-pdf-text-layer" />
           <PdfAnnotationLayer annotations={annotations} onOpenAnnotation={onOpenAnnotation} />
+          {evidenceRects ? <div className="dshr-pdf-evidence-mark" aria-hidden="true">
+            {evidenceRects.map((rect, index) => <i key={index} style={{
+              left: `${rect.x * 100}%`, top: `${rect.y * 100}%`,
+              width: `${rect.w * 100}%`, height: `${rect.h * 100}%`,
+            }} />)}
+          </div> : null}
           <div className="dshr-pdf-page-loading" aria-hidden="true">
             <span className="dshr-pdf-spinner" />
           </div>
@@ -350,6 +358,8 @@ export function PdfViewer({
   annotations = [],
   onOpenAnnotation,
   focusAnnotation,
+  focusEvidence,
+  onEvidenceLocated,
   hideTranslations = false,
   paged = false,
   onHideTranslations,
@@ -434,6 +444,7 @@ export function PdfViewer({
   const [pageInputFocused, setPageInputFocused] = useState(false);
   const [loadAttempt, setLoadAttempt] = useState(0);
   const [pageSources, setPageSources] = useState({});
+  const [evidenceMark, setEvidenceMark] = useState(null);
   const [visibleSegmentIds, setVisibleSegmentIds] = useState([]);
   const [linkedSegment, setLinkedSegment] = useState(null);
   const [panelDismissed, setPanelDismissed] = useState(false);
@@ -442,6 +453,8 @@ export function PdfViewer({
   const showTranslationPanel = autoTranslate && !hideTranslations && !panelDismissed;
   const translation = usePdfTranslation({ documentId, title: fileName, enabled: showTranslationPanel,
     activePage: currentPage, sources: pageSources, visibleIds: visibleSegmentIds });
+  const translationRowsRef = useRef(null);
+  translationRowsRef.current = translation.pages;
   const translationPaneOpenRef = useRef(false);
   translationPaneOpenRef.current = showTranslationPanel;
   const linkedEnabledRef = useRef(false);
@@ -1335,6 +1348,19 @@ export function PdfViewer({
     if (frame) {
       const pageRects = normalizedRectsForSelection(range, frame);
       if (pageRects.length > 0) payload.pageRects = pageRects;
+      const layer = frame.querySelector('.dshr-pdf-text-layer');
+      payload.evidenceAnchor = capturePdfAnchor(range, layer, frame, page);
+      if (payload.evidenceAnchor) {
+        const segmentIds = node => (node.nodeType === 1 ? node : node.parentElement)
+          ?.closest('[data-pdf-segments]')?.dataset.pdfSegments.split('|') || [];
+        const ends = segmentIds(range.endContainer);
+        const starts = segmentIds(range.startContainer);
+        const normalize = value => String(value ?? '').replace(/\s+/gu, '');
+        const paragraph = translationRowsRef.current?.[page]?.find(row => row.status === 'done'
+          && row.zh?.trim() && !row.sourceNeedsReview && starts.includes(row.id) && ends.includes(row.id)
+          && normalize(row.src).includes(normalize(text)));
+        if (paragraph) payload.paragraphTranslation = { scope: 'paragraph', text: paragraph.zh, source: paragraph.src };
+      }
     }
     const context = buildSelectionContext(page, text);
     if (context) {
@@ -1995,6 +2021,51 @@ export function PdfViewer({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [focusAnnotation, status]);
 
+  useEffect(() => {
+    if (!focusEvidence) return undefined;
+    const { anchor, quote, token } = focusEvidence;
+    const finish = result => onEvidenceLocated?.(token, result);
+    if (status === "error") { finish('unavailable'); return undefined; }
+    if (status !== "ready") return undefined;
+    const page = anchor?.page;
+    if (!Number.isInteger(page) || page < 1 || page > pageCountRef.current) {
+      finish('unavailable');
+      return undefined;
+    }
+    jumpToPage(page);
+    const deadline = performance.now() + 6000;
+    let frameRequest;
+    const locate = () => {
+      if (lastPageRef.current !== page) { finish('cancelled'); return; }
+      const state = pageStatesRef.current.get(page);
+      const frame = frameElementsRef.current.get(page);
+      if (state?.textLayerReady && !state.textLayer && frame?.isConnected) {
+        const rects = resolvePdfAnchor(anchor, quote, frame);
+        if (!rects) { finish('page'); return; }
+        const scroll = scrollRef.current;
+        const viewport = scroll.getBoundingClientRect();
+        const paper = frame.getBoundingClientRect();
+        const target = rects[0];
+        const x = paper.left + (target.x + target.w / 2) * paper.width;
+        const y = paper.top + (target.y + target.h / 2) * paper.height;
+        scroll.scrollBy({
+          left: x < viewport.left || x > viewport.right ? x - (viewport.left + viewport.width / 2) : 0,
+          top: y < viewport.top || y > viewport.bottom ? y - (viewport.top + viewport.height / 2) : 0,
+          behavior: 'auto',
+        });
+        setEvidenceMark({ token, page, rects });
+        finish('exact');
+        return;
+      }
+      if (performance.now() >= deadline) { finish('page'); return; }
+      frameRequest = requestAnimationFrame(locate);
+    };
+    frameRequest = requestAnimationFrame(locate);
+    return () => cancelAnimationFrame(frameRequest);
+    // The request token owns this operation. Renders and zoom updates must not restart it.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [focusEvidence, status]);
+
   const canZoomIn =
     (mode === "fit" ? effectiveScaleFor(currentPage) : scale) <
     MAX_SCALE - 0.001;
@@ -2194,6 +2265,8 @@ export function PdfViewer({
                 registerFrameElement={handleFrameElement}
                 annotations={annotationsByPage.get(pageNumber)}
                 onOpenAnnotation={onOpenAnnotation}
+                evidenceRects={evidenceMark?.token === focusEvidence?.token && evidenceMark?.page === pageNumber
+                  ? evidenceMark.rects : undefined}
               />
             ))}
             {!paged && lastMountedPage < pageCount ? <div className="dshr-pdf-spacer" aria-hidden="true" style={{ height: layout.top(pageCount + 1) - layout.top(lastMountedPage + 1) }} /> : null}

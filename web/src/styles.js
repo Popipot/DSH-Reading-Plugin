@@ -518,7 +518,7 @@ export const styles = String.raw`
 
 /* ---------- floating selection toolbar ---------- */
 .dshr-selection {
-  position: fixed; z-index: 70; display: flex; align-items: center; gap: 1px; padding: 4px;
+  position: fixed; z-index: 70; display: flex; flex-wrap: wrap; align-items: center; gap: 1px; padding: 4px;
   border-radius: 10px; background: var(--dshr-layer-2); border: 1px solid var(--dshr-border-strong);
   box-shadow: 0 12px 34px rgba(15, 23, 42, .18); transform: translateX(-50%);
   animation: dshr-pop .12s ease-out;
@@ -606,6 +606,22 @@ export const styles = String.raw`
 .dshr-modal h3 { margin: 0 0 8px; font-size: 16px; }
 .dshr-modal p { margin: 0 0 18px; color: var(--dshr-fg-2); font-size: 13px; line-height: 1.65; }
 .dshr-modal__actions { display: flex; justify-content: flex-end; gap: 8px; }
+.dshr-evidence-dialog { width: min(680px, 100%); max-height: 88vh; overflow: auto; }
+.dshr-evidence-dialog label { display: grid; gap: 4px; margin-block: 7px; }
+.dshr-evidence-dialog textarea, .dshr-evidence-dialog select {
+  padding: 6px 8px; border: 1px solid var(--dshr-border); border-radius: 6px;
+  background: var(--dshr-layer-2); color: var(--dshr-fg);
+}
+.dshr-evidence-dialog textarea { min-height: 56px; resize: vertical; }
+.dshr-evidence-dialog blockquote {
+  margin: 8px 0; padding: 6px 10px; border-inline-start: 2px solid var(--dshr-border-strong);
+  white-space: pre-wrap; overflow-wrap: anywhere;
+}
+.dshr-evidence-card { margin-block: 8px; padding: 10px; border: 1px solid var(--dshr-border); border-radius: 8px; }
+.dshr-evidence-card p { margin: 4px 0; }
+.dshr-evidence-note { white-space: pre-wrap; overflow-wrap: anywhere; }
+.dshr-evidence-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 4px; }
+.dshr-evidence-dialog .dshr-evidence-checkbox { display: flex; align-items: center; }
 .dshr-collection-dialog { width: min(480px, calc(100% - 24px)); max-height: calc(100dvh - 32px); overflow: auto; color: var(--dshr-fg); }
 .dshr-collection-dialog::backdrop { background: var(--dsw-alias-bg-mask-1, rgba(15, 23, 42, .45)); }
 .dshr-collection-dialog__field { display: grid; gap: 6px; margin: 12px 0; font-size: 13px; }
