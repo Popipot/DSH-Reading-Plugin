@@ -32,6 +32,8 @@ Ein Plugin für **DeepSeek Harness** zum Lesen von Fachliteratur und Büchern. O
 
 **PDF-Ansicht.** Bei angepasster Breite wird durchgehend gescrollt. In der Ganzseitenansicht stehen Scrollen und Blättern zur Wahl. Die Schaltfläche zeigt in beiden Werkzeugleisten die aktuelle Ansicht an.
 
+**Die B4-Freigabe ist ausgesetzt.** Die installierbare Version bestand die Prüfungen für das Offline-Lesen von PDFs, den Zugriff auf Themen und den Markdown-Export sowie sechs Browser-Regressionstests. Sicherung, Wiederherstellung und die gepaarte Leistungsmessung stehen aus.
+
 Im früheren B1-Leistungstest mit 80 kalten Dokumentöffnungen in DSH Desktop lag der höchste P95 je Testgruppe bei **1.375 ms** für den Referenzartikel und **2.426 ms** für das Lehrbuch mit 1.029 Seiten. Bei 480 Seitenwechseln in DSH Web lag der höchste P95 bei **44 ms** mit und **259 ms** ohne Vorladen. Der finale Build bestand die Desktop-Prüfung der Darstellung und sechs Browser-Regressionsreihen.
 
 ## Funktionen
