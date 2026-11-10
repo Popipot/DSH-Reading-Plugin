@@ -19,6 +19,7 @@ const TRANSLATIONS = 'pdfTranslations';
 const BACKGROUND_KEY = 'reader-background';
 const COLLECTION_PREFIX = 'book-collection:';
 const EVIDENCE_PREFIX = 'pdf-evidence:';
+const TRANSLATION_PREFIX = 'pdf-translation:';
 const SETTINGS_KEY = 'dsh-reader:settings:v1';
 const MAX_BYTES = 320 * 1024 * 1024;
 const MAX_BACKGROUND_BYTES = 16 * 1024 * 1024;
@@ -217,6 +218,7 @@ export async function listBooks() {
           cover: typeof row.cover === 'string' ? row.cover : '',
           category: CATEGORY_IDS.has(row.category) ? row.category : inferCategory(row),
           categoryManual: Boolean(row.categoryManual),
+          ...(row.backupSource && !row.blob ? { missingSource: true } : {}),
         });
         cursor.continue();
       };
@@ -655,6 +657,126 @@ export async function clearLibrary() {
   } finally {
     db.close();
   }
+}
+
+// Use the existing v3 stores so a prior library opens without a schema rewrite.
+const backupStores = [BOOKS, ANNOTATIONS, ASSETS, TRANSLATIONS];
+
+function backupLocation({ kind, value }) {
+  switch (kind) {
+    case 'book': return [BOOKS, value.id, value];
+    case 'annotation': return [ANNOTATIONS, value.id, value];
+    case 'collection': return [ASSETS, collectionKey(value.id), { ...value, key: collectionKey(value.id) }];
+    case 'evidence': return [ASSETS, evidenceKey(value.id), { key: evidenceKey(value.id), value }];
+    case 'translationPreference': {
+      const key = TRANSLATION_PREFIX + value.bookId;
+      return [ASSETS, key, { key, value: value.preferences }];
+    }
+    case 'translationCache': return [TRANSLATIONS, value.key, value];
+    default: throw new Error('备份包含未知记录类型。');
+  }
+}
+
+export async function readBackupLibrary() {
+  const db = await openDatabase();
+  try {
+    const tx = db.transaction(backupStores, 'readonly');
+    const [books, annotations, assets, translations] = await Promise.all(
+      backupStores.map(name => requestValue(tx.objectStore(name).getAll())),
+    );
+    const rows = [
+      ...books.map(value => ({ kind: 'book', value })),
+      ...annotations.map(value => ({ kind: 'annotation', value })),
+      ...translations.map(value => ({ kind: 'translationCache', value })),
+    ];
+    for (const row of assets) {
+      if (row.key.startsWith(COLLECTION_PREFIX)) rows.push({ kind: 'collection', value: row });
+      if (row.key.startsWith(EVIDENCE_PREFIX)) rows.push({ kind: 'evidence', value: row.value });
+      if (row.key.startsWith(TRANSLATION_PREFIX)) {
+        rows.push({ kind: 'translationPreference', value: { bookId: row.key.slice(TRANSLATION_PREFIX.length), preferences: row.value } });
+      }
+    }
+    return rows;
+  } finally { db.close(); }
+}
+
+async function existingBackupRows(tx, locations) {
+  const keys = await Promise.all(backupStores.map(name => requestValue(tx.objectStore(name).getAllKeys())));
+  const byStore = new Map(backupStores.map((name, i) => [name, new Set(keys[i])]));
+  return locations.filter(([store, key]) => byStore.get(store).has(key));
+}
+
+const backupConflictId = ([store, key]) => JSON.stringify([store, key]);
+
+export async function previewBackupConflicts(rows) {
+  const db = await openDatabase();
+  try {
+    const tx = db.transaction(backupStores, 'readonly');
+    const conflicts = await existingBackupRows(tx, rows.map(backupLocation));
+    return conflicts.map(backupConflictId);
+  } finally { db.close(); }
+}
+
+export async function restoreBackupLibrary(rows, { policy, expectedConflicts, signal }) {
+  if (!['keep', 'replace'].includes(policy)) throw new Error('请选择同 ID 记录的处理方式。');
+  signal?.throwIfAborted();
+  const db = await openDatabase();
+  try {
+    signal?.throwIfAborted();
+    const tx = db.transaction(backupStores, 'readwrite');
+    const done = txDone(tx);
+    void done.catch(() => {});
+    const abort = () => { try { tx.abort(); } catch { /* The transaction already settled. */ } };
+    signal?.addEventListener('abort', abort, { once: true });
+    try {
+      const locations = rows.map(backupLocation);
+      const conflicts = await existingBackupRows(tx, locations);
+      const actual = new Set(conflicts.map(backupConflictId));
+      if (actual.size !== expectedConflicts.length || expectedConflicts.some(id => !actual.has(id))) {
+        throw new Error('书架在预检后已变化，请重新选择备份并检查冲突。');
+      }
+
+      const protectedBooks = new Set();
+      if (policy === 'replace') {
+        const withoutFiles = conflicts.filter(([store, , row]) => store === BOOKS && !row.blob);
+        await Promise.all(withoutFiles.map(async ([, id]) => {
+          if ((await requestValue(tx.objectStore(BOOKS).get(id)))?.blob) protectedBooks.add(id);
+        }));
+      }
+      signal?.throwIfAborted();
+      let written = 0;
+      for (const location of locations) {
+        const [store, key, row] = location;
+        if ((policy === 'keep' && actual.has(backupConflictId(location)))
+          || (store === BOOKS && protectedBooks.has(key))) continue;
+        tx.objectStore(store).put(row);
+        written += 1;
+      }
+      await done;
+      return { written, kept: rows.length - written };
+    } catch (error) {
+      abort();
+      await done.catch(() => {});
+      if (error?.name === 'QuotaExceededError') throw new Error('本地空间不足，恢复已取消。');
+      throw error;
+    } finally { signal?.removeEventListener('abort', abort); }
+  } finally { db.close(); }
+}
+
+export async function reattachBackupBook(id, file, source) {
+  const db = await openDatabase();
+  try {
+    const tx = db.transaction(BOOKS, 'readwrite');
+    const done = txDone(tx);
+    void done.catch(() => {});
+    const store = tx.objectStore(BOOKS);
+    const row = await requestValue(store.get(id));
+    if (!row || row.blob || row.backupSource?.sha256 !== source.sha256 || row.backupSource?.bytes !== source.bytes) {
+      throw new Error('该文档已变化，请重新打开书架。');
+    }
+    store.put({ ...row, blob: file });
+    await done;
+  } finally { db.close(); }
 }
 
 /* ------------------------------------------------------------------ annotations */

@@ -31,7 +31,7 @@ function BookCard({ book, onOpen, onDelete, onCycleCategory, onAdd, onRemove, on
   return (
     <article className={`dshr-book-card${selection ? ' is-selecting' : ''}${selection?.has(book.id) ? ' is-selected' : ''}`}>
       <button type="button" className="dshr-book" aria-pressed={selection ? selection.has(book.id) : undefined}
-        aria-label={selection ? `选择 ${bookTitle(book)}` : `打开 ${bookTitle(book)}`}
+        aria-label={`${selection ? '选择' : book.missingSource ? '关联原文' : '打开'} ${bookTitle(book)}`}
         onClick={() => selection ? onToggle(book.id) : onOpen(book)}>
       <span className="dshr-book__media">
         {book.cover
@@ -40,7 +40,7 @@ function BookCard({ book, onOpen, onDelete, onCycleCategory, onAdd, onRemove, on
       </span>
       <span className="dshr-book__body">
         <span className="dshr-book__title">{bookTitle(book)}</span>
-        <span className="dshr-book__meta">{meta}</span>
+        <span className="dshr-book__meta">{meta}{book.missingSource ? ' · 点击关联原文' : ''}</span>
         <span className="dshr-book__foot">
           <span>{book.lastOpenedAt ? `阅读于 ${formatRelativeTime(book.lastOpenedAt)}` : formatRelativeTime(book.addedAt)}</span>
           <span>{percent > 0 ? `${Math.round(percent)}%` : '未开始'}</span>
@@ -82,8 +82,11 @@ function BookCard({ book, onOpen, onDelete, onCycleCategory, onAdd, onRemove, on
 export function LibraryView({
   books, collections, onCollectionsChange, loading, resumeBook, onResume, importing, organizing, categoryFilter, onCategoryFilter,
   onAutoOrganize, onImport, onOpen, onDelete, onCycleCategory, onSettings, onOnlineImport, onEvidence, onEditCitation,
+  onBackup, onRestoreOriginal,
 }) {
   const inputRef = React.useRef(null);
+  const originalInput = React.useRef(null);
+  const originalBook = React.useRef(null);
   const [over, setOver] = React.useState(false);
   const [search, setSearch] = React.useState('');
   const [preview, setPreview] = React.useState(null);
@@ -153,6 +156,11 @@ export function LibraryView({
   }
 
   const pick = () => inputRef.current?.click();
+  function readBook(book) {
+    if (!book.missingSource) { onOpen(book); return; }
+    originalBook.current = book;
+    originalInput.current?.click();
+  }
 
   const handleDrop = (event) => {
     event.preventDefault();
@@ -202,6 +210,7 @@ export function LibraryView({
               <IconSettings size={15} /> 设置
             </button>
             <button type="button" className="dshr-btn dshr-btn--outline" onClick={() => onEvidence()}>证据库</button>
+            {onBackup ? <button type="button" className="dshr-btn dshr-btn--outline" onClick={onBackup}>备份与恢复</button> : null}
           </div>
         </header>
 
@@ -232,7 +241,7 @@ export function LibraryView({
             <div className="dshr-collections__grid">
               {folders.map(folder => <CollectionCard key={folder.id} folder={folder} expanded={preview === folder.id}
                 onToggle={() => setPreview(value => value === folder.id ? null : folder.id)}
-                onOpen={() => openFolder(folder.id)} onRead={onOpen} />)}
+                onOpen={() => openFolder(folder.id)} onRead={readBook} />)}
             </div>
           </section>
         )}
@@ -327,7 +336,7 @@ export function LibraryView({
               <BookCard
                 key={book.id}
                 book={book}
-                onOpen={onOpen}
+                onOpen={readBook}
                 onDelete={onDelete}
                 onEditCitation={onEditCitation}
                 onCycleCategory={(item) => onCycleCategory(item, NEXT_CATEGORY[item.category || 'document'])}
@@ -360,6 +369,15 @@ export function LibraryView({
           setSelection(null);
           setNotice(action.kind === 'add' ? `已加入「${saved.name}」。` : `已保存「${saved.name}」。`);
         }} />}
+
+      <input ref={originalInput} type="file" aria-label="选择原文文件" hidden
+        onChange={event => {
+          const file = event.target.files?.[0];
+          const book = originalBook.current;
+          originalBook.current = null;
+          event.target.value = '';
+          if (book && file) void onRestoreOriginal?.(book, file);
+        }} />
 
       <input
         ref={inputRef}

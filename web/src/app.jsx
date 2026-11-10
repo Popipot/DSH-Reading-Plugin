@@ -30,6 +30,8 @@ import {
 import { translateSegments, isAbortError, fetchRemoteBook } from './ai-client.js';
 import { generateCover } from './cover.js';
 
+const BackupDialog = React.lazy(() => import('./backup/BackupDialog.jsx'));
+
 const LAST_BOOK_KEY = 'dsh-reader:last-book:v1';
 const SESSION_BOOK_KEY = 'dsh-reader:session-book:v1';
 const IMMERSIVE_BAR_HEIGHT = 44;
@@ -160,6 +162,7 @@ export function ReaderPage() {
   const pdfScrollLocked = current?.kind === 'pdf' && (pdfViewMode === 'width' || pdfViewMode === 'custom-width');
   const effectiveReadingMode = pdfScrollLocked ? 'scroll' : settings.readingMode;
   const [settingsOpen, setSettingsOpen] = React.useState(false);
+  const [backupOpen, setBackupOpen] = React.useState(false);
   const [onlineOpen, setOnlineOpen] = React.useState(false);
   const [onlineBusy, setOnlineBusy] = React.useState(false);
   const [appearanceOpen, setAppearanceOpen] = React.useState(false);
@@ -386,7 +389,7 @@ export function ReaderPage() {
     };
   }, [selection]);
 
-  const flushProgress = React.useCallback(async () => {
+  const flushProgress = React.useCallback(async ({ requireSaved = false } = {}) => {
     const pending = progressSaveRef.current.latest;
     if (!pending) return;
     progressSaveRef.current.latest = null;
@@ -395,8 +398,9 @@ export function ReaderPage() {
       setBooks((books) => books.map((book) => book.id === pending.id
         ? { ...book, progress: pending.progress, lastOpenedAt: Date.now() }
         : book));
-    } catch {
-      // Progress is best-effort; never interrupt reading for a quota/lock error.
+    } catch (error) {
+      if (requireSaved) throw error;
+      // Progress is best-effort during reading.
     }
   }, [refreshBooks]);
 
@@ -699,6 +703,17 @@ export function ReaderPage() {
     }
   }, [refreshBooks, reloadAnnotations, showToast]);
   const evidence = useEvidence({ currentRef, navigation: openRevision, openBook, refreshBooks, showToast });
+  async function restoreOriginal(book, file) {
+    try {
+      const { attachLibraryOriginal } = await import('./backup/library.js');
+      await attachLibraryOriginal(book.id, file);
+      await refreshBooks();
+      showToast('原文已重新关联，阅读进度与证据已保留。');
+    } catch (error) {
+      showToast(error?.message || '关联原文失败。', 5000);
+    }
+  }
+
   async function saveCitation(id, fields) {
     const saved = await savePaperCitation(id, fields);
     setBooks(previous => previous.map(book => book.id === id ? { ...book, ...saved } : book));
@@ -1382,6 +1397,8 @@ export function ReaderPage() {
             onOnlineImport={() => setOnlineOpen(true)}
             onEvidence={topicId => evidence.show('', topicId)}
             onEditCitation={setCitationBook}
+            onBackup={() => setBackupOpen(true)}
+            onRestoreOriginal={restoreOriginal}
           />
         )}
 
@@ -1423,8 +1440,19 @@ export function ReaderPage() {
             onChange={setSettings}
             onClose={() => setSettingsOpen(false)}
             onOpenAppearance={() => { setSettingsOpen(false); setAppearanceOpen(true); }}
+            onBackup={() => { setSettingsOpen(false); setBackupOpen(true); }}
             onClearLibrary={() => void handleClearLibrary()}
           />
+        ) : null}
+        {backupOpen ? (
+          <React.Suspense fallback={null}>
+            <BackupDialog
+              allowRestore={!current && !importing && !organizing && !onlineBusy}
+              onClose={() => setBackupOpen(false)}
+              beforeBackup={() => flushProgress({ requireSaved: true })}
+              onRestored={() => void refreshBooks()}
+            />
+          </React.Suspense>
         ) : null}
         {appearanceOpen ? (
           <AppearancePanel

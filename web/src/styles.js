@@ -620,6 +620,11 @@ export const styles = String.raw`
 .dshr-modal h3 { margin: 0 0 8px; font-size: 16px; }
 .dshr-modal p { margin: 0 0 18px; color: var(--dshr-fg-2); font-size: 13px; line-height: 1.65; }
 .dshr-modal__actions { display: flex; justify-content: flex-end; gap: 8px; }
+.dshr-backup { max-height: calc(100% - 24px); overflow: auto; }
+.dshr-backup__heading { display: flex; align-items: flex-start; justify-content: space-between; gap: 8px; }
+.dshr-backup__preview { padding: 12px 0; overflow-wrap: anywhere; }
+.dshr-backup__preview p { margin: 6px 0 10px; }
+.dshr-backup__preview select { margin: 6px 0 6px 8px; max-width: 100%; }
 .dshr-evidence-dialog { width: min(680px, 100%); max-height: 88vh; overflow: auto; }
 .dshr-evidence-dialog label { display: grid; gap: 4px; margin-block: 7px; }
 .dshr-evidence-dialog textarea, .dshr-evidence-dialog select, .dshr-evidence-dialog input:not([type=checkbox]) {

@@ -1,7 +1,7 @@
 import React from 'react';
 import { IconX, IconMinus, IconPlus, IconTrash, IconPalette } from './icons.jsx';
 
-export function SettingsDialog({ settings, onChange, onClose, onClearLibrary, onOpenAppearance }) {
+export function SettingsDialog({ settings, onChange, onClose, onClearLibrary, onOpenAppearance, onBackup }) {
   const [confirmClear, setConfirmClear] = React.useState(false);
   React.useEffect(() => {
     const onKey = (event) => { if (event.key === 'Escape') onClose(); };
@@ -84,6 +84,16 @@ export function SettingsDialog({ settings, onChange, onClose, onClearLibrary, on
           </div>
           <span className="dshr-chip dshr-chip--brand">DSH 默认模型</span>
         </div>
+
+        {onBackup ? (
+          <div className="dshr-settings-row">
+            <div>
+              <div className="dshr-settings-row__title">备份与恢复</div>
+              <div className="dshr-settings-row__hint">将书架与研究资料保存为本地 ZIP。</div>
+            </div>
+            <button type="button" className="dshr-btn dshr-btn--sm dshr-btn--outline" onClick={onBackup}>打开备份与恢复</button>
+          </div>
+        ) : null}
 
         <div className="dshr-settings-row dshr-settings-row--danger">
           <div>

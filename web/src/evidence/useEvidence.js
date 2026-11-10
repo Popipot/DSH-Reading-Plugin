@@ -149,7 +149,15 @@ export function useEvidence({ currentRef, navigation, openBook, refreshBooks, sh
           : '原版本待确认。若无法核验原文件，请在所选 PDF 重新选择原文。');
         return;
       }
-      const stored = await saveBook(file, { fingerprint: identity });
+      const previous = await getBook(record.bookId);
+      let stored;
+      if (!previous?.blob && previous?.backupSource?.sha256 === identity.sha256 && previous.backupSource.bytes === identity.bytes) {
+        const { attachLibraryOriginal } = await import('../backup/library.js');
+        await attachLibraryOriginal(previous.id, file);
+        stored = await getBook(previous.id);
+      } else {
+        stored = await saveBook(file, { fingerprint: identity });
+      }
       const updated = await reviseEvidence(record.id, {
         bookId: stored.id, fileRevision: stored.fileRevision, sourceRevision: uuid(), identityError: '',
       }, record.sourceRevision);
