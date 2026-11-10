@@ -362,6 +362,8 @@ export function PdfViewer({
   onEvidenceLocated,
   hideTranslations = false,
   paged = false,
+  viewMode: controlledViewMode,
+  onViewModeChange,
   onHideTranslations,
 }) {
   const propsRef = useRef(null);
@@ -433,11 +435,14 @@ export function PdfViewer({
   const [pageCount, setPageCount] = useState(0);
   const [dims, setDims] = useState({});
   const [baseDim, setBaseDim] = useState(null);
-  const [mode, setMode] = useState("fit");
+  const [standaloneViewMode, setStandaloneViewMode] = useState(paged ? "page" : "width");
+  const viewMode = controlledViewMode ?? standaloneViewMode;
+  const setViewMode = onViewModeChange ?? setStandaloneViewMode;
+  const fitPage = viewMode === "page";
+  const mode = viewMode.startsWith("custom-") ? "custom" : "fit";
   const [scale, setScale] = useState(1);
   const [viewportWidth, setViewportWidth] = useState(0);
   const [viewportHeight, setViewportHeight] = useState(0);
-  const [fitPage, setFitPage] = useState(false);
   const [currentPage, setCurrentPage] = useState(
     clamp(Number.parseInt(initialPage, 10) || 1, 1, 999999)
   );
@@ -1221,20 +1226,10 @@ export function PdfViewer({
         : scaleRef.current;
     const next = clamp(base * factor, MIN_SCALE, MAX_SCALE);
     fitPageRef.current = false;
-    setFitPage(false);
     modeRef.current = "custom";
     scaleRef.current = next;
-    setMode("custom");
+    setViewMode(viewMode === "page" || viewMode === "custom-page" ? "custom-page" : "custom-width");
     setScale(next);
-    scheduleAnchorRestore(anchor);
-  }
-
-  function fitToWidth() {
-    const anchor = captureScrollAnchor();
-    fitPageRef.current = false;
-    setFitPage(false);
-    modeRef.current = "fit";
-    setMode("fit");
     scheduleAnchorRestore(anchor);
   }
 
@@ -1242,9 +1237,8 @@ export function PdfViewer({
     const anchor = captureScrollAnchor();
     const next = !fitPageRef.current;
     fitPageRef.current = next;
-    setFitPage(next);
     modeRef.current = "fit";
-    setMode("fit");
+    setViewMode(next ? "page" : "width");
     scheduleAnchorRestore(anchor);
     scheduleMeasure();
   }
@@ -1742,8 +1736,8 @@ export function PdfViewer({
   }, [status, pageCount, paged]);
 
   useEffect(() => {
-    if (paged) setFitPage(true);
-  }, [paged]);
+    if (paged && controlledViewMode === undefined) setStandaloneViewMode("page");
+  }, [paged, controlledViewMode]);
 
   useEffect(() => {
     if (!paged) return;
@@ -2172,10 +2166,12 @@ export function PdfViewer({
       className={`${toolButtonClass} dshr-pdf-tbtn-wide`}
       data-active={fitPage ? "true" : "false"}
       aria-pressed={fitPage}
-      title={fitPage ? "当前整页显示；点击回到适合宽度" : "点击切换为整页显示；再次点击回到适合宽度"}
+      title={fitPage ? "当前整页显示；点击切换为适合宽度"
+        : viewMode === "width" ? "当前为适合宽度；点击切换为整页显示"
+          : "当前为自定义缩放；点击切换为整页显示，再点击切回适合宽度"}
       onClick={toggleWholePage}
     >
-      {integratedToolbar || fitPage ? "整页" : "适宽"}
+      {fitPage ? "整页" : viewMode === "width" ? "适宽" : "自定义"}
     </button>
   );
   const pageInputControl = (

@@ -397,7 +397,8 @@ export const styles = String.raw`
   font: 11.5px/1 var(--dshr-sans); white-space: nowrap;
   transition: color .15s ease, background .15s ease;
 }
-.dshr-topbar__mode-btn:hover { color: var(--dshr-fg); }
+.dshr-topbar__mode-btn:hover:not(:disabled) { color: var(--dshr-fg); }
+.dshr-topbar__mode-btn:disabled { opacity: .45; cursor: default; }
 .dshr-topbar__mode-btn.is-active { color: var(--dshr-brand); background: var(--dshr-brand-soft); font-weight: 600; }
 .dshr-topbar__animation {
   height: 24px; max-width: 96px; margin-left: 2px; padding: 0 5px;
@@ -407,6 +408,19 @@ export const styles = String.raw`
 }
 .dshr-topbar__animation option { background: var(--dshr-layer-2); color: var(--dshr-fg); }
 .dshr-topbar__animation:focus-visible { border-color: var(--dshr-brand); }
+.dshr-immersive-controls--pdf .dshr-topbar__mode {
+  border-color: color-mix(in srgb, currentColor 15%, transparent);
+  background: color-mix(in srgb, currentColor 4%, transparent);
+}
+.dshr-immersive-controls--pdf .dshr-topbar__mode-btn { color: inherit; }
+.dshr-immersive-controls--pdf .dshr-topbar__mode-btn.is-active {
+  background: color-mix(in srgb, currentColor 10%, transparent);
+}
+.dshr-immersive-controls--pdf .dshr-topbar__animation {
+  color: inherit;
+  border-color: color-mix(in srgb, currentColor 15%, transparent);
+  background: transparent;
+}
 .dshr-topbar__tools .dshr-btn { position: relative; }
 .dshr-topbar__divider { width: 1px; height: 18px; background: var(--dshr-border); margin: 0 4px; }
 .dshr-progress {

@@ -156,6 +156,9 @@ export function ReaderPage() {
   const [opening, setOpening] = React.useState(false);
   const [openingLabel, setOpeningLabel] = React.useState('');
   const [settings, setSettings] = React.useState(loadSettings);
+  const [pdfViewMode, setPdfViewMode] = React.useState('width');
+  const pdfScrollLocked = current?.kind === 'pdf' && (pdfViewMode === 'width' || pdfViewMode === 'custom-width');
+  const effectiveReadingMode = pdfScrollLocked ? 'scroll' : settings.readingMode;
   const [settingsOpen, setSettingsOpen] = React.useState(false);
   const [onlineOpen, setOnlineOpen] = React.useState(false);
   const [onlineBusy, setOnlineBusy] = React.useState(false);
@@ -305,7 +308,7 @@ export function ReaderPage() {
   }, [settings]);
 
   React.useEffect(() => {
-    if (!current || settings.readingMode === 'book') return undefined;
+    if (!current || effectiveReadingMode === 'book') return undefined;
     const onKey = (event) => {
       if (event.defaultPrevented || event.repeat || event.ctrlKey || event.metaKey || event.altKey) return;
       if (!['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown'].includes(event.key)) return;
@@ -322,7 +325,7 @@ export function ReaderPage() {
     };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
-  }, [current, settings.readingMode]);
+  }, [current, effectiveReadingMode]);
 
   React.useEffect(() => {
     if (!backgroundImageUrl) {
@@ -646,6 +649,7 @@ export function ReaderPage() {
         // Keep the payload in data; the metadata record has no second payload
         // field. A Blob reference itself does not duplicate its file bytes.
         const viewerRecord = { ...record, blob: null, blobName: record.blob.name || '' };
+        setPdfViewMode(settingsRef.current.readingMode === 'book' ? 'page' : 'width');
         setCurrent({ kind: 'pdf', record: viewerRecord, data });
         setProgress({ page: saved.page || 1, pages: saved.pages || 0, percent: saved.percent || 0 });
         setFlowLocation({ index: 0, entry: null });
@@ -982,29 +986,29 @@ export function ReaderPage() {
       : (((chapterIndex + 1) / Math.max(1, current.book.chapters.length)) * 100))
     : 0;
 
-  function renderTopbar({ iconTools, textTools } = {}) {
-    const isPdf = current.kind === 'pdf';
-    const readingMode = (
+  function renderReadingMode() {
+    return (
       <div className="dshr-topbar__mode" role="group" aria-label="翻书方式">
         <button
           type="button"
-          className={`dshr-topbar__mode-btn${settings.readingMode !== 'book' ? ' is-active' : ''}`}
-          onClick={() => setSettings((value) => ({ ...value, readingMode: 'scroll' }))}
-          aria-pressed={settings.readingMode !== 'book'}
-          title="连续滚动阅读"
+          className={`dshr-topbar__mode-btn${effectiveReadingMode !== 'book' ? ' is-active' : ''}`}
+          onClick={() => { if (!pdfScrollLocked) setSettings(value => ({ ...value, readingMode: 'scroll' })); }}
+          aria-pressed={effectiveReadingMode !== 'book'}
+          title={pdfScrollLocked ? '适宽视图固定使用滚动阅读' : '连续滚动阅读'}
         >
           <span>滚动</span>
         </button>
         <button
           type="button"
-          className={`dshr-topbar__mode-btn${settings.readingMode === 'book' ? ' is-active' : ''}`}
-          onClick={() => setSettings((value) => ({ ...value, readingMode: 'book' }))}
-          aria-pressed={settings.readingMode === 'book'}
-          title="横版纸质书翻页"
+          className={`dshr-topbar__mode-btn${effectiveReadingMode === 'book' ? ' is-active' : ''}`}
+          onClick={() => setSettings(value => ({ ...value, readingMode: 'book' }))}
+          aria-pressed={effectiveReadingMode === 'book'}
+          disabled={pdfScrollLocked}
+          title={pdfScrollLocked ? '切换到整页后可使用横版翻页' : '横版纸质书翻页'}
         >
           <span>横版</span>
         </button>
-        {settings.readingMode === 'book' ? (
+        {effectiveReadingMode === 'book' ? (
           <select
             className="dshr-topbar__animation"
             aria-label="翻页动画"
@@ -1018,6 +1022,10 @@ export function ReaderPage() {
         ) : null}
       </div>
     );
+  }
+
+  function renderTopbar({ iconTools, textTools } = {}) {
+    const isPdf = current.kind === 'pdf';
     const immersiveButton = (
       <button
         type="button"
@@ -1115,7 +1123,7 @@ export function ReaderPage() {
             </div>
             <div className="dshr-topbar__tools dshr-topbar__labels">
               {textTools}
-              {readingMode}
+              {renderReadingMode()}
               {translationSwitch}
               {aiButton}
             </div>
@@ -1125,7 +1133,7 @@ export function ReaderPage() {
             <button type="button" className={`dshr-btn dshr-btn--icon ${tocOpen ? 'dshr-btn--outline' : ''}`} onClick={() => setTocOpen((value) => !value)} title="目录" aria-label="目录" aria-pressed={tocOpen}>
               <IconList size={16} />
             </button>
-            {readingMode}
+            {renderReadingMode()}
             {immersiveButton}
             {translationSwitch}
             {iconActions}
@@ -1148,6 +1156,7 @@ export function ReaderPage() {
       >
         {isPdf ? <span className="dshr-immersive-title" title={currentBookTitle}>{currentBookTitle}</span> : null}
         {pdfTools}
+        {isPdf && pdfTools ? renderReadingMode() : null}
         <div className="dshr-immersive-actions">
           {!isPdf ? (
             <button
@@ -1230,7 +1239,7 @@ export function ReaderPage() {
         }}
         data-reader-background={settings.backgroundPreset}
         data-hide-translations={settings.hideTranslations ? 'true' : 'false'}
-        data-reading-mode={settings.readingMode || 'scroll'}
+        data-reading-mode={effectiveReadingMode || 'scroll'}
       >
         <input
           ref={backgroundInputRef}
@@ -1292,7 +1301,9 @@ export function ReaderPage() {
                   initialPage={current.record.progress?.page || 1}
                   autoTranslate={settings.autoTranslate}
                   hideTranslations={settings.hideTranslations}
-                  paged={settings.readingMode === 'book'}
+                  viewMode={pdfViewMode}
+                  onViewModeChange={setPdfViewMode}
+                  paged={effectiveReadingMode === 'book'}
                   onHideTranslations={() => setSettings(value => ({ ...value, hideTranslations: true }))}
                   annotations={annotations}
                   onOpenAnnotation={openAnnotationById}
@@ -1336,7 +1347,7 @@ export function ReaderPage() {
               {current.kind === 'flow' ? sidePanels : null}
             </div>
             <PagedReader
-              enabled={settings.readingMode === 'book'}
+              enabled={effectiveReadingMode === 'book'}
               animation={settings.bookAnimation}
               bookMode
               bookFrame={current.kind === 'flow'}
