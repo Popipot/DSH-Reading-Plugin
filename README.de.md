@@ -30,6 +30,8 @@ Ein Plugin für **DeepSeek Harness** zum Lesen von Fachliteratur und Büchern. O
 
 **B3 für Themenvergleich und Export ist freigegeben.** In einer Bücherliste lassen sich eine Forschungsfrage festhalten, Belege mehrerer Artikel gruppieren und nach Artikel filtern sowie Vergleiche verfassen. Quellenangaben und gedruckte Seitenbezeichnungen können ergänzt werden. Ausgewählte Belege und ganze Themen lassen sich als UTF-8-Markdown exportieren. Revision `93436e0` bestand alle sieben Prüfungen, darunter neun präzise PDF-Rücksprünge und neun vollständige Quellenangaben im Export. Bei 100 Artikeln und 1.000 Belegen lag das P95 für die Filterung bei 31,8 ms.
 
+**PDF-Ansicht.** Bei angepasster Breite wird durchgehend gescrollt. In der Ganzseitenansicht stehen Scrollen und Blättern zur Wahl. Die Schaltfläche zeigt in beiden Werkzeugleisten die aktuelle Ansicht an.
+
 Im früheren B1-Leistungstest mit 80 kalten Dokumentöffnungen in DSH Desktop lag der höchste P95 je Testgruppe bei **1.375 ms** für den Referenzartikel und **2.426 ms** für das Lehrbuch mit 1.029 Seiten. Bei 480 Seitenwechseln in DSH Web lag der höchste P95 bei **44 ms** mit und **259 ms** ohne Vorladen. Der finale Build bestand die Desktop-Prüfung der Darstellung und sechs Browser-Regressionsreihen.
 
 ## Funktionen

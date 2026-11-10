@@ -30,6 +30,8 @@ A **DeepSeek Harness** plugin for reading papers and books. Organize your local 
 
 **B3 topic comparison and export is released.** Open a book list and choose its topic workspace to record a research question, group evidence from several papers, filter by paper, and write a comparison. Paper citations can be confirmed or completed, including an optional printed page label. Export selected evidence or the whole topic as UTF-8 Markdown. Candidate `93436e0` passed all seven checks, including nine exact PDF returns, nine complete exported references, and a 31.8 ms filter P95 at 100 papers and 1,000 evidence records.
 
+**PDF viewing controls.** Fit Width uses continuous scrolling. Fit Page offers both scrolling and page turning. The button displays the active view in the standard and immersive toolbars.
+
 In B1's earlier performance run, 80 cold opens on DSH Desktop had a highest group P95 of **1,375 ms** for the reference paper and **2,426 ms** for the 1,029-page textbook. For 480 adjacent-page turns on DSH Web, the highest group P95 was **44 ms** with preloading and **259 ms** without it. The final build passed the desktop appearance check and six browser regression suites.
 
 ## Features
