@@ -32,7 +32,7 @@ A **DeepSeek Harness** plugin for reading papers and books. Organize your local 
 
 **PDF viewing controls.** Fit Width uses continuous scrolling. Fit Page offers both scrolling and page turning. The button displays the active view in the standard and immersive toolbars.
 
-**B4 recovery and release verification is on hold.** The installable version passed offline PDF reading, topic access, Markdown export, and six browser regression suites. Local backup and restore and paired performance verification remain open.
+**Local ZIP backup and restore.** From the library or reader settings, save reading and research data with or without the original documents. From the library, verify a ZIP and preview same-ID conflicts before restoring. B4 candidate e5f61dc passed all nine v0.1 checks.
 
 In B1's earlier performance run, 80 cold opens on DSH Desktop had a highest group P95 of **1,375 ms** for the reference paper and **2,426 ms** for the 1,029-page textbook. For 480 adjacent-page turns on DSH Web, the highest group P95 was **44 ms** with preloading and **259 ms** without it. The final build passed the desktop appearance check and six browser regression suites.
 
