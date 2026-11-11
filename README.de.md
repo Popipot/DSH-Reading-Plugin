@@ -38,6 +38,8 @@ Ein Plugin für **DeepSeek Harness** zum Lesen von Fachliteratur und Büchern. O
 
 **Bibliotheksthemen.** Öffnen Sie unten in der Seitenleiste **主题** (Design). Sehen Sie sich **纸本** (Papier) oder **鲸海蓝** (Walblau) direkt in Ihrem Bücherregal an und speichern Sie Ihre Wahl mit **应用** (Anwenden) auf diesem Gerät. Bei Walblau erscheint das winkende Walmädchen transparent im Hintergrund des Bücherregals.
 
+**Bedienelemente auf Bibliothekskarten.** Kategorien bleiben einzeilig. Bei wenig Platz wechseln ganze Schaltflächen in die nächste Zeile.
+
 **Illustrationen in der Bibliothek.** Das winkende Pixel-Walmädchen steht auf der Startseite der Bibliothek im Mittelpunkt und passt seine Größe an das Fenster an. Das Pixel-Walmädchen liest bei Büchern, sucht mit der Lupe bei Fachliteratur und schreibt bei Dokumenten. Weitere Posen begrüßen beim Start und begleiten leere Sammlungen und erfolgreiches Hinzufügen. [Alle sechs Posen ansehen](images/whale-girl/README.md).
 
 **B5-Nutzertest.** Die Unterlagen für den 14-tägigen Test mit 15 Personen liegen vor. Der Test steht noch aus.

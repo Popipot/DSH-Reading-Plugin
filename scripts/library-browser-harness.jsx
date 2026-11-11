@@ -25,8 +25,9 @@ style.textContent = styles + appearanceStyles + annotationStyles;
 document.head.append(style);
 document.documentElement.setAttribute('data-ds-dark-theme', '');
 
-async function until(predicate, message) {
-  for (let i = 0; i < 150; i += 1) {
+async function until(predicate, message, timeoutMs = 3000) {
+  const deadline = performance.now() + timeoutMs;
+  while (performance.now() < deadline) {
     const found = await predicate();
     if (found) return found;
     await sleep(20);
@@ -364,7 +365,7 @@ try {
   asset.src = artUrl;
   await asset.decode();
   assert(asset.naturalWidth === 960 && asset.naturalHeight === 960, 'incorrect background asset size');
-  await until(() => !document.querySelector('.dshr-toast'), 'previous reader toast did not close');
+  await until(() => !document.querySelector('.dshr-toast'), 'previous reader toast did not close', 6000);
   await capture('whale-blue-preview');
   picker().dispatchEvent(new KeyboardEvent('keydown', { key:'Escape', bubbles:true, cancelable:true }));
   await until(() => shelfTheme() === 'paper' && !picker(), 'cancel did not restore paper');
@@ -443,6 +444,73 @@ try {
   await until(() => shelfTheme() === 'paper', 'saved paper theme did not survive remount');
   results.push({ check:'b8-library-themes', choices:2, previewWrites:0, cancelPaths:2, persistedSwitches:2, blueLayoutCases,
     compatibilityCases, backgroundWidth:asset.naturalWidth, backgroundOnCategory:0, backgroundInReader:0, defaultBackgroundRequests:0, missingStatus });
+  const paperTitle = 'Card footer PDF';
+  for (const title of [paperTitle, 'Card layout sample']) {
+    const pdf = await saveBook(new File(['%PDF-1.4\n%' + title + '\n%%EOF'], title + '.pdf', { type:'application/pdf' }));
+    await updateBook(pdf.id, { category:'paper', categoryManual:true });
+  }
+  root.render(null);
+  await sleep(30);
+  root.render(<ReaderPage />);
+  await until(() => named('编辑论文出处 ' + paperTitle), 'PDF action fixture is missing');
+  const paperFooter = () => named('编辑论文出处 ' + paperTitle)?.parentElement;
+  const nav = () => document.querySelector('.dshr-library-nav');
+  let footerCases = 0;
+  let wrappedFooterCases = 0;
+  for (const theme of ['whale-blue','paper']) {
+    await click('主题');
+    await click(theme === 'whale-blue' ? '应用鲸海蓝' : '应用纸本', picker());
+    await until(() => shelfTheme() === theme, 'footer theme did not apply');
+    for (const dark of [true,false]) {
+      document.documentElement.toggleAttribute('data-ds-dark-theme', dark);
+      for (const width of [1020,540,1280]) {
+        mount.style.width = width + 'px';
+        for (const category of [true,false]) {
+          if (category) await click('文献', nav());
+          else await click('返回书架');
+          const footer = paperFooter();
+          assert(footer?.children.length === 4, 'PDF footer is missing actions');
+          if (theme === 'whale-blue' && dark && width === 1020 && category) {
+            assert(footer.closest('article').getBoundingClientRect().width <= 280, 'card footer fixture did not use three columns');
+            await capture('paper-card-footer');
+          }
+          assert(footer.scrollWidth === footer.clientWidth, 'card footer scrolled horizontally');
+          const bounds = footer.getBoundingClientRect();
+          const firstRow = footer.firstElementChild.getBoundingClientRect().top;
+          if ([...footer.children].some(button => button.getBoundingClientRect().top > firstRow + 14)) wrappedFooterCases++;
+          for (const button of footer.children) {
+            const rect = button.getBoundingClientRect();
+            const label = [...button.childNodes].find(node => node.nodeType === Node.TEXT_NODE && node.textContent.trim());
+            if (label) {
+              const range = document.createRange();
+              range.selectNode(label);
+              const lines = [...range.getClientRects()].filter(line => line.width > 0);
+              assert(lines.length && lines.every(line => Math.abs(line.top - lines[0].top) < 1
+                && line.left >= rect.left - 1 && line.right <= rect.right + 1
+                && line.top >= rect.top - 1 && line.bottom <= rect.bottom + 1),
+                'card footer label wrapped or overflowed: ' + label.textContent.trim());
+            }
+            assert(rect.left >= bounds.left - 1 && rect.right <= bounds.right + 1
+              && rect.top >= bounds.top - 1 && rect.bottom <= bounds.bottom + 1, 'card footer action overflowed');
+            button.focus({ preventScroll:true });
+            assert(document.activeElement === button, 'card footer action could not receive keyboard focus');
+          }
+          footerCases++;
+        }
+      }
+    }
+  }
+  mount.style.width = '';
+  document.documentElement.removeAttribute('data-ds-dark-theme');
+  await click('出处', paperFooter());
+  const citationDialog = document.querySelector('[role="dialog"][aria-label="论文出处"]');
+  assert(citationDialog, 'card footer citation action did not open');
+  await click('取消', citationDialog);
+  await click('加入书单', paperFooter());
+  assert(dialog(), 'card footer collection action did not open');
+  await click('取消', dialog());
+  assert(wrappedFooterCases > 0, 'no footer exercised whole-button wrapping');
+  results.push({ check:'paper-card-footer-layout', footerCases, wrappedFooterCases, actionsPerPdf:4, labelLines:1, overflowCssPx:0 });
   await clearLibrary();
   assert(!(await listBookCollections()).length && !(await listBooks()).length, 'clear library left stale folders');
   assert(errors.length === 0, errors.join('; '));
