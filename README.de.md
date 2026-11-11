@@ -34,6 +34,8 @@ Ein Plugin für **DeepSeek Harness** zum Lesen von Fachliteratur und Büchern. O
 
 **Lokale ZIP-Sicherung und Wiederherstellung.** In der Bibliothek oder in den Leseeinstellungen lassen sich Lese- und Forschungsdaten mit oder ohne Originaldateien exportieren. Vor der Wiederherstellung prüft die Bibliothek das Archiv und zeigt Konflikte bei gleichen IDs. B4-Kandidat e5f61dc bestand alle neun Prüfungen nach v0.1.
 
+**B5-Nutzertest.** Die Unterlagen für den 14-tägigen Test mit 15 Personen liegen vor. Der Test steht noch aus.
+
 Im früheren B1-Leistungstest mit 80 kalten Dokumentöffnungen in DSH Desktop lag der höchste P95 je Testgruppe bei **1.375 ms** für den Referenzartikel und **2.426 ms** für das Lehrbuch mit 1.029 Seiten. Bei 480 Seitenwechseln in DSH Web lag der höchste P95 bei **44 ms** mit und **259 ms** ohne Vorladen. Der finale Build bestand die Desktop-Prüfung der Darstellung und sechs Browser-Regressionsreihen.
 
 ## Funktionen
