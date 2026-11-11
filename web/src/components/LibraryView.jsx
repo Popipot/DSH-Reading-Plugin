@@ -268,8 +268,10 @@ export function LibraryView({
                   setGuideOpen(true);
                   requestAnimationFrame(() => guideRef.current?.scrollIntoView({ block: "nearest" }));
                 }}>
-                  <LibraryMascot pose="welcome" />
-                  <strong>导入指南</strong><IconChevronRight size={18} />
+                  <LibraryMascot pose="welcome" size={192} />
+                  <span className="dshr-library-guide__label">
+                    <strong>导入指南</strong><IconChevronRight size={18} />
+                  </span>
                 </button>
                 <button type="button" className="dshr-btn dshr-btn--icon dshr-btn--ghost dshr-library-guide__close" aria-label="隐藏导入指南"
                   onClick={() => { setGuideDismissed(true); setGuideOpen(false); }}><IconX size={16} /></button>

@@ -794,11 +794,16 @@ export const styles = String.raw`
 .dshr-library-start .dshr-resume__eyebrow { font-size:16px; color:var(--dshr-fg); }
 .dshr-resume__progress { height:6px; max-width:355px; margin-top:3px; overflow:hidden; border-radius:999px; background:var(--dshr-border); }
 .dshr-resume__progress i { display:block; width:var(--p); height:100%; border-radius:inherit; background:var(--dshr-brand); }
-.dshr-library-guide { flex:1 1 220px; min-width:0; position:relative; display:flex; align-items:stretch; }
-.dshr-library-start .dshr-resume + .dshr-library-guide::before { content:""; align-self:center; height:68%; width:1px; background:var(--dshr-border); }
-.dshr-library-guide__open { display:flex; justify-content:center; align-items:center; gap:12px; width:100%; min-height:96px; padding:10px 30px 10px 12px; color:var(--dshr-fg); border:0; border-radius:12px; background:transparent; }
-.dshr-library-guide__open strong { font-size:clamp(15px,1.6cqi,21px); }
-.dshr-library-guide__open:hover { background:var(--dshr-hover); }
+.dshr-library-guide { flex:1 1 330px; min-width:0; position:relative; display:flex; align-items:stretch; }
+.dshr-library-guide__open {
+  display:flex; flex-wrap:wrap; justify-content:center; align-items:center; gap:4px 14px; width:100%;
+  padding:10px 28px 10px 14px; color:var(--dshr-fg); border:0; border-radius:11px;
+  background:color-mix(in srgb,var(--dshr-brand-soft) 65%,var(--dshr-layer));
+}
+.dshr-library-guide__open .dshr-library-mascot { inline-size:192px; block-size:192px; }
+.dshr-library-guide__label { display:inline-flex; align-items:center; gap:6px; }
+.dshr-library-guide__label strong { font-size:clamp(15px,1.6cqi,21px); }
+.dshr-library-guide__open:hover { background:color-mix(in srgb,var(--dshr-brand-soft) 85%,var(--dshr-layer)); }
 .dshr-library-guide__close { position:absolute; top:5px; right:5px; }
 .dshr-library-shell .dshr-collections__bar h2, .dshr-library-shell .dshr-library__bar h2 { font-size:clamp(20px,2.1cqi,29px); }
 .dshr-library-shell .dshr-collections__grid { grid-template-columns:repeat(3,minmax(0,1fr)); gap:16px; }
@@ -830,11 +835,13 @@ export const styles = String.raw`
 .dshr-library-rows .dshr-book__selected { right:2px; top:3px; }
 .dshr-library-rows .dshr-book-card.is-selecting { grid-template-columns:minmax(0,1fr); }
 @container (max-width:1020px) {
+  .dshr-library-guide__open .dshr-library-mascot { inline-size:160px; block-size:160px; }
   .dshr-library-shell .dshr-collections__grid { grid-template-columns:repeat(2,minmax(0,1fr)); }
   .dshr-library-rows { --dshr-row-cols:minmax(0,2fr) minmax(0,1fr) minmax(70px,.8fr); }
   .dshr-library-rows__head > span:nth-child(3), .dshr-library-rows .dshr-book > .dshr-library-row__year { display:none; }
 }
 @container (max-width:760px) {
+  .dshr-library-guide__open .dshr-library-mascot { inline-size:144px; block-size:144px; }
   .dshr-library-shell { grid-template-columns:minmax(0,1fr); grid-template-rows:auto minmax(0,1fr); }
   .dshr-library-nav { flex-direction:row; align-items:center; flex-wrap:wrap; gap:4px 10px; padding:5px 12px; }
   .dshr-library-nav__brand { font-size:15px; padding:4px 5px; }
@@ -844,11 +851,14 @@ export const styles = String.raw`
   .dshr-library-nav button { min-height:32px; padding:4px 6px; font-size:12px; gap:4px; }
   .dshr-library-nav button svg { width:14px; height:14px; }
   .dshr-library-shell .dshr-library__inner { padding:19px 16px 30px; }
+  .dshr-library-shell .dshr-hero { align-items:stretch; }
+  .dshr-library-shell .dshr-hero__actions { flex:0 1 auto; justify-content:flex-start; }
+  .dshr-library-shell .dshr-hero .dshr-library__search { order:0; flex:1 1 135px; }
+  .dshr-library-start .dshr-resume { min-height:96px; }
 }
 @container (max-width:545px) {
   .dshr-library-shell .dshr-hero { margin-bottom:15px; }
   .dshr-library-shell .dshr-hero__actions { justify-content:flex-start; }
-  .dshr-library-start .dshr-resume + .dshr-library-guide::before { display:none; }
   .dshr-library-rows { --dshr-row-cols:minmax(0,1fr) minmax(72px,.5fr); }
   .dshr-library-rows__head, .dshr-library-rows .dshr-book-card { grid-template-columns:minmax(0,1fr); }
   .dshr-library-rows__head { grid-template-columns:var(--dshr-row-cols); }

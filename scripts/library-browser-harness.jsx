@@ -250,8 +250,9 @@ try {
   document.documentElement.setAttribute("data-ds-dark-theme", "");
   await click("预览全部 5 本", folder("待精读"));
   await capture("home");
+  const heroSizes = [];
   let matrixCases = 0;
-  for (const width of [540, 1280]) {
+  for (const [width, expected] of [[540, 144], [900, 160], [1280, 192]]) {
     mount.style.width = width + 'px';
     for (const dark of [true, false]) {
       document.documentElement.toggleAttribute('data-ds-dark-theme', dark);
@@ -259,10 +260,15 @@ try {
       const sprite = await mascot('welcome');
       const library = document.querySelector('.dshr-library');
       assert(library.scrollWidth <= library.clientWidth, 'mascot layout overflowed at ' + width);
-      assert(sprite.getBoundingClientRect().width === 64, 'welcome mascot size mismatch');
+      assert(sprite.closest('.dshr-library-guide__open'), 'welcome mascot is missing from the guide');
+      const size = sprite.getBoundingClientRect();
+      assert(size.width === expected && size.height === expected, 'hero mascot size mismatch at ' + width);
+      heroSizes.push({ width, dark, size: size.width });
       const importButton = named('导入文档');
       importButton.focus();
       assert(document.activeElement === importButton, 'import control lost keyboard focus');
+      const header = importButton.closest('.dshr-hero').getBoundingClientRect();
+      assert(header.height < 135, 'search and import took too much height at ' + width);
       const rect = sprite.getBoundingClientRect();
       const hit = document.elementFromPoint(rect.x + rect.width / 2, rect.y + rect.height / 2);
       assert(hit !== sprite, 'mascot intercepted pointer events');
@@ -275,7 +281,7 @@ try {
   welcome.src = '/dsh-reader-assets/mascot/unavailable-fixture.webp';
   await until(() => welcome.hidden, 'broken mascot was not hidden');
   assert(named('导入文档') && document.querySelector('h1').textContent === '我的书架', 'asset failure hid library controls');
-  results.push({ check: 'b6-mascot-scene-mapping-accessibility-and-fallback', poses: 6, states: 7, matrixCases, readerImages: 0, brokenImagesVisible: 0 });
+  results.push({ check: 'b6-mascot-scene-mapping-accessibility-and-fallback', poses: 6, states: 7, matrixCases, heroSizes, readerImages: 0, brokenImagesVisible: 0 });
   mount.style.width = '400px';
   await sleep(100);
   assert(document.querySelector('.dshr-library').scrollWidth <= mount.clientWidth, 'narrow library overflowed horizontally');

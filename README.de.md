@@ -36,7 +36,7 @@ Ein Plugin für **DeepSeek Harness** zum Lesen von Fachliteratur und Büchern. O
 
 **Lesearbeitsplatz nach Entwurf A.** Die Bibliothek bietet eine Seitennavigation, Suche und Import im Kopfbereich, Sammlungen mit Buchcovern und eine Liste zuletzt genutzter Dokumente. Im PDF-Standardmodus steht das Inhaltsverzeichnis links. Rechts lassen sich Belege zum aktuellen Dokument und die Übersetzung aufrufen. In schmalen Fenstern bleibt die gesamte verfügbare Breite für das PDF erhalten.
 
-**Illustrationen in der Bibliothek.** Das Pixel-Walmädchen liest bei Büchern, sucht mit der Lupe bei Fachliteratur und schreibt bei Dokumenten. Weitere Posen begrüßen beim Start und begleiten leere Sammlungen und erfolgreiches Hinzufügen. [Alle sechs Posen ansehen](images/whale-girl/README.md).
+**Illustrationen in der Bibliothek.** Das winkende Pixel-Walmädchen steht auf der Startseite der Bibliothek im Mittelpunkt und passt seine Größe an das Fenster an. Das Pixel-Walmädchen liest bei Büchern, sucht mit der Lupe bei Fachliteratur und schreibt bei Dokumenten. Weitere Posen begrüßen beim Start und begleiten leere Sammlungen und erfolgreiches Hinzufügen. [Alle sechs Posen ansehen](images/whale-girl/README.md).
 
 **B5-Nutzertest.** Die Unterlagen für den 14-tägigen Test mit 15 Personen liegen vor. Der Test steht noch aus.
 
