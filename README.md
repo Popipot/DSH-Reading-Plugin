@@ -34,6 +34,8 @@ A **DeepSeek Harness** plugin for reading papers and books. Organize your local 
 
 **Local ZIP backup and restore.** From the library or reader settings, save reading and research data with or without the original documents. From the library, verify a ZIP and preview same-ID conflicts before restoring. B4 candidate e5f61dc passed all nine v0.1 checks.
 
+**Reader workspace, design A.** The library has category navigation, a top search and import bar, collection covers, and a recent-document list. The standard PDF view puts the document outline on the left and the current paper’s evidence and translation on the right. Narrow windows keep the PDF at full available width, with tools opening on demand.
+
 **Library illustrations.** Six pixel-art whale girl poses distinguish Books, Papers and Documents, welcome readers to the library, and accompany empty and success states. [See all six poses](images/whale-girl/README.md).
 
 **B5 user trial.** The materials for the 15-person, 14-day study are ready. Participant testing is pending.

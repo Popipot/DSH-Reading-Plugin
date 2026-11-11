@@ -27,6 +27,8 @@ import { PageBitmapCache, PageLayoutIndex } from "./performance.js";
 import { groupPdfText, extractPdfParagraphs } from "./text.js";
 import { pdfStyles as basePdfStyles, translationPanelStyles } from "./styles.js";
 import { TranslationPanel } from "./TranslationPanel.jsx";
+import { PdfOutline } from "./PdfOutline.jsx";
+import { IconList, IconNote, IconX } from "../components/icons.jsx";
 import { usePdfTranslation } from "./usePdfTranslation.js";
 import { PdfAnnotationLayer } from "../annotations/PdfAnnotationLayer.jsx";
 import { normalizedRectsForSelection } from "../annotations/model.js";
@@ -365,6 +367,8 @@ export function PdfViewer({
   viewMode: controlledViewMode,
   onViewModeChange,
   onHideTranslations,
+  onOpenEvidencePane,
+  renderEvidencePane,
 }) {
   const propsRef = useRef(null);
   propsRef.current = {
@@ -455,10 +459,40 @@ export function PdfViewer({
   const [visibleSegmentIds, setVisibleSegmentIds] = useState([]);
   const [linkedSegment, setLinkedSegment] = useState(null);
   const [panelDismissed, setPanelDismissed] = useState(false);
+  const [wideWorkspace, setWideWorkspace] = useState(false);
+  const [outlinePreference, setOutlinePreference] = useState(null);
+  const [panePreference, setPanePreference] = useState(null);
+  const [paneTab, setPaneTab] = useState(autoTranslate && !hideTranslations ? "translation" : "evidence");
+  const integratedWorkspace = Boolean(renderTopbar && renderEvidencePane);
+  const outlineOpen = integratedWorkspace && (outlinePreference ?? wideWorkspace);
+  const toolsOpen = integratedWorkspace && (panePreference ?? (wideWorkspace || (autoTranslate && !hideTranslations)));
+  const evidenceVisible = toolsOpen && paneTab === "evidence" && status === "ready";
+
+  useLayoutEffect(() => {
+    const root = rootRef.current;
+    if (!integratedWorkspace || !root) return;
+    const measure = () => setWideWorkspace(root.clientWidth >= 1040);
+    measure();
+    const observer = new ResizeObserver(measure);
+    observer.observe(root);
+    return () => observer.disconnect();
+  }, [integratedWorkspace]);
+
+  useEffect(() => {
+    if (evidenceVisible) void onOpenEvidencePane?.().catch(() => {});
+  }, [evidenceVisible, onOpenEvidencePane]);
+
+  useEffect(() => {
+    if (autoTranslate && !hideTranslations) {
+      setPaneTab("translation");
+      setPanePreference(true);
+    }
+  }, [autoTranslate, hideTranslations]);
   const linkedSegmentRef = useRef(null);
   const linkOriginRef = useRef("source");
-  const showTranslationPanel = autoTranslate && !hideTranslations && !panelDismissed;
-  const translation = usePdfTranslation({ documentId, title: fileName, enabled: showTranslationPanel,
+  const translationEnabled = autoTranslate && !hideTranslations && !panelDismissed;
+  const showTranslationPanel = translationEnabled && (!integratedWorkspace || (toolsOpen && paneTab === "translation"));
+  const translation = usePdfTranslation({ documentId, title: fileName, enabled: translationEnabled,
     activePage: currentPage, sources: pageSources, visibleIds: visibleSegmentIds });
   const translationRowsRef = useRef(null);
   translationRowsRef.current = translation.pages;
@@ -2203,6 +2237,14 @@ export function PdfViewer({
   ) : null;
 
   const standardTools = renderTopbar && status === "ready" ? {
+    workspaceTools: integratedWorkspace ? (
+      <>
+        <button type="button" className="dshr-btn dshr-btn--icon" aria-label="PDF 目录" title="目录"
+          aria-pressed={outlineOpen} onClick={() => setOutlinePreference(!outlineOpen)}><IconList size={16} /></button>
+        <button type="button" className="dshr-btn dshr-btn--icon" aria-label="阅读侧栏" title="证据与翻译"
+          aria-pressed={toolsOpen} onClick={() => setPanePreference(!toolsOpen)}><IconNote size={16} /></button>
+      </>
+    ) : null,
     iconTools: (
       <div className="dshr-pdf-tool-group" role="group" aria-label="PDF 缩放">
         {zoomOut}
@@ -2218,9 +2260,26 @@ export function PdfViewer({
     ),
   } : undefined;
 
+  const translationPanel = showTranslationPanel ? <TranslationPanel
+        page={currentPage}
+        source={pageSources[currentPage]}
+        rows={documentId ? translation.pages[currentPage] || [] : (pageSources[currentPage]?.segments || []).map((segment, index) => ({
+          ...segment, ...(pageTranslations?.[currentPage]?.segments?.[index] || {}), status: pageTranslations?.[currentPage]?.status || 'queued', error: pageTranslations?.[currentPage]?.error,
+        }))}
+        activeId={linkedSegment?.page === currentPage ? linkedSegment.id : null}
+        originRef={linkOriginRef}
+        translation={documentId ? translation : { ...translation, retry: page => {
+          reportedPagesRef.current.delete(page);
+          onRetryTranslation?.(page);
+          reportPageText(page);
+        } }}
+        onActivate={(id, options) => activateParagraph(id, options, currentPage)}
+        onClose={() => { setPanelDismissed(true); onHideTranslations?.(); }}
+      /> : null;
+
   return (
     <div
-      className="dshr-pdf-root"
+      className={integratedWorkspace ? "dshr-pdf-root dshr-pdf-root--scheme-a" : "dshr-pdf-root"}
       ref={rootRef}
       tabIndex={0}
       data-dshr-pdf=""
@@ -2239,6 +2298,13 @@ export function PdfViewer({
       <div className="dshr-pdf-body">
       <div className="dshr-pdf-area">
       <div className="dshr-pdf-workspace">
+      {outlineOpen && status === "ready" && documentRef.current && (
+        <PdfOutline pdf={documentRef.current} page={currentPage} onClose={() => setOutlinePreference(false)}
+          onPage={page => {
+            jumpToPage(page);
+            if (!wideWorkspace) setOutlinePreference(false);
+          }} />
+      )}
       <div
         className="dshr-pdf-scroll"
         ref={scrollRef}
@@ -2307,22 +2373,17 @@ export function PdfViewer({
           </div>
         )}
       </div>
-      {showTranslationPanel ? <TranslationPanel
-        page={currentPage}
-        source={pageSources[currentPage]}
-        rows={documentId ? translation.pages[currentPage] || [] : (pageSources[currentPage]?.segments || []).map((segment, index) => ({
-          ...segment, ...(pageTranslations?.[currentPage]?.segments?.[index] || {}), status: pageTranslations?.[currentPage]?.status || 'queued', error: pageTranslations?.[currentPage]?.error,
-        }))}
-        activeId={linkedSegment?.page === currentPage ? linkedSegment.id : null}
-        originRef={linkOriginRef}
-        translation={documentId ? translation : { ...translation, retry: page => {
-          reportedPagesRef.current.delete(page);
-          onRetryTranslation?.(page);
-          reportPageText(page);
-        } }}
-        onActivate={(id, options) => activateParagraph(id, options, currentPage)}
-        onClose={() => { setPanelDismissed(true); onHideTranslations?.(); }}
-      /> : null}
+      {toolsOpen && status === "ready" && (
+        <aside className="dshr-pdf-reading-tools" aria-label="阅读侧栏">
+          <div className="dshr-pdf-reading-tools__tabs" role="group" aria-label="阅读侧栏视图">
+            <button type="button" aria-pressed={paneTab === "evidence"} onClick={() => setPaneTab("evidence")}>证据</button>
+            <button type="button" aria-pressed={paneTab === "translation"} onClick={() => setPaneTab("translation")}>翻译</button>
+            <button type="button" className="dshr-pdf-reading-tools__close" aria-label="收起阅读侧栏" onClick={() => setPanePreference(false)}><IconX size={16} /></button>
+          </div>
+          {paneTab === "evidence" ? renderEvidencePane({ page: currentPage }) : translationPanel ?? <p className="dshr-pdf-evidence__empty">打开顶部的实时翻译开关，即可查看译文。</p>}
+        </aside>
+      )}
+      {!integratedWorkspace ? translationPanel : null}
       </div>
       </div>
       {sidePanels}

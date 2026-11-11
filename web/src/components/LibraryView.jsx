@@ -1,8 +1,8 @@
 import React from 'react';
 import {
   IconBookOpen, IconUpload, IconBook, IconTrash, IconPlus, IconSettings,
-  IconSparkles, IconTranslate, IconSearch, IconWand, IconTag, IconDownload,
-  IconCheck, IconChevronLeft, IconFolder, IconMinus,
+  IconSearch, IconWand, IconTag, IconDownload, IconChevronRight, IconX,
+  IconCheck, IconChevronLeft, IconFolder, IconMinus, IconNote, IconCopy,
 } from './icons.jsx';
 import {
   CATEGORIES, categoryLabel, formatBytes, formatLabel, formatRelativeTime, isSupportedFile,
@@ -25,30 +25,44 @@ function progressPercent(book) {
 }
 
 const CATEGORY_MASCOT = { book: 'reading', paper: 'search', document: 'note' };
+const SHELF_CATEGORIES = ['paper', 'book', 'document'].map(id => CATEGORIES.find(category => category.id === id));
+const CATEGORY_ICON = { book: IconBookOpen, paper: IconNote, document: IconNote };
 const NEXT_CATEGORY = { book: 'paper', paper: 'document', document: 'book' };
 
-function BookCard({ book, onOpen, onDelete, onCycleCategory, onAdd, onRemove, onEditCitation, selection, onToggle }) {
+function BookCard({ book, list, onOpen, onDelete, onCycleCategory, onAdd, onRemove, onEditCitation, selection, onToggle }) {
   const percent = progressPercent(book);
   const meta = [formatLabel(book.format), book.author || '', formatBytes(book.size)].filter(Boolean).join(' · ');
+  const page = book.progress?.page;
+  const progressLabel = page ? "第 " + page + (book.progress.pages ? " / " + book.progress.pages : "") + " 页" : percent > 0 ? Math.round(percent) + "%" : "未开始";
   return (
     <article className={`dshr-book-card${selection ? ' is-selecting' : ''}${selection?.has(book.id) ? ' is-selected' : ''}`}>
       <button type="button" className="dshr-book" aria-pressed={selection ? selection.has(book.id) : undefined}
         aria-label={`${selection ? '选择' : book.missingSource ? '关联原文' : '打开'} ${bookTitle(book)}`}
         onClick={() => selection ? onToggle(book.id) : onOpen(book)}>
-      <span className="dshr-book__media">
-        {book.cover
-          ? <img className="dshr-book__cover" src={book.cover} alt="" loading="lazy" decoding="async" />
-          : <span className="dshr-book__spine">{formatLabel(book.format)}</span>}
-      </span>
-      <span className="dshr-book__body">
-        <span className="dshr-book__title">{bookTitle(book)}</span>
-        <span className="dshr-book__meta">{meta}{book.missingSource ? ' · 点击关联原文' : ''}</span>
-        <span className="dshr-book__foot">
-          <span>{book.lastOpenedAt ? `阅读于 ${formatRelativeTime(book.lastOpenedAt)}` : formatRelativeTime(book.addedAt)}</span>
-          <span>{percent > 0 ? `${Math.round(percent)}%` : '未开始'}</span>
-        </span>
-        <span className="dshr-book__progress" aria-hidden="true"><i style={{ '--p': `${percent}%` }} /></span>
-      </span>
+      {list ? (
+        <>
+          <span className="dshr-library-row__title"><IconNote size={17} /><strong title={bookTitle(book)}>{bookTitle(book)}</strong></span>
+          <span className="dshr-library-row__author" title={book.author || undefined}>{book.author || "—"}</span>
+          <span className="dshr-library-row__year">{book.year || "—"}</span>
+          <span className="dshr-library-row__progress">{book.missingSource ? "原文待关联" : progressLabel}</span>
+        </>
+      ) : (
+        <>
+          <span className="dshr-book__media">
+            {book.cover ? <img className="dshr-book__cover" src={book.cover} alt="" loading="lazy" decoding="async" />
+              : <span className="dshr-book__spine">{formatLabel(book.format)}</span>}
+          </span>
+          <span className="dshr-book__body">
+            <span className="dshr-book__title">{bookTitle(book)}</span>
+            <span className="dshr-book__meta">{meta}{book.missingSource ? " · 点击关联原文" : ""}</span>
+            <span className="dshr-book__foot">
+              <span>{book.lastOpenedAt ? "阅读于 " + formatRelativeTime(book.lastOpenedAt) : formatRelativeTime(book.addedAt)}</span>
+              <span>{progressLabel}</span>
+            </span>
+            <span className="dshr-book__progress" aria-hidden="true"><i style={{ "--p": percent + "%" }} /></span>
+          </span>
+        </>
+      )}
       {selection && <span className="dshr-book__selected" aria-hidden="true">{selection.has(book.id) && <IconCheck size={14} />}</span>}
       </button>
       {!selection && (
@@ -95,6 +109,9 @@ export function LibraryView({
   const [selection, setSelection] = React.useState(null);
   const [action, setAction] = React.useState(null);
   const [notice, setNotice] = React.useState(null);
+  const [guideOpen, setGuideOpen] = React.useState(false);
+  const [guideDismissed, setGuideDismissed] = React.useState(false);
+  const guideRef = React.useRef(null);
   const dragDepth = React.useRef(0);
   const shelfRef = React.useRef(null);
   const headingRef = React.useRef(null);
@@ -114,6 +131,11 @@ export function LibraryView({
   const scope = active?.books ?? books;
   const query = search.trim().toLowerCase();
   const filtered = query ? scope.filter(book => matchesBook(book, query)) : scope;
+  const homeFolders = collections.length ? folders.filter(folder => !folder.system) : folders;
+  const shownBooks = active || query ? filtered : [...filtered].sort((a, b) =>
+    (b.lastOpenedAt || 0) - (a.lastOpenedAt || 0) || (b.addedAt || 0) - (a.addedAt || 0));
+  const listMode = !active;
+  const continueBook = resumeBook || books.find(book => !book.missingSource && book.progress);
   const selectedIds = selection ? scope.filter(book => selection.has(book.id)).map(book => book.id) : [];
 
   React.useLayoutEffect(() => {
@@ -123,12 +145,13 @@ export function LibraryView({
   }, [categoryFilter]);
 
   function openFolder(id) {
-    focusHeading.current = true;
+    focusHeading.current = id !== categoryFilter;
     onCategoryFilter(id);
     setSearch('');
     setSelection(null);
     setPreview(null);
     setNotice(null);
+    setGuideOpen(false);
     shelfRef.current?.scrollTo({ top: 0 });
   }
 
@@ -170,6 +193,7 @@ export function LibraryView({
 
   const handleDrop = (event) => {
     event.preventDefault();
+    event.stopPropagation();
     dragDepth.current = 0;
     setOver(false);
     const files = [...(event.dataTransfer?.files ?? [])].filter((file) => isSupportedFile(file.name));
@@ -181,81 +205,94 @@ export function LibraryView({
   };
 
   return (
-    <div className="dshr-library" ref={shelfRef}>
+    <div className="dshr-library-shell">
+      <aside className="dshr-library-nav" aria-label="书库导航">
+        <strong className="dshr-library-nav__brand"><IconBookOpen size={24} /> DSH Reader</strong>
+        <nav aria-label="书架分类">
+          <button type="button" aria-current={!active ? "page" : undefined} onClick={() => openFolder("all")}><IconFolder size={19} /> 我的书架</button>
+          {SHELF_CATEGORIES.map(category => {
+            const Icon = CATEGORY_ICON[category.id];
+            return <button key={category.id} type="button" aria-current={active?.id === category.id ? "page" : undefined}
+              onClick={() => openFolder(category.id)}><Icon size={19} /> {category.label}</button>;
+          })}
+          <button type="button" onClick={() => onEvidence()}><IconBook size={19} /> 证据库</button>
+        </nav>
+        <div className="dshr-library-nav__actions">
+          <button type="button" onClick={onOnlineImport}><IconDownload size={17} /> 公开书库导入</button>
+          <button type="button" onClick={onAutoOrganize} disabled={organizing || books.length === 0}><IconWand size={17} /> {organizing ? "整理中…" : "一键整理"}</button>
+          {onBackup && <button type="button" onClick={onBackup}><IconCopy size={17} /> 备份与恢复</button>}
+          <button type="button" onClick={onSettings}><IconSettings size={19} /> 设置</button>
+        </div>
+      </aside>
+      <div className="dshr-library" ref={shelfRef} onDragOver={event => event.preventDefault()} onDrop={handleDrop}>
       <div className="dshr-library__inner">
         <header className="dshr-hero">
-          <div>
-            <div className="dshr-hero__eyebrow"><IconBookOpen size={15} /> DSH READER · LIBRARY</div>
-            <div className="dshr-library-title">
-              <h1>我的书架</h1>
-              {!active && !loading && <LibraryMascot pose="welcome" />}
-            </div>
-            <p>用书单整理书籍、论文和阅读资料。</p>
+          <div className="dshr-library-title">
+            <h1 ref={headingRef} tabIndex={-1}>{active?.name || "我的书架"}</h1>
+            {active?.system && <LibraryMascot key={active.id} pose={CATEGORY_MASCOT[active.id]} size={48} />}
+            {!active && (guideDismissed || query) && !loading && <LibraryMascot pose="welcome" />}
           </div>
           <div className="dshr-hero__actions">
+            <label className="dshr-library__search">
+              <IconSearch size={17} />
+              <input type="search" value={search} onChange={event => setSearch(event.target.value)}
+                placeholder={active ? "搜索此书单" : "搜索文档"} aria-label={active ? "搜索此书单" : "搜索书架"} />
+            </label>
             <button type="button" className="dshr-btn dshr-btn--primary" onClick={pick} disabled={importing}>
-              {importing ? <span className="dshr-spinner" /> : <IconPlus size={15} />}
-              {importing ? '正在加入书架…' : '导入文档'}
+              {importing ? <span className="dshr-spinner" /> : <IconDownload size={17} />}
+              {importing ? "正在加入书架…" : "导入文档"}
             </button>
-            <button
-              type="button"
-              className="dshr-btn dshr-btn--outline"
-              onClick={onOnlineImport}
-              title="从古登堡、Standard Ebooks、arXiv 等公开来源下载并打开"
-            >
-              <IconDownload size={15} /> 公开书库导入
-            </button>
-            <button
-              type="button"
-              className="dshr-btn dshr-btn--outline"
-              onClick={onAutoOrganize}
-              disabled={organizing || books.length === 0}
-              title="按文件类型与元数据，把书架整理成书籍 / 文献 / 文档"
-            >
-              {organizing ? <span className="dshr-spinner" /> : <IconWand size={15} />}
-              {organizing ? '整理中…' : '一键整理'}
-            </button>
-            <button type="button" className="dshr-btn dshr-btn--outline" onClick={onSettings} title="阅读与书架设置">
-              <IconSettings size={15} /> 设置
-            </button>
-            <button type="button" className="dshr-btn dshr-btn--outline" onClick={() => onEvidence()}>证据库</button>
-            {onBackup ? <button type="button" className="dshr-btn dshr-btn--outline" onClick={onBackup}>备份与恢复</button> : null}
           </div>
         </header>
 
-        {resumeBook ? (
-          <button type="button" className="dshr-resume" onClick={() => onResume(resumeBook)}>
-            <span className="dshr-resume__mark"><IconBookOpen size={19} /></span>
-            <span className="dshr-resume__body">
-              <span className="dshr-resume__eyebrow">继续上次阅读</span>
-              <strong>{resumeBook.title || '上次打开的文档'}</strong>
-              <span className="dshr-resume__meta">
-                {formatLabel(resumeBook.format)}
-                {resumeBook.progress?.page
-                  ? ` · 第 ${resumeBook.progress.page}${resumeBook.progress.pages ? ` / ${resumeBook.progress.pages}` : ''} 页`
-                  : ''}
-                {` · ${Math.round(progressPercent(resumeBook))}%`}
-              </span>
-            </span>
-            <span className="dshr-resume__arrow">→</span>
-          </button>
-        ) : null}
-
-        {!active && !loading && (
+        {!active && !loading && !query && (continueBook || !guideDismissed) && (
+          <section className="dshr-library-start" aria-label="阅读与导入">
+            {continueBook && (
+              <button type="button" className="dshr-resume" onClick={() => onResume(continueBook)}>
+                <span className="dshr-resume__mark"><IconNote size={25} /></span>
+                <span className="dshr-resume__body">
+                  <span className="dshr-resume__eyebrow">继续阅读</span>
+                  <strong title={bookTitle(continueBook)}>{bookTitle(continueBook)}</strong>
+                  <span className="dshr-resume__meta">{continueBook.progress?.page
+                    ? "第 " + continueBook.progress.page + (continueBook.progress.pages ? " / " + continueBook.progress.pages : "") + " 页"
+                    : formatLabel(continueBook.format) + " · " + Math.round(progressPercent(continueBook)) + "%"}</span>
+                  <span className="dshr-resume__progress" aria-hidden="true"><i style={{ "--p": progressPercent(continueBook) + "%" }} /></span>
+                </span>
+                <span className="dshr-resume__arrow" aria-hidden="true"><IconChevronRight size={18} /></span>
+              </button>
+            )}
+            {!guideDismissed && (
+              <div className="dshr-library-guide">
+                <button type="button" className="dshr-library-guide__open" aria-expanded={guideOpen} onClick={() => {
+                  if (guideOpen) { setGuideOpen(false); return; }
+                  setGuideOpen(true);
+                  requestAnimationFrame(() => guideRef.current?.scrollIntoView({ block: "nearest" }));
+                }}>
+                  <LibraryMascot pose="welcome" />
+                  <strong>导入指南</strong><IconChevronRight size={18} />
+                </button>
+                <button type="button" className="dshr-btn dshr-btn--icon dshr-btn--ghost dshr-library-guide__close" aria-label="隐藏导入指南"
+                  onClick={() => { setGuideDismissed(true); setGuideOpen(false); }}><IconX size={16} /></button>
+              </div>
+            )}
+          </section>
+        )}
+        {!active && !loading && !query && (
           <section className="dshr-collections" aria-label="书单文件夹">
             <div className="dshr-collections__bar">
-              <h2 ref={headingRef} tabIndex={-1}>书单文件夹</h2>
+              <h2>书单</h2>
               <button type="button" className="dshr-btn dshr-btn--outline" onClick={() => createFolder()}><IconPlus size={15} /> 新建书单</button>
             </div>
             <div className="dshr-collections__grid">
-              {folders.map(folder => <CollectionCard key={folder.id} folder={folder} expanded={preview === folder.id}
+              {homeFolders.map(folder => <CollectionCard key={folder.id} folder={folder} expanded={preview === folder.id}
                 onToggle={() => setPreview(value => value === folder.id ? null : folder.id)}
                 onOpen={() => openFolder(folder.id)} onRead={readBook} />)}
             </div>
           </section>
         )}
 
-        {!active && <section
+        {!active && !query && (!books.length || guideOpen) && <section
+          ref={guideRef}
           className={`dshr-drop${books.length ? ' is-compact' : ''}${over ? ' is-over' : ''}`}
           onDragEnter={(event) => {
             event.preventDefault();
@@ -289,8 +326,6 @@ export function LibraryView({
           <div className="dshr-collection-context">
             <nav aria-label="书架位置">
               <button type="button" className="dshr-btn dshr-btn--ghost" onClick={() => openFolder('all')}><IconChevronLeft size={15} /> 返回书架</button>
-              <span ref={headingRef} tabIndex={-1} aria-current="page"><IconFolder size={16} /> {active.name}</span>
-              {active.system && <LibraryMascot key={active.id} pose={CATEGORY_MASCOT[active.id]} size={48} />}
             </nav>
             {!active.system && <div className="dshr-collection-context__actions">
               <button type="button" className="dshr-btn dshr-btn--outline" onClick={() => onEvidence(active.id)}>专题与证据</button>
@@ -301,17 +336,7 @@ export function LibraryView({
         )}
 
         <div className="dshr-library__bar">
-          <h2>{active ? '书单内容' : '全部文档'}</h2>
-          <div className="dshr-library__search">
-            <IconSearch size={14} />
-            <input
-              type="search"
-              value={search}
-              onChange={(event) => setSearch(event.target.value)}
-              placeholder={active ? '搜索此书单' : '搜索书名、作者'}
-              aria-label={active ? '搜索此书单' : '搜索书架'}
-            />
-          </div>
+          <h2>{query ? "搜索结果" : active ? "书单内容" : "最近文献"}</h2>
           <span>{filtered.length} / {scope.length} 本</span>
           {scope.length > 0 && <button type="button" className="dshr-btn dshr-btn--outline" aria-pressed={!!selection} onClick={() => setSelection(value => value ? null : new Set())}>
             {selection ? '退出多选' : '多选'}
@@ -345,11 +370,15 @@ export function LibraryView({
             </button>}
           </div>
         ) : (
-          <div className="dshr-books">
-            {filtered.map((book) => (
+          <div className={listMode ? "dshr-library-rows" : "dshr-books"}>
+            {listMode && <div className="dshr-library-rows__head" aria-hidden="true">
+              <span>文献标题</span><span>作者</span><span>年份</span><span>进度</span><span>操作</span>
+            </div>}
+            {shownBooks.map((book) => (
               <BookCard
                 key={book.id}
                 book={book}
+                list={listMode}
                 onOpen={readBook}
                 onDelete={onDelete}
                 onEditCitation={onEditCitation}
@@ -368,12 +397,7 @@ export function LibraryView({
           </div>
         )}
 
-        <footer className="dshr-library__foot">
-          <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}><IconTranslate size={14} /> 实时对照翻译</span>
-          <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}><IconSparkles size={14} /> 选中问 AI</span>
-          <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}><IconSearch size={14} /> Google / 学术搜索</span>
-          <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}><IconBook size={14} /> 本地书架 · 进度与批注自动保存</span>
-        </footer>
+      </div>
       </div>
 
       {action && <CollectionDialog key={`${action.kind}:${action.collection?.id || ''}`} action={action} books={books} collections={collections}

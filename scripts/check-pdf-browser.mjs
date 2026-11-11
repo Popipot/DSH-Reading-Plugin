@@ -14,12 +14,13 @@ const project = fileURLToPath(new URL('../', import.meta.url));
 const output = path.join(project, 'output/playwright');
 await mkdir(output, { recursive: true });
 const animationCheck = process.argv.includes('--flow-animations');
+const workspaceCheck = process.argv.includes('--workspace');
 const libraryCheck = process.argv.includes('--library');
 const flowCheck = process.argv.includes('--flow') || animationCheck;
 const translationCheck = process.argv.includes('--translation');
 const performanceCheck = process.argv.includes('--performance');
 const suppliedPdf = flowCheck || translationCheck || libraryCheck ? null : process.argv.slice(2).find(arg => !arg.startsWith('--'));
-function fixture(pages = 1029, paragraphs = false) {
+function fixture(pages = 1029, paragraphs = false, withOutline = false) {
   const objects = ['<< /Type /Catalog /Pages 2 0 R >>', '', '<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>'];
   const kids = [];
   for (let page = 1; page <= pages; page += 1) {
@@ -30,6 +31,16 @@ function fixture(pages = 1029, paragraphs = false) {
     objects.push(`<< /Length ${content.length} >>\nstream\n${content}\nendstream`);
   }
   objects[1] = `<< /Type /Pages /Kids [${kids.join(' ')}] /Count ${pages} >>`;
+  if (withOutline) {
+    const outline = objects.length + 1;
+    objects[0] = '<< /Type /Catalog /Pages 2 0 R /Outlines ' + outline + ' 0 R >>';
+    objects.push(
+      '<< /Type /Outlines /First ' + (outline + 1) + ' 0 R /Last ' + (outline + 3) + ' 0 R /Count 3 >>',
+      '<< /Title (Overview) /Parent ' + outline + ' 0 R /Next ' + (outline + 2) + ' 0 R /Dest [' + kids[0] + ' /Fit] >>',
+      '<< /Title (Method) /Parent ' + outline + ' 0 R /Prev ' + (outline + 1) + ' 0 R /Next ' + (outline + 3) + ' 0 R /Dest [' + kids[1] + ' /Fit] >>',
+      '<< /Title (Results) /Parent ' + outline + ' 0 R /Prev ' + (outline + 2) + ' 0 R /Dest [' + kids[2] + ' /Fit] >>',
+    );
+  }
   // Large unreferenced stream stresses file transport without pretending to
   // reproduce the complex fonts/images in the user's textbook.
   const padding = paragraphs ? '' : ' '.repeat(80_000_000);
@@ -46,9 +57,10 @@ function fixture(pages = 1029, paragraphs = false) {
   pdf += `trailer\n<< /Size ${objects.length + 1} /Root 1 0 R >>\nstartxref\n${xref}\n%%EOF\n`;
   return Buffer.from(pdf);
 }
-const pdf = flowCheck || libraryCheck ? Buffer.alloc(0) : translationCheck ? fixture(24, true) : suppliedPdf ? await readFile(path.resolve(suppliedPdf)) : performanceCheck ? complexPdfFixture() : fixture();
+const pdf = flowCheck || libraryCheck ? Buffer.alloc(0) : workspaceCheck ? fixture(3, true, true) : translationCheck ? fixture(24, true) : suppliedPdf ? await readFile(path.resolve(suppliedPdf)) : performanceCheck ? complexPdfFixture() : fixture();
+if (workspaceCheck) await writeFile(path.join(output, 'scheme-a-fixture.pdf'), pdf);
 const bundle = await build({
-  entryPoints: [path.join(project, libraryCheck ? 'scripts/library-browser-harness.jsx' : animationCheck ? 'scripts/flow-animation-harness.jsx' : flowCheck ? 'scripts/flow-browser-harness.jsx' : translationCheck ? 'scripts/translation-browser-harness.jsx' : performanceCheck ? 'scripts/pdf-performance-harness.jsx' : 'scripts/pdf-browser-harness.jsx')],
+  entryPoints: [path.join(project, workspaceCheck ? 'scripts/pdf-workspace-browser-harness.jsx' : libraryCheck ? 'scripts/library-browser-harness.jsx' : animationCheck ? 'scripts/flow-animation-harness.jsx' : flowCheck ? 'scripts/flow-browser-harness.jsx' : translationCheck ? 'scripts/translation-browser-harness.jsx' : performanceCheck ? 'scripts/pdf-performance-harness.jsx' : 'scripts/pdf-browser-harness.jsx')],
   bundle: true, write: false, format: 'esm', platform: 'browser', target: 'chrome120', jsx: 'automatic',
   define: { 'process.env.NODE_ENV': '"production"' },
 });
@@ -56,9 +68,10 @@ let assets;
 registerAssetRoutes({ register(route) { assets = route.handler; return () => {}; } }, project);
 const fixtureService = translationFixtureService();
 const server = createServer(async (req, res) => {
-  if (translationCheck && await fixtureService(req, res)) return;
+  if ((translationCheck || workspaceCheck) && await fixtureService(req, res)) return;
   if (req.url.startsWith('/dsh-reader-assets/')) return assets(req, res);
   if (req.url === '/fixture.pdf') { res.setHeader('content-type', 'application/pdf'); res.end(pdf); return; }
+  if (workspaceCheck && req.url === '/no-outline.pdf') { res.setHeader('content-type','application/pdf'); res.end(fixture(2, true)); return; }
   if (req.url === '/fixture.mobi') { res.end(await readFile(path.join(project, 'test/fixtures/formats-mobi/pg1342.mobi'))); return; }
   if (req.url === '/harness.js') { res.setHeader('content-type', 'text/javascript'); res.end(bundle.outputFiles[0].text); return; }
   res.setHeader('content-type', 'text/html');
@@ -72,7 +85,7 @@ if (!profileDir.startsWith(path.resolve(output) + path.sep)) throw new Error('Br
 const browser = spawn(executable, [
   ...(process.argv.includes('--hidpi') ? ['--force-device-scale-factor=2'] : []),
   '--headless=new', '--no-first-run', '--no-default-browser-check', '--remote-debugging-port=0',
-  `--user-data-dir=${profileDir}`, '--window-size=1280,900', url,
+  `--user-data-dir=${profileDir}`, workspaceCheck || (libraryCheck && process.argv.includes('--design')) ? '--window-size=1503,1143' : '--window-size=1280,900', url,
 ], { windowsHide: true, stdio: ['ignore', 'ignore', 'pipe'] });
 let socket;
 try {
@@ -102,12 +115,12 @@ try {
   let result;
   const deadline = Date.now() + 90000;
   while (Date.now() < deadline) {
-    if (animationCheck || libraryCheck) {
+    if (animationCheck || libraryCheck || workspaceCheck) {
       const capture = await command('Runtime.evaluate', { expression: 'window.__flowCapture?.name', returnByValue: true });
       const name = capture.result?.result?.value;
       if (name) {
         const frame = await command('Page.captureScreenshot', { format: 'png' });
-        if (frame.result?.data) await writeFile(path.join(output, `${libraryCheck ? 'library' : 'flow-animation'}-${name}.png`), Buffer.from(frame.result.data, 'base64'));
+        if (frame.result?.data) await writeFile(path.join(output, `${workspaceCheck ? 'scheme-a' : libraryCheck ? 'library' : 'flow-animation'}-${name}.png`), Buffer.from(frame.result.data, 'base64'));
         await command('Runtime.evaluate', { expression: 'window.__flowCapture = null' });
       }
     }
@@ -118,7 +131,7 @@ try {
     await new Promise((resolve) => setTimeout(resolve, 200));
   }
   const shot = await command('Page.captureScreenshot', { format: 'png' });
-  const reportBase = libraryCheck ? 'library-regression' : animationCheck ? 'flow-animations' : flowCheck ? 'flow-regression' : translationCheck ? 'translation-regression' : performanceCheck ? suppliedPdf ? 'pdf-real-performance' : 'pdf-complex-performance' : 'pdf-regression';
+  const reportBase = workspaceCheck ? 'pdf-workspace' : libraryCheck ? 'library-regression' : animationCheck ? 'flow-animations' : flowCheck ? 'flow-regression' : translationCheck ? 'translation-regression' : performanceCheck ? suppliedPdf ? 'pdf-real-performance' : 'pdf-complex-performance' : 'pdf-regression';
   const report = reportBase + (process.argv.includes('--hidpi') ? '-hidpi' : '');
   if (shot.result?.data) await writeFile(path.join(output, `${report}.png`), Buffer.from(shot.result.data, 'base64'));
   await writeFile(path.join(output, `${report}.json`), JSON.stringify(result, null, 2));

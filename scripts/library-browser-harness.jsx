@@ -108,7 +108,7 @@ try {
       { author: index === 5 ? 'Ada Example' : '' });
     const cover = index < colors.length ? 'data:image/svg+xml,' + encodeURIComponent(`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 150"><rect width="100" height="150" fill="${colors[index]}"/><path d="M14 22h72M14 103h72" stroke="#f2e9cf"/><text x="14" y="54" fill="#f2e9cf" font-family="sans-serif" font-size="11">${title.split(' ')[0]}</text><text x="14" y="70" fill="#f2e9cf" font-family="sans-serif" font-size="11">${title.split(' ').slice(1).join(' ')}</text></svg>`) : '';
     books.push(await updateBook(book.id, {
-      cover, category: index < 2 ? 'paper' : index < 5 ? 'book' : 'document', categoryManual: true,
+      cover, lastOpenedAt: 1000 + index, year: index === 0 ? "2024" : "", category: index < 2 ? 'paper' : index < 5 ? 'book' : 'document', categoryManual: true,
       progress: index === 0 ? { chapter: 0, scrollRatio: 0.25, percent: 25 } : null,
     }));
   }
@@ -117,11 +117,18 @@ try {
   await until(() => cards().length === titles.length && folder('文献'), 'initial library was not rendered');
   assert(folder('文献').textContent.includes('2 本') && folder('书籍').textContent.includes('3 本'), 'legacy classifications did not populate the default folders');
   await mascot('welcome');
-  await capture('mascot-home');
+  await capture("mascot-home");
+  await click("导入指南");
+  assert(document.querySelector(".dshr-drop") && named("选择文件"), "import guide did not show its controls");
+  await click("导入指南");
+  assert(document.querySelector(".dshr-resume") && document.querySelector(".dshr-library-rows"), "scheme A library regions are missing");
+  assert(document.querySelectorAll(".dshr-library-nav nav button").length === 5, "wrong shelf navigation count");
+  const rows = cards();
+  assert(rows[0].textContent.includes(titles.at(-1)) && rows.at(-1).textContent.includes("2024"), "recent items or metadata are in the wrong order");
   for (const [category, pose] of [['书籍', 'reading'], ['文献', 'search'], ['文档', 'note']]) {
-    await click(`打开书单 ${category}`);
+    await click(category, document.querySelector(".dshr-library-nav"));
     assert(document.querySelector('[aria-current="page"]').textContent.includes(category) && cards().length > 0, `cannot open ${category}`);
-    const sprite = await mascot(pose, document.querySelector('.dshr-collection-context'));
+    const sprite = await mascot(pose, document.querySelector(".dshr-library-title"));
     assert(sprite.getBoundingClientRect().width === 48, 'category mascot size mismatch');
     await capture('mascot-' + pose);
     await click('返回书架');
@@ -190,6 +197,7 @@ try {
   assert((await row('待读论文')).bookIds.length === 3, 'bulk add did not retain the existing member');
   assert((await listBooks()).length === titles.length, 'collection membership duplicated a book');
   results.push({ check: 'single-and-batch-add-with-search' });
+  await setInput(document.querySelector('input[aria-label="搜索书架"]'), '');
 
   await click('打开书单 芯片与器件');
   await capture('collection');
@@ -197,7 +205,7 @@ try {
   await capture('edit');
   await setInput(dialog().querySelector('input[required]'), '半导体与器件');
   await submit('保存书单');
-  assert(document.querySelector('[aria-current="page"]').textContent.includes('半导体与器件'), 'rename did not update the active folder');
+  assert(document.querySelector("h1").textContent === "半导体与器件", 'rename did not update the active folder');
   await click(`从此书单移出 ${(await getBook(first.bookIds[0])).title}`);
   await until(() => cards().length === 4, 'single removal did not update the folder');
   await click('多选');
@@ -225,9 +233,23 @@ try {
   root.render(<ReaderPage />);
   await until(() => folder('待精读') && folder('半导体与器件'), 'folders did not persist across remount');
   results.push({ check: 'rename-remove-persist-and-concurrent-writes' });
+  const expectedResume = document.querySelector(".dshr-resume__body strong").textContent;
+  document.querySelector(".dshr-resume").click();
+  await until(() => document.querySelector(".dshr-topbar__title strong")?.textContent === expectedResume, "continue reading opened the wrong item");
+  await click("返回书架");
+  await until(() => folder("待精读"), "could not return to the redesigned shelf");
 
-  await click('预览全部 5 本', folder('待精读'));
-  await capture('home');
+
+  await saveBookCollection({ name: "待阅专题", add: [books[2].id, books[3].id] });
+  root.render(null); await sleep(30);
+  root.render(<ReaderPage />);
+  await until(() => folder("待阅专题"), "third fixture collection did not load");
+  document.documentElement.removeAttribute("data-ds-dark-theme");
+  await sleep(230);
+  await capture("scheme-a-home");
+  document.documentElement.setAttribute("data-ds-dark-theme", "");
+  await click("预览全部 5 本", folder("待精读"));
+  await capture("home");
   let matrixCases = 0;
   for (const width of [540, 1280]) {
     mount.style.width = width + 'px';

@@ -20,11 +20,11 @@ export function useEvidence({ currentRef, navigation, openBook, refreshBooks, sh
   const busyRef = React.useRef(false);
   const refreshId = React.useRef(0);
 
-  async function refresh() {
+  const refresh = React.useCallback(async () => {
     const id = ++refreshId.current;
     const result = await listEvidence();
     if (id === refreshId.current) setRows(result);
-  }
+  }, []);
 
   async function action(operation) {
     if (busyRef.current) return;
@@ -48,7 +48,7 @@ export function useEvidence({ currentRef, navigation, openBook, refreshBooks, sh
     await refresh();
   }
 
-  function createDraft(selection, translation) {
+  function createDraft(selection, translation, { inline = false } = {}) {
     const current = currentRef.current;
     if (current?.kind !== 'pdf' || !selection.evidenceAnchor) return;
     const old = replacement?.blob === current.data ? replacement.record : null;
@@ -59,7 +59,7 @@ export function useEvidence({ currentRef, navigation, openBook, refreshBooks, sh
     ].filter(Boolean);
     setProblem('');
     setDraft({
-      id: old?.id || uuid(), old, blob: current.data,
+      id: old?.id || uuid(), old, inline, blob: current.data,
       source: sourceOf({ record: current.record, anchor: selection.evidenceAnchor, quote: selection.text }),
       options, note: old?.note || '', translation: options[0] || null,
       printLabelRequest: selection.printLabelRequest,
@@ -78,7 +78,7 @@ export function useEvidence({ currentRef, navigation, openBook, refreshBooks, sh
       if (!old) await createEvidence(record);
       setDraft(null);
       setReplacement(null);
-      setPanel({ bookId: source.bookId });
+      if (!draft.inline) setPanel({ bookId: source.bookId });
       ++refreshId.current;
       setRows(previous => [record, ...previous.filter(row => row.id !== record.id)]);
       showToast('证据已保存。');

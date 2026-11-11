@@ -12,6 +12,7 @@ import { AppearancePanel } from './appearance/AppearancePanel.jsx';
 import { appearanceVars, autoInk, BOOK_ANIMATIONS } from './appearance/appearance.js';
 import { AnnotationsPanel } from './annotations/AnnotationsPanel.jsx';
 import { AnnotationComposer } from './annotations/AnnotationComposer.jsx';
+import { PdfEvidencePanel } from './pdf/PdfEvidencePanel.jsx';
 import { EvidenceComposer, EvidenceLibrary } from './evidence/EvidenceDialogs.jsx';
 import { CitationForm } from './evidence/ResearchDialogs.jsx';
 import { useEvidence } from './evidence/useEvidence.js';
@@ -1039,7 +1040,7 @@ export function ReaderPage() {
     );
   }
 
-  function renderTopbar({ iconTools, textTools } = {}) {
+  function renderTopbar({ iconTools, textTools, workspaceTools } = {}) {
     const isPdf = current.kind === 'pdf';
     const immersiveButton = (
       <button
@@ -1130,6 +1131,7 @@ export function ReaderPage() {
           <>
             <div className="dshr-topbar__tools dshr-topbar__icons" role="group" aria-label="阅读快捷操作">
               {iconTools}
+              {workspaceTools}
               {immersiveButton}
               {iconActions}
               <button type="button" className="dshr-btn dshr-btn--icon" aria-label="证据库" title="当前论文的证据"
@@ -1313,6 +1315,12 @@ export function ReaderPage() {
                   renderImmersiveToolbar={immersive ? renderImmersiveToolbar : undefined}
                   renderTopbar={immersive ? undefined : renderTopbar}
                   sidePanels={sidePanels}
+                  onOpenEvidencePane={evidence.refresh}
+                  renderEvidencePane={({ page }) => (
+                    <PdfEvidencePanel evidence={evidence} bookId={current.record.id} page={page}
+                      onSave={selection?.source === 'pdf' && selection.evidenceAnchor
+                        ? () => evidence.createDraft(selection, selectionTranslation, { inline: true }) : undefined} />
+                  )}
                   initialPage={current.record.progress?.page || 1}
                   autoTranslate={settings.autoTranslate}
                   hideTranslations={settings.hideTranslations}
