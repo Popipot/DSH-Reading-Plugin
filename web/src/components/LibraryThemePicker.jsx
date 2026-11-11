@@ -4,6 +4,7 @@ import { IconPalette, IconX } from './icons.jsx';
 const themes = [
   { id: 'paper', label: '纸本', detail: '暖色纸面与欢迎插画' },
   { id: 'whale-blue', label: '鲸海蓝', detail: '蓝色书架与半透明鲸鱼娘' },
+  { id: 'whale-navy', label: '藏青像素', detail: '藏青描边、奶白卡片与半透明鲸鱼娘' },
 ];
 
 export function LibraryThemePicker({ theme, preview, onPreview, onApply }) {

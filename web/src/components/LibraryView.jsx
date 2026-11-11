@@ -112,7 +112,7 @@ export function LibraryView({
   const [notice, setNotice] = React.useState(null);
   const [themePreview, setThemePreview] = React.useState(null);
   const theme = themePreview ?? libraryTheme;
-  const showLibrarySticker = theme !== 'whale-blue';
+  const showLibrarySticker = theme === 'paper';
   const [guideOpen, setGuideOpen] = React.useState(false);
   const [guideDismissed, setGuideDismissed] = React.useState(false);
   const guideRef = React.useRef(null);

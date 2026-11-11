@@ -355,7 +355,7 @@ try {
   themeButton.focus();
   await click('主题');
   await until(picker, 'theme picker did not open');
-  assert(picker().querySelectorAll('.dshr-theme-option').length === 2 && picker().querySelectorAll('.dshr-theme-apply:disabled').length === 1, 'unexpected theme count or applied label');
+  assert(picker().querySelectorAll('.dshr-theme-option').length === 3 && picker().querySelectorAll('.dshr-theme-apply:disabled').length === 1, 'unexpected theme count or applied label');
   await click('预览鲸海蓝', picker());
   await until(() => shelfTheme() === 'whale-blue', 'theme preview did not update the current shelf');
   assert(localStorage.getItem(savedKey) === before, 'preview wrote the theme to storage');
@@ -443,7 +443,7 @@ try {
   localStorage.setItem(savedKey, stable);
   root.render(<ReaderPage />);
   await until(() => shelfTheme() === 'paper', 'saved paper theme did not survive remount');
-  results.push({ check:'b8-library-themes', choices:2, previewWrites:0, cancelPaths:2, persistedSwitches:2, blueLayoutCases,
+  results.push({ check:'b8-library-themes', choices:3, previewWrites:0, cancelPaths:2, persistedSwitches:2, blueLayoutCases,
     compatibilityCases, backgroundWidth:asset.naturalWidth, backgroundOnCustomCollection:0, backgroundInReader:0, defaultBackgroundRequests:0, missingStatus });
   const categories = [['文献','paper','search'],['书籍','book','reading'],['文档','document','note']];
   const categoryUrl = pose => '/dsh-reader-assets/mascot/' + pose + '-background.webp';
@@ -531,6 +531,66 @@ try {
   await until(() => shelfTheme() === 'paper', 'category test did not restore paper');
   results.push({ check:'b9-category-backdrops', matchedCategories:3, layersPerCategory:1, duplicateCategoryStickers:0,
     layoutCombinations:4, scrollCases, firstCategoryArtRequests:1, paperCategoryArtRequests:0, scrollArtRequests:0, missingCategoryStatus });
+
+  const navyBefore = localStorage.getItem(savedKey);
+  await click('主题');
+  await click('预览藏青像素', picker());
+  await until(() => shelfTheme() === 'whale-navy', 'navy preview did not update the shelf');
+  assert(localStorage.getItem(savedKey) === navyBefore, 'navy preview wrote the theme to storage');
+  document.dispatchEvent(new KeyboardEvent('keydown', { key:'Escape', bubbles:true, cancelable:true }));
+  await until(() => shelfTheme() === 'paper' && !picker(), 'Escape did not restore paper from the navy preview');
+  await click('主题');
+  await click('应用藏青像素', picker());
+  await until(() => shelfTheme() === 'whale-navy' && loadSettings().libraryTheme === 'whale-navy' && !picker(), 'navy theme was not saved');
+  root.render(null);
+  await sleep(30);
+  root.render(<ReaderPage />);
+  await until(() => shelfTheme() === 'whale-navy' && cards().length >= 72, 'saved navy theme did not survive remount');
+  assert(!document.querySelector('.dshr-library .dshr-library-mascot'), 'navy theme duplicated a sticker over its backdrop');
+  const navyRail = getComputedStyle(document.querySelector('.dshr-library-nav')).backgroundColor;
+  assert(navyRail === 'rgb(27, 42, 107)', 'navy rail colour is ' + navyRail);
+  await capture('whale-navy-home');
+  const navyCases = [];
+  for (const width of [540,1280]) {
+    mount.style.width = width + 'px';
+    for (const dark of [false,true]) {
+      document.documentElement.toggleAttribute('data-ds-dark-theme', dark);
+      for (const [label, pose] of [['我的书架','welcome'],...categories.map(([name, ,key]) => [name,key])]) {
+        await showCategory(label);
+        const pane = backdropPane();
+        const shelf = pane.querySelector('.dshr-library');
+        const content = shelf.querySelector('.dshr-library__inner');
+        shelf.scrollTop = 0;
+        const start = pane.getBoundingClientRect();
+        const contentStart = content.getBoundingClientRect().top;
+        const beforeRequests = totalRequests();
+        const art = backdrop();
+        assert(pane.dataset.libraryBackdrop === pose && art.backgroundImage.includes(pose + '-background.webp') && art.position === 'absolute'
+          && art.pointerEvents === 'none' && art.opacity === (dark ? '0.22' : '0.3'), 'navy backdrop did not match ' + pose);
+        assert(!document.querySelector('.dshr-library-title .dshr-library-mascot'), 'navy category duplicated its sticker');
+        shelf.scrollTop = 360;
+        await until(() => shelf.scrollTop >= 300, 'navy fixture cannot scroll 300 CSS px');
+        const end = pane.getBoundingClientRect();
+        const shift = Math.max(Math.abs(start.x - end.x), Math.abs(start.y - end.y));
+        assert(shift <= 1 && contentStart - content.getBoundingClientRect().top >= 300 && shelf.scrollWidth === shelf.clientWidth,
+          'navy background moved, content did not scroll, or shelf overflowed');
+        assert(totalRequests() === beforeRequests, 'navy scrolling requested a background again');
+        navyCases.push({ width, dark, pose, scrollDistanceCssPx:shelf.scrollTop, backdropShiftCssPx:shift });
+        if (width === 1280 && !dark && pose !== 'welcome') await capture('whale-navy-' + pose);
+        if (width === 1280 && dark && pose === 'welcome') await capture('whale-navy-dark-scrolled');
+        if (width === 540 && !dark && pose === 'welcome') { shelf.scrollTop = 0; await capture('whale-navy-narrow'); }
+      }
+    }
+  }
+  mount.style.width = '';
+  document.documentElement.removeAttribute('data-ds-dark-theme');
+  await showCategory('我的书架');
+  await click('主题');
+  assert(picker().querySelectorAll('.dshr-theme-apply:disabled').length === 1 && named('应用藏青像素', picker()).disabled, 'navy was not marked as applied');
+  await click('应用纸本', picker());
+  await until(() => shelfTheme() === 'paper' && loadSettings().libraryTheme === 'paper', 'navy test did not restore paper');
+  results.push({ check:'b10-whale-navy-theme', choices:3, previewWrites:0, persistedSwitches:2, backdropPoses:4, layoutCombinations:4, navyCases,
+    lightOpacity:0.3, darkOpacity:0.22, duplicateStickers:0, railColour:navyRail });
 
   const paperTitle = 'Card footer PDF';
   for (const title of [paperTitle, 'Card layout sample']) {

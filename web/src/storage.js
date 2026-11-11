@@ -1009,7 +1009,7 @@ export function loadSettings() {
       ...DEFAULT_SETTINGS,
       ...parsed,
       settingsVersion: 2,
-      libraryTheme: parsed.libraryTheme === 'whale-blue' ? 'whale-blue' : DEFAULT_SETTINGS.libraryTheme,
+      libraryTheme: ['whale-blue', 'whale-navy'].includes(parsed.libraryTheme) ? parsed.libraryTheme : DEFAULT_SETTINGS.libraryTheme,
       autoTranslate,
       hideTranslations: Boolean(parsed.hideTranslations),
       fontSize: clamp(parsed.fontSize, 13, 34, DEFAULT_SETTINGS.fontSize),
