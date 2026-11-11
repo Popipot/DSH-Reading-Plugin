@@ -9,6 +9,7 @@ import {
   saveBookCollection, deleteBookCollection,
 } from '../storage.js';
 import { bookTitle, CollectionCard, CollectionDialog, matchesBook } from './BookCollections.jsx';
+import { LibraryMascot } from './LibraryMascot.jsx';
 
 function progressPercent(book) {
   const progress = book.progress;
@@ -23,6 +24,7 @@ function progressPercent(book) {
   return 0;
 }
 
+const CATEGORY_MASCOT = { book: 'reading', paper: 'search', document: 'note' };
 const NEXT_CATEGORY = { book: 'paper', paper: 'document', document: 'book' };
 
 function BookCard({ book, onOpen, onDelete, onCycleCategory, onAdd, onRemove, onEditCitation, selection, onToggle }) {
@@ -92,7 +94,7 @@ export function LibraryView({
   const [preview, setPreview] = React.useState(null);
   const [selection, setSelection] = React.useState(null);
   const [action, setAction] = React.useState(null);
-  const [notice, setNotice] = React.useState('');
+  const [notice, setNotice] = React.useState(null);
   const dragDepth = React.useRef(0);
   const shelfRef = React.useRef(null);
   const headingRef = React.useRef(null);
@@ -126,12 +128,16 @@ export function LibraryView({
     setSearch('');
     setSelection(null);
     setPreview(null);
-    setNotice('');
+    setNotice(null);
     shelfRef.current?.scrollTo({ top: 0 });
   }
 
   const createFolder = (bookIds = []) => setAction({ kind: 'edit', bookIds });
-  const addToFolder = bookIds => collections.length ? setAction({ kind: 'add', bookIds }) : createFolder(bookIds);
+  function addToFolder(bookIds) {
+    setNotice(null);
+    if (collections.length) setAction({ kind: 'add', bookIds });
+    else createFolder(bookIds);
+  }
   async function saveFolder(input) {
     const saved = await saveBookCollection(input);
     onCollectionsChange(current => current.some(item => item.id === saved.id)
@@ -143,16 +149,16 @@ export function LibraryView({
     try {
       await saveFolder({ id: active.id, remove: bookIds });
       setSelection(null);
-      setNotice(`已从「${active.name}」移出 ${bookIds.length} 本。`);
+      setNotice({ text: `已从「${active.name}」移出 ${bookIds.length} 本。` });
     } catch (error) {
-      setNotice(error?.message || '移出书单失败。');
+      setNotice({ text: error?.message || '移出书单失败。' });
     }
   }
   async function deleteFolder(id) {
     await deleteBookCollection(id);
     onCollectionsChange(current => current.filter(item => item.id !== id));
     if (categoryFilter === id) openFolder('all');
-    setNotice('书单已删除。');
+    setNotice({ text: '书单已删除。' });
   }
 
   const pick = () => inputRef.current?.click();
@@ -180,7 +186,10 @@ export function LibraryView({
         <header className="dshr-hero">
           <div>
             <div className="dshr-hero__eyebrow"><IconBookOpen size={15} /> DSH READER · LIBRARY</div>
-            <h1>我的书架</h1>
+            <div className="dshr-library-title">
+              <h1>我的书架</h1>
+              {!active && !loading && <LibraryMascot pose="welcome" />}
+            </div>
             <p>用书单整理书籍、论文和阅读资料。</p>
           </div>
           <div className="dshr-hero__actions">
@@ -281,6 +290,7 @@ export function LibraryView({
             <nav aria-label="书架位置">
               <button type="button" className="dshr-btn dshr-btn--ghost" onClick={() => openFolder('all')}><IconChevronLeft size={15} /> 返回书架</button>
               <span ref={headingRef} tabIndex={-1} aria-current="page"><IconFolder size={16} /> {active.name}</span>
+              {active.system && <LibraryMascot key={active.id} pose={CATEGORY_MASCOT[active.id]} size={48} />}
             </nav>
             {!active.system && <div className="dshr-collection-context__actions">
               <button type="button" className="dshr-btn dshr-btn--outline" onClick={() => onEvidence(active.id)}>专题与证据</button>
@@ -308,7 +318,10 @@ export function LibraryView({
           </button>}
         </div>
 
-        <div className="dshr-library__notice" role="status">{notice}</div>
+        <div className="dshr-library__notice" role="status">
+          {notice?.added && <LibraryMascot pose="celebrate" size={36} />}
+          {notice?.text}
+        </div>
         {selection && <div className="dshr-collection-selection" aria-label="批量书单操作">
           <span>已选 {selectedIds.length} 本</span>
           <button type="button" className="dshr-btn dshr-btn--sm dshr-btn--outline" disabled={!filtered.length}
@@ -324,6 +337,7 @@ export function LibraryView({
           </div>
         ) : filtered.length === 0 ? (
           <div className="dshr-empty-books">
+            {query ? <LibraryMascot key="search" pose="search" /> : active && !active.system ? <LibraryMascot key="sleep" pose="sleep" /> : null}
             {query ? `没有匹配「${search.trim()}」的文档。`
               : active ? `「${active.name}」还没有书。` : '导入文档后，就可以把它们加入书单。'}
             {active && !active.system && !query && <button type="button" className="dshr-btn dshr-btn--outline" onClick={() => setAction({ kind: 'edit', collection: active })}>
@@ -367,7 +381,8 @@ export function LibraryView({
         onSave={async input => {
           const saved = await saveFolder(input);
           setSelection(null);
-          setNotice(action.kind === 'add' ? `已加入「${saved.name}」。` : `已保存「${saved.name}」。`);
+          const added = action.kind === 'add' || (action.kind === 'edit' && !action.collection && action.bookIds?.length > 0);
+          setNotice({ added, text: added ? `已加入「${saved.name}」。` : `已保存「${saved.name}」。` });
         }} />}
 
       <input ref={originalInput} type="file" aria-label="选择原文文件" hidden

@@ -7,10 +7,18 @@ const assets = path.join(root, 'dist/reader-assets');
 
 await fs.mkdir(assets, { recursive: true });
 
+const mascots = ['01-welcome', '02-reading', '03-search', '04-note', '05-celebrate', '06-sleep'];
+await fs.mkdir(path.join(assets, 'mascot'), { recursive: true });
+for (const name of mascots) {
+  const file = name + '.webp';
+  await fs.copyFile(path.join(root, 'web/assets/mascot', file), path.join(assets, 'mascot', file));
+}
+
 const required = [
   'pdf.bundle.js',
   'pdf.worker.mjs',
   'pdf.renderer.mjs',
+  ...mascots.map(name => path.join('mascot', name + '.webp')),
   path.join('cmaps', 'UniGB-UCS2-H.bcmap'),
   path.join('standard_fonts', 'FoxitSerif.pfb'),
 ];
@@ -24,8 +32,8 @@ for (const relative of required) {
   }
 }
 if (missing.length > 0) {
-  console.error('[dsh-reader] missing PDF assets after build:', missing.join(', '));
+  console.error('[dsh-reader] missing reader assets after build:', missing.join(', '));
   console.error('[dsh-reader] run `npm run build:pdf` before `npm run build:assets`.');
   process.exit(1);
 }
-console.log('[dsh-reader] PDF assets verified');
+console.log('[dsh-reader] PDF and library assets verified');

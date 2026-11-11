@@ -42,6 +42,15 @@ const click = async (label, within = document) => {
   button.click();
   await sleep(0);
 };
+const mascot = async (pose, within = document) => {
+  const matches = within.querySelectorAll('[data-mascot="' + pose + '"]');
+  assert(matches.length === 1, 'unexpected count for mascot ' + pose);
+  const sprite = matches[0];
+  await until(() => sprite.complete && sprite.naturalWidth > 0, 'failed to load mascot ' + pose);
+  assert(sprite.getAttribute('alt') === '' && sprite.tabIndex === -1 && !sprite.hidden, 'mascot should be decorative');
+  assert(new URL(sprite.src).origin === location.origin, 'mascot was requested outside the host');
+  return sprite;
+};
 const cards = () => [...document.querySelectorAll('.dshr-book')];
 const folder = name => named(`打开书单 ${name}`)?.closest('.dshr-collection');
 const setInput = async (element, value) => {
@@ -83,6 +92,14 @@ try {
   assert(resolveAppearance({ contentWidth: 1601 }).width === 1600, 'body width exceeded the CSS pixel limit');
   results.push({ check: 'b1-local-file-and-background-limits', localLimit, backgroundLimit, maxContentCssPx: 1600 });
 
+  root.render(<ReaderPage />);
+  await until(() => document.querySelector('.dshr-empty-books') && named('导入文档'), 'empty shelf did not initialize');
+  await mascot('welcome');
+  assert(cards().length === 0, 'empty shelf fixture contains documents');
+  await capture('mascot-empty-home');
+  root.render(null);
+  await sleep(35);
+
   const titles = ['Semiconductor Physics', 'Power Devices', 'Control Systems', 'Lecture 01', 'Lecture 02', 'Research Notes'];
   const colors = ['#224c67', '#a14b33', '#345d49', '#574c88', '#6e4c35'];
   const books = [];
@@ -99,13 +116,23 @@ try {
   root.render(<React.StrictMode><ReaderPage /></React.StrictMode>);
   await until(() => cards().length === titles.length && folder('文献'), 'initial library was not rendered');
   assert(folder('文献').textContent.includes('2 本') && folder('书籍').textContent.includes('3 本'), 'legacy classifications did not populate the default folders');
-  for (const category of ['书籍', '文献', '文档']) {
+  await mascot('welcome');
+  await capture('mascot-home');
+  for (const [category, pose] of [['书籍', 'reading'], ['文献', 'search'], ['文档', 'note']]) {
     await click(`打开书单 ${category}`);
     assert(document.querySelector('[aria-current="page"]').textContent.includes(category) && cards().length > 0, `cannot open ${category}`);
+    const sprite = await mascot(pose, document.querySelector('.dshr-collection-context'));
+    assert(sprite.getBoundingClientRect().width === 48, 'category mascot size mismatch');
+    await capture('mascot-' + pose);
     await click('返回书架');
   }
   const search = document.querySelector('input[aria-label="搜索书架"]');
+  await setInput(search, 'No matching fixture');
+  await mascot('search', document.querySelector('.dshr-empty-books'));
+  assert(document.querySelector('.dshr-empty-books').textContent.includes('No matching fixture'), 'missing no-results text');
+  await capture('mascot-no-results');
   await setInput(search, 'Ada Example');
+  assert(!document.querySelector('[data-mascot="search"]'), 'no-results mascot remained after a match');
   assert(cards().length === 1 && cards()[0].textContent.includes('Research Notes'), 'author search selected the wrong documents');
   await click('文档', cards()[0].closest('article'));
   await until(async () => (await getBook(books[5].id)).category === 'book', 'manual category change was not saved');
@@ -128,6 +155,7 @@ try {
   const previewTitle = preview.querySelector('span').textContent;
   preview.click();
   await until(() => document.querySelector('.dshr-content')?.textContent.includes(previewTitle), 'preview could not open a document');
+  assert(!document.querySelector('[data-mascot]'), 'a mascot appeared in the reading view');
   await click('返回书架');
   await until(() => folder('芯片与器件'), 'book did not return to the shelf');
   results.push({ check: 'default-folders-and-custom-preview', visibleCovers: 4, previewTitles: 5 });
@@ -136,6 +164,11 @@ try {
   await setInput(dialog().querySelector('input[required]'), '待读论文');
   await submit('保存书单');
   const second = await row('待读论文');
+  await click('打开书单 待读论文');
+  await mascot('sleep', document.querySelector('.dshr-empty-books'));
+  assert(named('添加书籍'), 'empty collection action missing');
+  await capture('mascot-sleep');
+  await click('返回书架');
   const addOne = title => click('加入书单', cards().find(card => card.textContent.includes(title)).closest('article'));
   const chooseDestination = async id => {
     dialog().querySelector('select').value = id;
@@ -143,10 +176,17 @@ try {
     await sleep(0);
   };
   await addOne(titles[0]); await chooseDestination(second.id); await submit('加入');
+  await mascot('celebrate', document.querySelector('.dshr-library__notice'));
+  assert(document.querySelector('.dshr-library__notice').textContent.includes('已加入'), 'missing success text');
+  await capture('mascot-celebrate');
+  await click('打开书单 待读论文');
+  assert(!document.querySelector('[data-mascot="sleep"]'), 'non-empty collection showed the empty illustration');
+  await click('返回书架');
   await setInput(document.querySelector('input[aria-label="搜索书架"]'), 'Lecture');
   await click('多选');
   await click('全选当前结果');
   await click('加入书单'); await chooseDestination(second.id); await submit('加入');
+  await mascot('celebrate', document.querySelector('.dshr-library__notice'));
   assert((await row('待读论文')).bookIds.length === 3, 'bulk add did not retain the existing member');
   assert((await listBooks()).length === titles.length, 'collection membership duplicated a book');
   results.push({ check: 'single-and-batch-add-with-search' });
@@ -188,6 +228,32 @@ try {
 
   await click('预览全部 5 本', folder('待精读'));
   await capture('home');
+  let matrixCases = 0;
+  for (const width of [540, 1280]) {
+    mount.style.width = width + 'px';
+    for (const dark of [true, false]) {
+      document.documentElement.toggleAttribute('data-ds-dark-theme', dark);
+      await sleep(35);
+      const sprite = await mascot('welcome');
+      const library = document.querySelector('.dshr-library');
+      assert(library.scrollWidth <= library.clientWidth, 'mascot layout overflowed at ' + width);
+      assert(sprite.getBoundingClientRect().width === 64, 'welcome mascot size mismatch');
+      const importButton = named('导入文档');
+      importButton.focus();
+      assert(document.activeElement === importButton, 'import control lost keyboard focus');
+      const rect = sprite.getBoundingClientRect();
+      const hit = document.elementFromPoint(rect.x + rect.width / 2, rect.y + rect.height / 2);
+      assert(hit !== sprite, 'mascot intercepted pointer events');
+      matrixCases++;
+      if (width === 540 && !dark) await capture('mascot-narrow-light');
+    }
+  }
+  document.documentElement.setAttribute('data-ds-dark-theme', '');
+  const welcome = await mascot('welcome');
+  welcome.src = '/dsh-reader-assets/mascot/unavailable-fixture.webp';
+  await until(() => welcome.hidden, 'broken mascot was not hidden');
+  assert(named('导入文档') && document.querySelector('h1').textContent === '我的书架', 'asset failure hid library controls');
+  results.push({ check: 'b6-mascot-scene-mapping-accessibility-and-fallback', poses: 6, states: 7, matrixCases, readerImages: 0, brokenImagesVisible: 0 });
   mount.style.width = '400px';
   await sleep(100);
   assert(document.querySelector('.dshr-library').scrollWidth <= mount.clientWidth, 'narrow library overflowed horizontally');
@@ -232,6 +298,16 @@ try {
   } finally {
     window.fetch = fetchOnline;
   }
+  const imported = (await listBooks()).find(book => book.title.includes('b1-online') || book.file?.name === 'b1-online.txt' || book.fileName === 'b1-online.txt');
+  assert(imported, 'missing temporary document for failed-add test');
+  await addOne(imported.title);
+  await chooseDestination(edited.id);
+  await deleteBook(imported.id);
+  await click('加入', dialog());
+  await until(() => dialog()?.querySelector('[role="alert"]'), 'failed member save did not show an error');
+  assert(!document.querySelector('[data-mascot="celebrate"]'), 'failed add showed the success illustration');
+  assert(!(await row('待精读')).bookIds.includes(imported.id), 'failed add changed membership');
+  results.push({ check: 'b6-collection-success-and-failure', successfulPaths: 2, falseCelebrations: 0 });
   await clearLibrary();
   assert(!(await listBookCollections()).length && !(await listBooks()).length, 'clear library left stale folders');
   assert(errors.length === 0, errors.join('; '));

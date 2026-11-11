@@ -215,7 +215,10 @@ export const styles = String.raw`
 .dshr-collection-context nav span { font-weight: 650; overflow-wrap: anywhere; min-width: 0; }
 .dshr-collection-context nav svg { flex: 0 0 auto; }
 .dshr-collection-selection { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; padding: 9px 12px; margin-bottom: 10px; border: 1px solid var(--dshr-border); border-radius: 9px; background: var(--dshr-brand-soft); font-size: 12px; }
-.dshr-library__notice:not(:empty) { margin: 0 2px 10px; font-size: 12px; color: var(--dshr-fg-2); }
+.dshr-library-mascot { display: block; flex: 0 0 auto; object-fit: contain; pointer-events: none; }
+.dshr-library-mascot[hidden] { display: none; }
+.dshr-library-title { display: flex; align-items: center; flex-wrap: wrap; gap: 8px 14px; }
+.dshr-library__notice:not(:empty) { display: flex; align-items: center; gap: 8px; margin: 0 2px 10px; font-size: 12px; color: var(--dshr-fg-2); }
 .dshr-collection__open:focus-visible, .dshr-collection__peek:focus-visible, .dshr-collection__preview button:focus-visible, .dshr-book:focus-visible { outline: 2px solid var(--dshr-brand); outline-offset: -2px; }
 .dshr-books { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 250px), 1fr)); gap: 14px; }
 .dshr-book__badges { display: flex; align-items: center; gap: 4px; padding: 3px 8px; border-top: 1px solid var(--dshr-border); }
