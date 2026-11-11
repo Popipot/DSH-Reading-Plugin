@@ -917,14 +917,16 @@ export const styles = String.raw`
   background:linear-gradient(180deg,var(--dshr-layer-3),var(--dshr-blue-rail)); border-right:1px solid var(--dshr-border);
 }
 /* The pane stays in place while its library child scrolls. */
-.dshr-library-pane[data-library-backdrop] { position:relative; isolation:isolate; }
-.dshr-library-pane[data-library-backdrop="welcome"] { --dshr-backdrop-image:url('/dsh-reader-assets/mascot/welcome-background.webp'); }
-.dshr-library-pane[data-library-backdrop="search"] { --dshr-backdrop-image:url('/dsh-reader-assets/mascot/search-background.webp'); }
-.dshr-library-pane[data-library-backdrop="reading"] { --dshr-backdrop-image:url('/dsh-reader-assets/mascot/reading-background.webp'); }
-.dshr-library-pane[data-library-backdrop="note"] { --dshr-backdrop-image:url('/dsh-reader-assets/mascot/note-background.webp'); }
+.dshr-library-pane[data-library-backdrop] { position:relative; isolation:isolate; overflow:hidden; }
+.dshr-library-pane[data-library-backdrop="welcome"] { --dshr-backdrop-image:url('/dsh-reader-assets/mascot/welcome-background.webp'); --dshr-backdrop-x:0.489; --dshr-backdrop-y:0.486; }
+.dshr-library-pane[data-library-backdrop="search"] { --dshr-backdrop-image:url('/dsh-reader-assets/mascot/search-background.webp'); --dshr-backdrop-x:0.49; --dshr-backdrop-y:0.479; }
+.dshr-library-pane[data-library-backdrop="reading"] { --dshr-backdrop-image:url('/dsh-reader-assets/mascot/reading-background.webp'); --dshr-backdrop-x:0.499; --dshr-backdrop-y:0.547; }
+.dshr-library-pane[data-library-backdrop="note"] { --dshr-backdrop-image:url('/dsh-reader-assets/mascot/note-background.webp'); --dshr-backdrop-x:0.505; --dshr-backdrop-y:0.55; }
 .dshr-library-pane[data-library-backdrop]::before {
-  content:""; position:absolute; z-index:-1; pointer-events:none; inset:0;
-  background:var(--dshr-backdrop-image) no-repeat 55% -135px / min(1180px,111%) auto;
+  content:""; position:absolute; z-index:-1; pointer-events:none; left:50%; top:50%; width:min(1400px,125%); aspect-ratio:1;
+  /* Each pose carries the centroid of its opaque pixels, which sits on the pane centre. */
+  transform:translate(calc(var(--dshr-backdrop-x) * -100%),calc(var(--dshr-backdrop-y) * -100%));
+  background:var(--dshr-backdrop-image) no-repeat center / 100% 100%;
   opacity:var(--dshr-blue-art-opacity);
 }
 .dshr-library-pane[data-library-backdrop] .dshr-books .dshr-book-card { background:var(--dshr-blue-card); }
@@ -980,6 +982,6 @@ export const styles = String.raw`
 [data-library-theme="whale-navy"] .dshr-resume__progress i { background:var(--dshr-navy-gold); }
 @container (max-width:760px) {
   .dshr-library-nav .dshr-theme-trigger__current { display:none; }
-  .dshr-library-pane[data-library-backdrop]::before { background-size:min(680px,132%); background-position:center 16px; }
+  .dshr-library-pane[data-library-backdrop]::before { width:min(820px,150%); }
 }
 `;

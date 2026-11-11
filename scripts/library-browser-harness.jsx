@@ -345,6 +345,16 @@ try {
   const backdropPane = () => document.querySelector('.dshr-library-pane');
   const backdrop = () => getComputedStyle(backdropPane(), '::before');
   const savedKey = 'dsh-reader:settings:v1';
+  const artOffCentre = () => {
+    const pane = backdropPane().getBoundingClientRect();
+    const art = backdrop();
+    const side = parseFloat(art.width);
+    const shift = new DOMMatrix(art.transform);
+    const style = getComputedStyle(backdropPane());
+    const x = parseFloat(art.left) + shift.m41 + side * style.getPropertyValue('--dshr-backdrop-x');
+    const y = parseFloat(art.top) + shift.m42 + side * style.getPropertyValue('--dshr-backdrop-y');
+    return Math.max(Math.abs(x - pane.width / 2), Math.abs(y - pane.height / 2));
+  };
   assert(shelfTheme() === 'paper' && !performance.getEntriesByName(location.origin + artUrl).length,
     'paper loaded the optional theme asset');
   const before = localStorage.getItem(savedKey);
@@ -502,7 +512,7 @@ try {
         const contentStart = content.getBoundingClientRect().top;
         const beforeRequests = totalRequests();
         const art = backdrop();
-        assert(pane.dataset.libraryBackdrop === pose && art.position === 'absolute' && art.top === '0px' && art.bottom === '0px'
+        assert(pane.dataset.libraryBackdrop === pose && art.position === 'absolute' && artOffCentre() <= 1 && parseFloat(art.width) >= pane.clientWidth * (width === 540 ? 1.5 : 1.25) - 1
           && art.pointerEvents === 'none' && art.opacity === (dark ? '0.22' : '0.29'), 'backdrop layering or opacity changed');
         shelf.scrollTop = 360;
         await until(() => shelf.scrollTop >= 300, 'category fixture cannot scroll 300 CSS px');
@@ -511,7 +521,7 @@ try {
         assert(shift <= 1 && contentStart - content.getBoundingClientRect().top >= 300 && pane.scrollTop === 0
           && shelf.scrollWidth === shelf.clientWidth, 'background moved, content did not scroll, or shelf overflowed');
         assert(totalRequests() === beforeRequests, 'scrolling requested a background again');
-        scrollCases.push({ width, dark, pose, scrollDistanceCssPx:shelf.scrollTop, backdropShiftCssPx:shift });
+        scrollCases.push({ width, dark, pose, artSideCssPx:parseFloat(art.width), artOffCentreCssPx:Math.round(artOffCentre() * 100) / 100, scrollDistanceCssPx:shelf.scrollTop, backdropShiftCssPx:shift });
         if (width === 1280 && dark && pose === 'search') await capture('category-backdrop-search-scrolled');
       }
     }
@@ -565,7 +575,7 @@ try {
         const contentStart = content.getBoundingClientRect().top;
         const beforeRequests = totalRequests();
         const art = backdrop();
-        assert(pane.dataset.libraryBackdrop === pose && art.backgroundImage.includes(pose + '-background.webp') && art.position === 'absolute'
+        assert(pane.dataset.libraryBackdrop === pose && art.backgroundImage.includes(pose + '-background.webp') && art.position === 'absolute' && artOffCentre() <= 1
           && art.pointerEvents === 'none' && art.opacity === (dark ? '0.22' : '0.3'), 'navy backdrop did not match ' + pose);
         assert(!document.querySelector('.dshr-library-title .dshr-library-mascot'), 'navy category duplicated its sticker');
         shelf.scrollTop = 360;
@@ -575,7 +585,7 @@ try {
         assert(shift <= 1 && contentStart - content.getBoundingClientRect().top >= 300 && shelf.scrollWidth === shelf.clientWidth,
           'navy background moved, content did not scroll, or shelf overflowed');
         assert(totalRequests() === beforeRequests, 'navy scrolling requested a background again');
-        navyCases.push({ width, dark, pose, scrollDistanceCssPx:shelf.scrollTop, backdropShiftCssPx:shift });
+        navyCases.push({ width, dark, pose, artSideCssPx:parseFloat(art.width), artOffCentreCssPx:Math.round(artOffCentre() * 100) / 100, scrollDistanceCssPx:shelf.scrollTop, backdropShiftCssPx:shift });
         if (width === 1280 && !dark && pose !== 'welcome') await capture('whale-navy-' + pose);
         if (width === 1280 && dark && pose === 'welcome') await capture('whale-navy-dark-scrolled');
         if (width === 540 && !dark && pose === 'welcome') { shelf.scrollTop = 0; await capture('whale-navy-narrow'); }
