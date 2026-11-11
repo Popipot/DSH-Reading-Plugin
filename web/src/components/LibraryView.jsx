@@ -112,7 +112,7 @@ export function LibraryView({
   const [notice, setNotice] = React.useState(null);
   const [themePreview, setThemePreview] = React.useState(null);
   const theme = themePreview ?? libraryTheme;
-  const showWelcomeSticker = theme !== 'whale-blue';
+  const showLibrarySticker = theme !== 'whale-blue';
   const [guideOpen, setGuideOpen] = React.useState(false);
   const [guideDismissed, setGuideDismissed] = React.useState(false);
   const guideRef = React.useRef(null);
@@ -132,6 +132,8 @@ export function LibraryView({
     ];
   }, [books, collections]);
   const active = folders.find(folder => folder.id === categoryFilter);
+  const categoryMascot = active?.system ? CATEGORY_MASCOT[active.id] : undefined;
+  const backdrop = !showLibrarySticker && !loading ? (active ? categoryMascot : 'welcome') : undefined;
   const scope = active?.books ?? books;
   const query = search.trim().toLowerCase();
   const filtered = query ? scope.filter(book => matchesBook(book, query)) : scope;
@@ -229,13 +231,14 @@ export function LibraryView({
           <LibraryThemePicker theme={libraryTheme} preview={themePreview} onPreview={setThemePreview} onApply={onLibraryThemeChange} />
         </div>
       </aside>
-      <div className="dshr-library" data-library-home={!active && !loading ? "" : undefined} ref={shelfRef} onDragOver={event => event.preventDefault()} onDrop={handleDrop}>
+      <div className="dshr-library-pane" data-library-backdrop={backdrop}>
+      <div className="dshr-library" ref={shelfRef} onDragOver={event => event.preventDefault()} onDrop={handleDrop}>
       <div className="dshr-library__inner">
         <header className="dshr-hero">
           <div className="dshr-library-title">
             <h1 ref={headingRef} tabIndex={-1}>{active?.name || "我的书架"}</h1>
-            {active?.system && <LibraryMascot key={active.id} pose={CATEGORY_MASCOT[active.id]} size={48} />}
-            {showWelcomeSticker && !active && (guideDismissed || query) && !loading && <LibraryMascot pose="welcome" />}
+            {showLibrarySticker && categoryMascot && <LibraryMascot key={categoryMascot} pose={categoryMascot} size={48} />}
+            {showLibrarySticker && !active && (guideDismissed || query) && !loading && <LibraryMascot pose="welcome" />}
           </div>
           <div className="dshr-hero__actions">
             <label className="dshr-library__search">
@@ -273,7 +276,7 @@ export function LibraryView({
                   setGuideOpen(true);
                   requestAnimationFrame(() => guideRef.current?.scrollIntoView({ block: "nearest" }));
                 }}>
-                  {showWelcomeSticker && <LibraryMascot pose="welcome" size={192} />}
+                  {showLibrarySticker && <LibraryMascot pose="welcome" size={192} />}
                   <span className="dshr-library-guide__label">
                     <strong>导入指南</strong><IconChevronRight size={18} />
                   </span>
@@ -404,6 +407,7 @@ export function LibraryView({
           </div>
         )}
 
+      </div>
       </div>
       </div>
 

@@ -36,7 +36,7 @@ Ein Plugin für **DeepSeek Harness** zum Lesen von Fachliteratur und Büchern. O
 
 **Lesearbeitsplatz nach Entwurf A.** Die Bibliothek bietet eine Seitennavigation, Suche und Import im Kopfbereich, Sammlungen mit Buchcovern und eine Liste zuletzt genutzter Dokumente. Im PDF-Standardmodus steht das Inhaltsverzeichnis links. Rechts lassen sich Belege zum aktuellen Dokument und die Übersetzung aufrufen. In schmalen Fenstern bleibt die gesamte verfügbare Breite für das PDF erhalten.
 
-**Bibliotheksthemen.** Öffnen Sie unten in der Seitenleiste **主题** (Design). Sehen Sie sich **纸本** (Papier) oder **鲸海蓝** (Walblau) direkt in Ihrem Bücherregal an und speichern Sie Ihre Wahl mit **应用** (Anwenden) auf diesem Gerät. Bei Walblau erscheint das winkende Walmädchen transparent im Hintergrund des Bücherregals.
+**Bibliotheksthemen.** Öffnen Sie unten in der Seitenleiste **主题** (Design). Sehen Sie sich **纸本** (Papier) oder **鲸海蓝** (Walblau) direkt in Ihrem Bücherregal an und speichern Sie Ihre Wahl mit **应用** (Anwenden) auf diesem Gerät. Walblau zeigt auf der Startseite sowie unter Fachliteratur, Büchern und Dokumenten jeweils ein eigenes halbtransparentes Walmädchen. Das Motiv bleibt auch beim Scrollen im Vollbild an derselben Stelle.
 
 **Bedienelemente auf Bibliothekskarten.** Kategorien bleiben einzeilig. Bei wenig Platz wechseln ganze Schaltflächen in die nächste Zeile.
 

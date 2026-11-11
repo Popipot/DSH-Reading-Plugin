@@ -36,7 +36,7 @@ A **DeepSeek Harness** plugin for reading papers and books. Organize your local 
 
 **Reader workspace, design A.** The library has category navigation, a top search and import bar, collection covers, and a recent-document list. The standard PDF view puts the document outline on the left and the current paper’s evidence and translation on the right. Narrow windows keep the PDF at full available width, with tools opening on demand.
 
-**Library themes.** Open **主题** (Theme) at the bottom of the library sidebar. Preview **纸本** (Paper) or **鲸海蓝** (Whale Blue) on your bookshelf, then click **应用** (Apply) to save your choice on this device. Whale Blue puts the waving whale girl across the bookshelf background.
+**Library themes.** Open **主题** (Theme) at the bottom of the library sidebar. Preview **纸本** (Paper) or **鲸海蓝** (Whale Blue) on your bookshelf, then click **应用** (Apply) to save your choice on this device. Whale Blue uses a different translucent whale girl on the library home, Papers, Books, and Documents. The illustration stays in place as you scroll, including in fullscreen.
 
 **Library card controls.** Category labels stay on one line, and whole buttons wrap when a card needs more room.
 

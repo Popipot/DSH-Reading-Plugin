@@ -342,7 +342,8 @@ try {
   const shelfTheme = () => document.querySelector('.dshr-library-shell')?.dataset.libraryTheme;
   const picker = () => document.querySelector('.dshr-theme-picker:popover-open');
   const artUrl = '/dsh-reader-assets/mascot/welcome-background.webp';
-  const backdrop = () => getComputedStyle(document.querySelector('.dshr-library'), '::before');
+  const backdropPane = () => document.querySelector('.dshr-library-pane');
+  const backdrop = () => getComputedStyle(backdropPane(), '::before');
   const savedKey = 'dsh-reader:settings:v1';
   assert(shelfTheme() === 'paper' && !performance.getEntriesByName(location.origin + artUrl).length,
     'paper loaded the optional theme asset');
@@ -405,14 +406,14 @@ try {
   mount.style.width = '';
   document.documentElement.removeAttribute('data-ds-dark-theme');
   const missing = document.createElement('style');
-  missing.textContent = '[data-library-theme="whale-blue"] .dshr-library[data-library-home]::before { background-image:url("/dsh-reader-assets/mascot/theme-missing-fixture.webp") }';
+  missing.textContent = '.dshr-library-pane[data-library-backdrop]::before { background-image:url("/dsh-reader-assets/mascot/theme-missing-fixture.webp") }';
   document.head.append(missing);
   const missingStatus = await fetch('/dsh-reader-assets/mascot/theme-missing-fixture.webp').then(response=>response.status);
   assert(missingStatus === 404 && named('导入文档') && cards().length && !document.querySelector('.dshr-library img[src*="theme-missing"]'),
     'missing background disabled the book list or controls');
   missing.remove();
-  await click('文献', document.querySelector('.dshr-library-nav'));
-  assert(backdrop().backgroundImage === 'none' && shelfTheme() === 'whale-blue', 'background leaked into category');
+  await click('打开书单 待精读');
+  assert(backdrop().backgroundImage === 'none' && shelfTheme() === 'whale-blue', 'background leaked into a custom book list');
   await click('返回书架');
   cards()[0].click();
   await until(() => document.querySelector('.dshr-reader'), 'unable to open reader with whale blue applied');
@@ -443,7 +444,94 @@ try {
   root.render(<ReaderPage />);
   await until(() => shelfTheme() === 'paper', 'saved paper theme did not survive remount');
   results.push({ check:'b8-library-themes', choices:2, previewWrites:0, cancelPaths:2, persistedSwitches:2, blueLayoutCases,
-    compatibilityCases, backgroundWidth:asset.naturalWidth, backgroundOnCategory:0, backgroundInReader:0, defaultBackgroundRequests:0, missingStatus });
+    compatibilityCases, backgroundWidth:asset.naturalWidth, backgroundOnCustomCollection:0, backgroundInReader:0, defaultBackgroundRequests:0, missingStatus });
+  const categories = [['文献','paper','search'],['书籍','book','reading'],['文档','document','note']];
+  const categoryUrl = pose => '/dsh-reader-assets/mascot/' + pose + '-background.webp';
+  const requestCount = pose => performance.getEntriesByName(location.origin + categoryUrl(pose)).length;
+  const totalRequests = () => ['welcome',...categories.map(([, ,pose]) => pose)].reduce((total,pose) => total + requestCount(pose),0);
+  assert(categories.every(([, ,pose]) => requestCount(pose) === 0), 'category backgrounds were loaded early or in paper mode');
+  for (const [label, category] of categories) {
+    for (let number = 1; number <= 24; number++) {
+      const title = label + '样本 ' + number;
+      const doc = await saveBook(new File([title], title + '.txt', { type:'text/plain' }));
+      await updateBook(doc.id, { category, categoryManual:true });
+    }
+  }
+  root.render(null);
+  await sleep(30);
+  root.render(<ReaderPage />);
+  await until(() => cards().length >= 72, 'category scrolling fixtures did not load');
+  const showCategory = label => click(label, document.querySelector('.dshr-library-nav'));
+  for (const [label] of categories) {
+    await showCategory(label);
+    assert(!backdropPane().hasAttribute('data-library-backdrop'), 'paper mode used a background');
+  }
+  assert(categories.every(([, ,pose]) => requestCount(pose) === 0), 'paper mode requested a category backdrop');
+  await showCategory('我的书架');
+  await click('主题');
+  await click('应用鲸海蓝', picker());
+  for (const [label, ,pose] of categories) {
+    const beforeRequests = totalRequests();
+    await showCategory(label);
+    await until(() => requestCount(pose) === 1, 'active category did not request its own backdrop');
+    assert(totalRequests() === beforeRequests + 1, 'entering one category requested multiple backdrops');
+    assert(backdropPane().dataset.libraryBackdrop === pose && backdrop().backgroundImage.includes(categoryUrl(pose))
+      && backdrop().backgroundImage.includes(location.origin) && !document.querySelector('.dshr-library-title .dshr-library-mascot'),
+      'category backdrop did not match or duplicated its sticker');
+    const asset = new Image();
+    asset.src = categoryUrl(pose);
+    await asset.decode();
+    assert(asset.naturalWidth === 960 && asset.naturalHeight === 960, 'wrong category backdrop dimensions');
+    await capture('category-backdrop-' + pose);
+  }
+  await showCategory('我的书架');
+  assert(backdropPane().dataset.libraryBackdrop === 'welcome' && backdrop().backgroundImage.includes(artUrl), 'home did not restore welcome artwork');
+
+  const scrollCases = [];
+  for (const width of [540,1280]) {
+    mount.style.width = width + 'px';
+    for (const dark of [false,true]) {
+      document.documentElement.toggleAttribute('data-ds-dark-theme', dark);
+      for (const [label, pose] of [['我的书架','welcome'],...categories.map(([name, ,key]) => [name,key])]) {
+        await showCategory(label);
+        const pane = backdropPane();
+        const shelf = pane.querySelector('.dshr-library');
+        const content = shelf.querySelector('.dshr-library__inner');
+        shelf.scrollTop = 0;
+        const start = pane.getBoundingClientRect();
+        const contentStart = content.getBoundingClientRect().top;
+        const beforeRequests = totalRequests();
+        const art = backdrop();
+        assert(pane.dataset.libraryBackdrop === pose && art.position === 'absolute' && art.top === '0px' && art.bottom === '0px'
+          && art.pointerEvents === 'none' && art.opacity === (dark ? '0.22' : '0.29'), 'backdrop layering or opacity changed');
+        shelf.scrollTop = 360;
+        await until(() => shelf.scrollTop >= 300, 'category fixture cannot scroll 300 CSS px');
+        const end = pane.getBoundingClientRect();
+        const shift = Math.max(Math.abs(start.x - end.x), Math.abs(start.y - end.y));
+        assert(shift <= 1 && contentStart - content.getBoundingClientRect().top >= 300 && pane.scrollTop === 0
+          && shelf.scrollWidth === shelf.clientWidth, 'background moved, content did not scroll, or shelf overflowed');
+        assert(totalRequests() === beforeRequests, 'scrolling requested a background again');
+        scrollCases.push({ width, dark, pose, scrollDistanceCssPx:shelf.scrollTop, backdropShiftCssPx:shift });
+        if (width === 1280 && dark && pose === 'search') await capture('category-backdrop-search-scrolled');
+      }
+    }
+  }
+  mount.style.width = '';
+  document.documentElement.removeAttribute('data-ds-dark-theme');
+  const categoryMissing = document.createElement('style');
+  categoryMissing.textContent = '.dshr-library-pane[data-library-backdrop="note"]::before { background-image:url("/dsh-reader-assets/mascot/category-missing-fixture.webp") }';
+  document.head.append(categoryMissing);
+  const missingCategoryStatus = await fetch('/dsh-reader-assets/mascot/category-missing-fixture.webp').then(response=>response.status);
+  assert(missingCategoryStatus === 404 && cards().length >= 24 && named('导入文档')
+    && !document.querySelector('img[src*="category-missing"]'), 'missing category artwork disabled the shelf');
+  categoryMissing.remove();
+  await showCategory('我的书架');
+  await click('主题');
+  await click('应用纸本', picker());
+  await until(() => shelfTheme() === 'paper', 'category test did not restore paper');
+  results.push({ check:'b9-category-backdrops', matchedCategories:3, layersPerCategory:1, duplicateCategoryStickers:0,
+    layoutCombinations:4, scrollCases, firstCategoryArtRequests:1, paperCategoryArtRequests:0, scrollArtRequests:0, missingCategoryStatus });
+
   const paperTitle = 'Card footer PDF';
   for (const title of [paperTitle, 'Card layout sample']) {
     const pdf = await saveBook(new File(['%PDF-1.4\n%' + title + '\n%%EOF'], title + '.pdf', { type:'application/pdf' }));
