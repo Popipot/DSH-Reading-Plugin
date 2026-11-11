@@ -37,6 +37,7 @@ export const DEFAULT_SETTINGS = Object.freeze({
   showToc: true,
   aiOpen: false,
   theme: 'auto',
+  libraryTheme: 'paper',
   // Appearance (v2). Kept as a flat object so old settings migrate naturally.
   fontFamily: 'serif',
   fontWeight: 400,
@@ -1008,6 +1009,7 @@ export function loadSettings() {
       ...DEFAULT_SETTINGS,
       ...parsed,
       settingsVersion: 2,
+      libraryTheme: parsed.libraryTheme === 'whale-blue' ? 'whale-blue' : DEFAULT_SETTINGS.libraryTheme,
       autoTranslate,
       hideTranslations: Boolean(parsed.hideTranslations),
       fontSize: clamp(parsed.fontSize, 13, 34, DEFAULT_SETTINGS.fontSize),

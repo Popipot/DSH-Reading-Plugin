@@ -7,7 +7,7 @@ import { resolveAppearance } from '../web/src/appearance/appearance.js';
 import { annotationStyles } from '../web/src/annotations/styles.js';
 import {
   clearLibrary, deleteBook, deleteReaderBackground, getBook, getReaderBackground,
-  listAnnotations, listBookCollections, listBooks, saveAnnotation, saveBook,
+  listAnnotations, listBookCollections, listBooks, loadSettings, saveAnnotation, saveBook,
   saveBookCollection, saveReaderBackground, updateBook,
 } from '../web/src/storage.js';
 
@@ -336,6 +336,113 @@ try {
   assert(!document.querySelector('[data-mascot="celebrate"]'), 'failed add showed the success illustration');
   assert(!(await row('待精读')).bookIds.includes(imported.id), 'failed add changed membership');
   results.push({ check: 'b6-collection-success-and-failure', successfulPaths: 2, falseCelebrations: 0 });
+  await click('取消', dialog());
+  document.documentElement.removeAttribute('data-ds-dark-theme');
+  const shelfTheme = () => document.querySelector('.dshr-library-shell')?.dataset.libraryTheme;
+  const picker = () => document.querySelector('.dshr-theme-picker:popover-open');
+  const artUrl = '/dsh-reader-assets/mascot/welcome-background.webp';
+  const backdrop = () => getComputedStyle(document.querySelector('.dshr-library'), '::before');
+  const savedKey = 'dsh-reader:settings:v1';
+  assert(shelfTheme() === 'paper' && !performance.getEntriesByName(location.origin + artUrl).length,
+    'paper loaded the optional theme asset');
+  const before = localStorage.getItem(savedKey);
+  const bookIds = (await listBooks()).map(book => book.id).sort().join(',');
+  const collectionsBefore = JSON.stringify(await listBookCollections());
+  const themeButton = named('主题');
+  assert(themeButton === document.querySelector('.dshr-library-nav__actions > button:last-of-type'), 'theme entry is not last in the sidebar');
+  themeButton.focus();
+  await click('主题');
+  await until(picker, 'theme picker did not open');
+  assert(picker().querySelectorAll('.dshr-theme-option').length === 2 && picker().querySelectorAll('.dshr-theme-apply:disabled').length === 1, 'unexpected theme count or applied label');
+  await click('预览鲸海蓝', picker());
+  await until(() => shelfTheme() === 'whale-blue', 'theme preview did not update the current shelf');
+  assert(localStorage.getItem(savedKey) === before, 'preview wrote the theme to storage');
+  assert(backdrop().backgroundImage.includes(artUrl) && backdrop().opacity === '0.29' && backdrop().pointerEvents === 'none',
+    'blue background did not use the approved visual treatment');
+  assert(!document.querySelector('[data-mascot="welcome"]'), 'blue home duplicated the welcome mascot');
+  const asset = new Image();
+  asset.src = artUrl;
+  await asset.decode();
+  assert(asset.naturalWidth === 960 && asset.naturalHeight === 960, 'incorrect background asset size');
+  await until(() => !document.querySelector('.dshr-toast'), 'previous reader toast did not close');
+  await capture('whale-blue-preview');
+  picker().dispatchEvent(new KeyboardEvent('keydown', { key:'Escape', bubbles:true, cancelable:true }));
+  await until(() => shelfTheme() === 'paper' && !picker(), 'cancel did not restore paper');
+  assert(document.activeElement === themeButton && localStorage.getItem(savedKey) === before,
+    'cancel did not restore focus or wrote to storage');
+
+  await click('主题');
+  await click('应用鲸海蓝', picker());
+  await until(() => shelfTheme() === 'whale-blue' && loadSettings().libraryTheme === 'whale-blue' && !picker(),
+    'one-click apply did not save whale blue');
+  root.render(null);
+  await sleep(30);
+  root.render(<ReaderPage />);
+  await until(() => shelfTheme() === 'whale-blue' && cards().length > 0, 'saved blue theme did not survive remount');
+  assert((await listBooks()).map(book => book.id).sort().join(',') === bookIds
+    && JSON.stringify(await listBookCollections()) === collectionsBefore, 'theme apply changed library data');
+  await capture('whale-blue-home');
+  let blueLayoutCases = 0;
+  for (const width of [540,1280]) {
+    mount.style.width = width + 'px';
+    for (const dark of [false,true]) {
+      document.documentElement.toggleAttribute('data-ds-dark-theme', dark);
+      await sleep(55);
+      await click('主题');
+      const rect = picker().getBoundingClientRect();
+      const library = document.querySelector('.dshr-library');
+      const bounds = library.closest('.dshr-library-shell').getBoundingClientRect();
+      assert(rect.x >= bounds.x && rect.y >= bounds.y && rect.right <= bounds.right && rect.bottom <= bounds.bottom
+        && library.scrollWidth === library.clientWidth, 'theme chooser overflowed the viewport');
+      assert(backdrop().opacity === (dark ? '0.22' : '0.29'), 'wrong theme opacity for host mode');
+      if (width === 540 && !dark) await capture('whale-blue-narrow');
+      if (width === 1280 && dark) await capture('whale-blue-dark');
+      await click('关闭主题选择', picker());
+      blueLayoutCases++;
+    }
+  }
+  mount.style.width = '';
+  document.documentElement.removeAttribute('data-ds-dark-theme');
+  const missing = document.createElement('style');
+  missing.textContent = '[data-library-theme="whale-blue"] .dshr-library[data-library-home]::before { background-image:url("/dsh-reader-assets/mascot/theme-missing-fixture.webp") }';
+  document.head.append(missing);
+  const missingStatus = await fetch('/dsh-reader-assets/mascot/theme-missing-fixture.webp').then(response=>response.status);
+  assert(missingStatus === 404 && named('导入文档') && cards().length && !document.querySelector('.dshr-library img[src*="theme-missing"]'),
+    'missing background disabled the book list or controls');
+  missing.remove();
+  await click('文献', document.querySelector('.dshr-library-nav'));
+  assert(backdrop().backgroundImage === 'none' && shelfTheme() === 'whale-blue', 'background leaked into category');
+  await click('返回书架');
+  cards()[0].click();
+  await until(() => document.querySelector('.dshr-reader'), 'unable to open reader with whale blue applied');
+  assert(!document.querySelector('[data-library-theme]') && !document.querySelector('.dshr-theme-picker'),
+    'library theme leaked into document reading');
+  await click('返回书架');
+  await until(() => shelfTheme() === 'whale-blue', 'returning from reader lost the theme');
+  await click('主题');
+  await click('预览纸本', picker());
+  await until(() => shelfTheme() === 'paper', 'paper preview failed from blue');
+  assert(loadSettings().libraryTheme === 'whale-blue', 'paper preview persisted unexpectedly');
+  document.querySelector('h1').dispatchEvent(new PointerEvent('pointerdown',{ bubbles:true }));
+  await until(() => shelfTheme() === 'whale-blue' && !picker(), 'outside pointer did not restore the applied theme');
+  await click('主题');
+  await click('应用纸本', picker());
+  await until(() => shelfTheme() === 'paper' && loadSettings().libraryTheme === 'paper', 'paper apply failed');
+  root.render(null);
+  await sleep(30);
+  const stable = localStorage.getItem(savedKey);
+  let compatibilityCases = 0;
+  for (const legacy of [{ settingsVersion:2, fontSize:22 }, { settingsVersion:2, libraryTheme:'unsupported', fontSize:22 }]) {
+    localStorage.setItem(savedKey, JSON.stringify(legacy));
+    const loaded = loadSettings();
+    assert(loaded.libraryTheme === 'paper' && loaded.fontSize === 22, 'legacy or unknown theme did not fall back safely');
+    compatibilityCases++;
+  }
+  localStorage.setItem(savedKey, stable);
+  root.render(<ReaderPage />);
+  await until(() => shelfTheme() === 'paper', 'saved paper theme did not survive remount');
+  results.push({ check:'b8-library-themes', choices:2, previewWrites:0, cancelPaths:2, persistedSwitches:2, blueLayoutCases,
+    compatibilityCases, backgroundWidth:asset.naturalWidth, backgroundOnCategory:0, backgroundInReader:0, defaultBackgroundRequests:0, missingStatus });
   await clearLibrary();
   assert(!(await listBookCollections()).length && !(await listBooks()).length, 'clear library left stale folders');
   assert(errors.length === 0, errors.join('; '));

@@ -36,6 +36,8 @@ A **DeepSeek Harness** plugin for reading papers and books. Organize your local 
 
 **Reader workspace, design A.** The library has category navigation, a top search and import bar, collection covers, and a recent-document list. The standard PDF view puts the document outline on the left and the current paper’s evidence and translation on the right. Narrow windows keep the PDF at full available width, with tools opening on demand.
 
+**Library themes.** Open **主题** (Theme) at the bottom of the library sidebar. Preview **纸本** (Paper) or **鲸海蓝** (Whale Blue) on your bookshelf, then click **应用** (Apply) to save your choice on this device. Whale Blue puts the waving whale girl across the bookshelf background.
+
 **Library illustrations.** The waving whale girl is the main illustration on the library home page, with a larger welcome card that adapts to the window. Six pixel-art whale girl poses distinguish Books, Papers and Documents, welcome readers to the library, and accompany empty and success states. [See all six poses](images/whale-girl/README.md).
 
 **B5 user trial.** The materials for the 15-person, 14-day study are ready. Participant testing is pending.

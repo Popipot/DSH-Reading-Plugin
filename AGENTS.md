@@ -4,6 +4,8 @@ For work on a development batch, read the V-model workflow at `project-managemen
 
 Use baseline requirement and verification IDs. Keep batch outcomes, defects, decisions, candidate identity, and evidence in the batch archive. Run `npm run check:engineering` in the engineering workspace before handoff. Preserve earlier runs and record unresolved verification against the original gate.
 
+Every new feature follows the V-model workflow: record functional and non-functional requirements with measurable acceptance criteria, keep the SysML and verification trace synchronized, and archive decisions, candidate identity, failures, and evidence. Use a different process only when the user explicitly requests an exception, and record its scope and follow-up in the batch.
+
 ## Completion and publication
 
 At the end of each completed DSH Reader project task, synchronize both GitHub repositories before reporting completion.

@@ -7,7 +7,7 @@ const assets = path.join(root, 'dist/reader-assets');
 
 await fs.mkdir(assets, { recursive: true });
 
-const mascots = ['01-welcome', '02-reading', '03-search', '04-note', '05-celebrate', '06-sleep'];
+const mascots = ['01-welcome', '02-reading', '03-search', '04-note', '05-celebrate', '06-sleep', 'welcome-background'];
 await fs.mkdir(path.join(assets, 'mascot'), { recursive: true });
 for (const name of mascots) {
   const file = name + '.webp';

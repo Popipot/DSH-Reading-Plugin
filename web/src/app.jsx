@@ -1386,6 +1386,8 @@ export function ReaderPage() {
           </div>
         ) : (
           <LibraryView
+            libraryTheme={settings.libraryTheme}
+            onLibraryThemeChange={libraryTheme => setSettings(previous => ({ ...previous, libraryTheme }))}
             books={books}
             collections={collections}
             onCollectionsChange={updateCollections}

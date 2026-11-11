@@ -10,6 +10,7 @@ import {
 } from '../storage.js';
 import { bookTitle, CollectionCard, CollectionDialog, matchesBook } from './BookCollections.jsx';
 import { LibraryMascot } from './LibraryMascot.jsx';
+import { LibraryThemePicker } from './LibraryThemePicker.jsx';
 
 function progressPercent(book) {
   const progress = book.progress;
@@ -98,7 +99,7 @@ function BookCard({ book, list, onOpen, onDelete, onCycleCategory, onAdd, onRemo
 export function LibraryView({
   books, collections, onCollectionsChange, loading, resumeBook, onResume, importing, organizing, categoryFilter, onCategoryFilter,
   onAutoOrganize, onImport, onOpen, onDelete, onCycleCategory, onSettings, onOnlineImport, onEvidence, onEditCitation,
-  onBackup, onRestoreOriginal,
+  onBackup, onRestoreOriginal, libraryTheme = "paper", onLibraryThemeChange,
 }) {
   const inputRef = React.useRef(null);
   const originalInput = React.useRef(null);
@@ -109,6 +110,9 @@ export function LibraryView({
   const [selection, setSelection] = React.useState(null);
   const [action, setAction] = React.useState(null);
   const [notice, setNotice] = React.useState(null);
+  const [themePreview, setThemePreview] = React.useState(null);
+  const theme = themePreview ?? libraryTheme;
+  const showWelcomeSticker = theme !== 'whale-blue';
   const [guideOpen, setGuideOpen] = React.useState(false);
   const [guideDismissed, setGuideDismissed] = React.useState(false);
   const guideRef = React.useRef(null);
@@ -205,7 +209,7 @@ export function LibraryView({
   };
 
   return (
-    <div className="dshr-library-shell">
+    <div className="dshr-library-shell" data-library-theme={theme}>
       <aside className="dshr-library-nav" aria-label="书库导航">
         <strong className="dshr-library-nav__brand"><IconBookOpen size={24} /> DSH Reader</strong>
         <nav aria-label="书架分类">
@@ -222,15 +226,16 @@ export function LibraryView({
           <button type="button" onClick={onAutoOrganize} disabled={organizing || books.length === 0}><IconWand size={17} /> {organizing ? "整理中…" : "一键整理"}</button>
           {onBackup && <button type="button" onClick={onBackup}><IconCopy size={17} /> 备份与恢复</button>}
           <button type="button" onClick={onSettings}><IconSettings size={19} /> 设置</button>
+          <LibraryThemePicker theme={libraryTheme} preview={themePreview} onPreview={setThemePreview} onApply={onLibraryThemeChange} />
         </div>
       </aside>
-      <div className="dshr-library" ref={shelfRef} onDragOver={event => event.preventDefault()} onDrop={handleDrop}>
+      <div className="dshr-library" data-library-home={!active && !loading ? "" : undefined} ref={shelfRef} onDragOver={event => event.preventDefault()} onDrop={handleDrop}>
       <div className="dshr-library__inner">
         <header className="dshr-hero">
           <div className="dshr-library-title">
             <h1 ref={headingRef} tabIndex={-1}>{active?.name || "我的书架"}</h1>
             {active?.system && <LibraryMascot key={active.id} pose={CATEGORY_MASCOT[active.id]} size={48} />}
-            {!active && (guideDismissed || query) && !loading && <LibraryMascot pose="welcome" />}
+            {showWelcomeSticker && !active && (guideDismissed || query) && !loading && <LibraryMascot pose="welcome" />}
           </div>
           <div className="dshr-hero__actions">
             <label className="dshr-library__search">
@@ -268,7 +273,7 @@ export function LibraryView({
                   setGuideOpen(true);
                   requestAnimationFrame(() => guideRef.current?.scrollIntoView({ block: "nearest" }));
                 }}>
-                  <LibraryMascot pose="welcome" size={192} />
+                  {showWelcomeSticker && <LibraryMascot pose="welcome" size={192} />}
                   <span className="dshr-library-guide__label">
                     <strong>导入指南</strong><IconChevronRight size={18} />
                   </span>
