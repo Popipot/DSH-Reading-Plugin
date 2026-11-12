@@ -66,21 +66,90 @@ dsh plugin --profile web add "github:Popipot/DSH-Reading-Plugin#main"
 
 Für Desktop die integrierte Pluginverwaltung verwenden. Eine Installation im Profil `web` installiert das Plugin nicht im separaten Desktop-Profil.
 
-## Bibliothek organisieren
+## Schritt für Schritt
 
-Neben den Standardkategorien für Bücher, Fachliteratur und Dokumente kannst du eigene Sammlungen für Themen, Projekte oder Leselisten anlegen. Die Ordnerkarte zeigt bis zu vier Cover und Titel. Klappe die Titelliste auf, um alle enthaltenen Bücher zu sehen und direkt zu öffnen.
+Das Walmädchen führt durch die Anleitung. Die Nummern in jedem Bildschirmfoto gehören zu den Schritten darunter, und das Schild zeigt die Position in der Abfolge. Die Bildschirmfotos zeigen Beispieldokumente im Design Marine-Pixel. Die Oberfläche ist chinesisch.
 
-![Beispielbibliothek mit Covervorschau der Sammlungen und aufgeklappter Titelliste in der chinesischen Oberfläche](docs/images/library-paper.png)
+![Die sechs Posen der Begleiterin: Start, Suchen, Lesen, Sichern, Fertig, Pause](docs/images/guide/guide-poses.png)
 
-Über **加入书单** (Zur Sammlung hinzufügen) auf der Buchkarte ordnest du einzelne Bücher zu. Mit **多选** (Mehrfachauswahl) kannst du mehrere Bücher gleichzeitig hinzufügen. Ein Buch kann zu mehreren Sammlungen gehören und behält dabei dieselbe Leseposition und dieselben Anmerkungen. Die [bebilderte Anleitung zu Sammlungen](docs/USER_GUIDE.zh-CN.md#图书馆封面书单与批量归类) zeigt, wie du Sammlungen bearbeitest und Bücher daraus entfernst.
+### Bibliothek: importieren und ordnen
 
-## Erste Schritte
+![Bibliotheksstart mit markierter Importschaltfläche, Kategorien in der Seitenleiste und einer Sammlungskarte](docs/images/guide/library-home.png)
 
-1. **阅读** (Lesen) in der DSH-Seitenleiste öffnen.
-2. Eine unterstützte Datei in die Bibliothek ziehen oder **导入文档** (Dokument importieren) wählen.
-3. Das Dokument öffnen und oben zwischen Scrollen und horizontalem Umblättern wechseln.
-4. Bei Bedarf **实时翻译** (Live-Übersetzung) aktivieren. Standardmäßig ist sie ausgeschaltet.
-5. Text zum Übersetzen, Markieren, Fragenstellen oder Suchen auswählen. Lesepositionen und Anmerkungen werden lokal gespeichert.
+1. **导入文档** (Dokument importieren) wählen oder Dateien in die Bibliothek ziehen. Unterstützt werden PDF, EPUB, MOBI, TXT, Markdown und HTML.
+2. In der Seitenleiste zwischen **我的书架** (Meine Bibliothek), **文献** (Fachliteratur), **书籍** (Bücher), **文档** (Dokumente) und **证据库** (Belege) wechseln.
+3. Sammlungskarten zeigen eine Covervorschau. **预览全部** (Alle anzeigen) klappt die vollständige Titelliste auf. Mit **新建书单** (Neue Sammlung) nach Thema ordnen. Ein Buch kann in mehreren Sammlungen liegen und behält eine Leseposition und einen Satz Anmerkungen.
+
+Für mehrere Bücher auf einmal zuerst **多选** (Mehrfachauswahl) wählen. Die [bebilderte chinesische Anleitung](docs/USER_GUIDE.zh-CN.md#图书馆封面书单与批量归类) zeigt, wie Sammlungen bearbeitet und Bücher entfernt werden.
+
+![Designauswahl mit Vorschau auf Walblau](docs/images/guide/library-theme.png)
+
+1. Unten in der Seitenleiste **主题** (Design) wählen.
+2. Mit **预览** (Vorschau) ein Design ansehen und mit **应用** (Anwenden) übernehmen. Beim Schließen der Auswahl kehrt das bisherige Design zurück.
+
+### PDF-Arbeitsbereich: vom Lesen zum gesicherten Beleg
+
+**Schritt 1: PDF öffnen**
+
+![Die drei Bereiche des PDF-Arbeitsbereichs](docs/images/guide/pdf-open.png)
+
+1. Links steht die Gliederung.
+2. In der Mitte steht das Original im unveränderten Layout.
+3. Rechts liegt die Lesespalte. Sie wechselt zwischen **证据** (Belege) und **翻译** (Übersetzung).
+
+**Schritt 2: Zur gewünschten Stelle springen**
+
+![Ein Klick auf einen Gliederungseintrag springt zu Seite 2](docs/images/guide/pdf-outline.png)
+
+1. Einen Abschnitt in der Gliederung anklicken, um zu seiner Seite zu springen.
+2. Oder eine Seitenzahl in das Seitenfeld eingeben und die Eingabetaste drücken. Das hilft bei PDFs ohne Gliederung.
+
+**Schritt 3: Chinesische Übersetzung einschalten**
+
+![Der Schalter für die Live-Übersetzung und die chinesische Übersetzung rechts](docs/images/guide/pdf-translate.png)
+
+1. Oben **实时翻译** (Live-Übersetzung) einschalten. Sie ist standardmäßig aus und nutzt das in DSH eingerichtete Modell.
+2. Die Spalte zeigt die Übersetzung absatzweise. **定位原文** (Original anzeigen) führt zum passenden Absatz, **重译本段** (Neu übersetzen) übersetzt ihn erneut. Hier lassen sich auch die Schriftgröße ändern, das Glossar bearbeiten und die nächste Seite vorübersetzen.
+
+**Schritt 4: Die Stelle markieren, die zitiert werden soll**
+
+![Eine markierte Textstelle mit schwebender Werkzeugleiste und aktiver Schaltfläche zum Sichern in der Spalte](docs/images/guide/pdf-select.png)
+
+1. Text im Original markieren. Die schwebende Werkzeugleiste kann ihn übersetzen, hervorheben, von der KI erklären lassen oder danach suchen.
+2. In der Spalte **保存证据** (Beleg speichern) wählen.
+
+**Schritt 5: Beleg speichern**
+
+![Der Dialog zum Speichern eines Belegs](docs/images/guide/pdf-evidence.png)
+
+1. Notiz und gedruckte Seitenangabe sind freiwillig. Eine Übersetzung lässt sich später ergänzen.
+2. **保存证据** (Beleg speichern) wählen.
+
+**Schritt 6: Vom Beleg zum Original zurückkehren**
+
+![Nach dem Klick auf Zurück zum Original springt die Ansicht zu Seite 2 und bestätigt die genaue Stelle](docs/images/guide/pdf-return.png)
+
+1. Die Belege des aktuellen Artikels stehen in der Spalte. **回到原文** (Zurück zum Original) wählen.
+2. Die Ansicht springt zur gespeicherten Auswahl und meldet, ob die Stelle genau gefunden wurde.
+
+**Schritt 7: Leseansicht anpassen**
+
+![Vier Gruppen von Bedienelementen in der oberen Leiste](docs/images/guide/pdf-view.png)
+
+1. Schalter für Gliederung, Lesespalte und immersiven Modus.
+2. Darstellung sowie Anmerkungen und Notizen.
+3. **适宽** (Seitenbreite) wechselt den Zoom zwischen Seitenbreite und ganzer Seite. **滚动** (Scrollen) und **横版** (Horizontal) ändern das Blättern.
+4. Die KI-Spalte öffnen und Fragen zum aktuellen Dokument stellen.
+
+### Belegsammlung und Themen
+
+![Der Dialog der Belegsammlung mit gespeicherten Belegen](docs/images/guide/evidence-library.png)
+
+1. **证据库** (Belege) in der Seitenleiste sammelt die Belege aller Dokumente. Von dort geht es zurück zum Original, und Belege lassen sich bearbeiten, löschen oder für den Export auswählen.
+
+Für eine Übersichtsarbeit in einer Sammlung eine Forschungsfrage festhalten, Belege aus mehreren Artikeln gruppieren, Synthesenotizen schreiben und als UTF-8-Markdown exportieren. **备份与恢复** (Sicherung und Wiederherstellung) in der Seitenleiste exportiert Lese- und Forschungsdaten als lokale ZIP-Datei und zeigt Konflikte vor der Wiederherstellung.
+
+### Weitere Formate und Blättern
 
 Die Übersetzungsspalte lässt sich unabhängig scrollen, während das PDF sein Originallayout behält. Sie bietet Absatzverknüpfungen, ein Glossar, eine einstellbare Schriftgröße, erneute Übersetzungsversuche und die optionale Vorübersetzung der nächsten Seite. Bei E-Books mit fließendem Layout stehen Übersetzungen unter den Absätzen.
 

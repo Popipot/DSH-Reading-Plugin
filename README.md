@@ -66,21 +66,90 @@ dsh plugin --profile web add "github:Popipot/DSH-Reading-Plugin#main"
 
 For Desktop, use its plugin manager. A `web` profile installation does not install into Desktop's separate profile.
 
-## Organize your library
+## How to use it
 
-Create a collection for a topic, project, or reading list alongside the built-in Books, Papers, and Documents categories. A folder card previews up to four covers and titles. Expand it to see every title and open a book directly.
+The whale girl is your guide. The numbers in each screenshot match the steps below it, and her sign shows where you are in the sequence. The screenshots use sample documents and the Navy Pixel theme. The interface is in Chinese.
 
-![Example library with collection cover previews and an expanded list of titles in the Chinese interface](docs/images/library-paper.png)
+![The guide’s six poses: start, find, read, save, done, rest](docs/images/guide/guide-poses.png)
 
-Use **加入书单** (Add to collection) on a book card, or choose **多选** (Select multiple) to file several books at once. A book can belong to multiple collections and shares its reading position and notes across them. The [illustrated guide to collections](docs/USER_GUIDE.zh-CN.md#图书馆封面书单与批量归类) shows how to edit a collection or remove a book from it.
+### Library: import and organize
 
-## Start reading
+![Library home with the import button, sidebar categories, and a collection card marked](docs/images/guide/library-home.png)
 
-1. Open **阅读** (Reading) in the DSH sidebar.
-2. Drop a supported file into the library or choose **导入文档** (Import document).
-3. Open it and choose scrolling or horizontal page turning in the top bar.
-4. Enable **实时翻译** (Live translation) when needed. It is off by default.
-5. Select text to translate, annotate, ask AI, or search. Progress and notes are saved locally.
+1. Click **导入文档** (Import document), or drop files into the library. PDF, EPUB, MOBI, TXT, Markdown, and HTML are supported.
+2. Use the sidebar to switch between **我的书架** (My library), **文献** (Papers), **书籍** (Books), **文档** (Documents), and **证据库** (Evidence).
+3. Collection cards preview covers. Expand **预览全部** (Preview all) for the full list of titles. Click **新建书单** (New collection) to group by topic. A book can belong to several collections and keeps one reading position and one set of notes.
+
+To sort several books at once, click **多选** (Select) first. The [illustrated Chinese guide](docs/USER_GUIDE.zh-CN.md#图书馆封面书单与批量归类) shows how to edit a collection or remove books from it.
+
+![Theme picker previewing Whale Blue](docs/images/guide/library-theme.png)
+
+1. Click **主题** (Theme) at the bottom of the sidebar.
+2. Click **预览** (Preview) to try a theme, then **应用** (Apply) to keep it. Closing the panel restores the theme you had.
+
+### PDF workspace: from reading to saved evidence
+
+**Step 1. Open a PDF**
+
+![The three areas of the PDF workspace](docs/images/guide/pdf-open.png)
+
+1. The outline is on the left.
+2. The original is in the middle and keeps its layout.
+3. The reading panel is on the right. It switches between **证据** (Evidence) and **翻译** (Translation).
+
+**Step 2. Go to the part you need**
+
+![Clicking an outline entry jumps to page 2](docs/images/guide/pdf-outline.png)
+
+1. Click a section in the outline to jump to its page.
+2. Or type a page number in the page box and press Enter. Use this for PDFs without an outline.
+
+**Step 3. Turn on the Chinese translation**
+
+![The live translation switch and the Chinese translation on the right](docs/images/guide/pdf-translate.png)
+
+1. Turn on **实时翻译** (Live translation) in the top bar. It is off by default and calls the model you configured in DSH.
+2. The panel shows the translation paragraph by paragraph. **定位原文** (Locate original) returns to the matching paragraph and **重译本段** (Retranslate) translates it again. You can also change the font size, edit the glossary, and pretranslate the next page here.
+
+**Step 4. Select the passage you want to cite**
+
+![A selected passage with the floating toolbar, and the save evidence button enabled in the panel](docs/images/guide/pdf-select.png)
+
+1. Select text in the original. The floating toolbar can translate it, mark it, ask AI to explain it, or search for it.
+2. Click **保存证据** (Save evidence) in the panel.
+
+**Step 5. Save the evidence**
+
+![The save evidence dialog](docs/images/guide/pdf-evidence.png)
+
+1. The note and the printed page label are optional. You can add a translation later.
+2. Click **保存证据** (Save evidence).
+
+**Step 6. Return from evidence to the original**
+
+![After clicking return to original, the page jumps back to page 2 and confirms the exact location](docs/images/guide/pdf-return.png)
+
+1. Evidence from the current paper is listed in the panel. Click **回到原文** (Return to original).
+2. The page jumps back to the saved selection and tells you whether the location is exact.
+
+**Step 7. Adjust how you read**
+
+![Four groups of controls in the top bar](docs/images/guide/pdf-view.png)
+
+1. Toggles for the outline, the reading panel, and immersive mode.
+2. Reading appearance, and annotations and notes.
+3. **适宽** (Fit width) switches the zoom between fit width and fit page. **滚动** (Scroll) and **横版** (Horizontal) change how pages turn.
+4. Open the AI panel to ask about the current document.
+
+### Evidence library and topics
+
+![The evidence library dialog listing saved evidence](docs/images/guide/evidence-library.png)
+
+1. **证据库** (Evidence) in the sidebar collects evidence from every document. You can return to the original, edit, delete, or select items to export.
+
+For a review, write a research question in a collection, group evidence from several papers, add synthesis notes, and export UTF-8 Markdown. **备份与恢复** (Backup and restore) in the sidebar exports reading and research data to a local ZIP and previews conflicts before restoring.
+
+### Other formats and page turning
 
 For PDFs, the translation pane scrolls independently while the original keeps its layout. It supports paragraph links, a glossary, font size controls, retry, and optional next-page pretranslation. Reflowable ebooks show translations below paragraphs.
 
