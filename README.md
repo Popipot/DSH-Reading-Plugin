@@ -20,7 +20,7 @@ The library has three themes. Preview and switch them under **主题** (Theme) a
 
 | 纸本 (Paper) | 鲸海蓝 (Whale Blue) | 藏青像素 (Navy Pixel) |
 | --- | --- | --- |
-| ![Library home in the Paper theme on a dark host](docs/images/library-paper.png) | ![Library home in Whale Blue with the theme picker open at the lower left](docs/images/library-whale-blue.png) | ![Library home in the Navy Pixel theme](docs/images/library-navy-pixel.png) |
+| ![Library home in the Paper theme on a dark host](docs/images/library-paper.png) | ![Library home in Whale Blue with a deep-blue navigation rail](docs/images/library-whale-blue.png) | ![Library home in the Navy Pixel theme](docs/images/library-navy-pixel.png) |
 | Warm paper tones, with the waving whale girl on the welcome card. | A light blue shelf with the whale girl as a translucent background. | Navy sidebar, cream cards, and pixel-style outlines. |
 
 Both whale girl themes use a matching background on the library home, Papers, Books, and Documents. The background stays in place as you scroll.
@@ -172,6 +172,8 @@ The performance checks include complex sample PDFs and a 1,029-page textbook ope
 - Layout-preserving translated PDF export and annotation export are not included. Evidence and topic notes can be exported as Markdown. Clearing local site data removes the local library and settings.
 
 ## Development status
+
+**Theme contrast.** Apply buttons keep their current theme colors when hovered, focused, or pressed. Whale Blue uses a deeper blue navigation area beside a softer bookshelf.
 
 **November 9, 2026 · B1 released · 40 of 40 checks passed.** Immersive reading now has an always-visible row of labeled controls for appearance, fullscreen, and exit. Ebooks also have a contents toggle. The toolbar and appearance panel follow the reading theme, and settings persist across restarts.
 

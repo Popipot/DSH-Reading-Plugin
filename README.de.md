@@ -20,7 +20,7 @@ Die Bibliothek hat drei Designs. Unter **主题** (Design) unten in der Seitenle
 
 | 纸本 (Papier) | 鲸海蓝 (Walblau) | 藏青像素 (Marine-Pixel) |
 | --- | --- | --- |
-| ![Bibliotheksstart im Papier-Design auf dunklem Host](docs/images/library-paper.png) | ![Bibliotheksstart in Walblau mit geöffneter Designauswahl unten links](docs/images/library-whale-blue.png) | ![Bibliotheksstart im Marine-Pixel-Design](docs/images/library-navy-pixel.png) |
+| ![Bibliotheksstart im Papier-Design auf dunklem Host](docs/images/library-paper.png) | ![Bibliotheksstart in Walblau mit kräftig blauem Navigationsbereich](docs/images/library-whale-blue.png) | ![Bibliotheksstart im Marine-Pixel-Design](docs/images/library-navy-pixel.png) |
 | Warme Papiertöne, das winkende Walmädchen sitzt auf der Begrüßungskarte. | Hellblaues Regal mit dem Walmädchen als halbtransparentem Hintergrund. | Marineblaue Seitenleiste, cremefarbene Karten und Pixelkonturen. |
 
 Beide Walmädchen-Designs zeigen auf der Startseite sowie unter Fachliteratur, Büchern und Dokumenten jeweils ein passendes Motiv. Der Hintergrund bleibt beim Scrollen stehen.
@@ -172,6 +172,8 @@ Die Leistungstests umfassen komplexe Beispiel-PDFs und ein direkt in DSH geöffn
 - Layoutgetreuer Export übersetzter PDFs und Export von Anmerkungen sind nicht enthalten. Belege und Themennotizen lassen sich als Markdown exportieren. Beim Löschen lokaler Website-Daten gehen Bibliothek und Einstellungen verloren.
 
 ## Entwicklungsstand
+
+**Designkontrast.** Beim Überfahren, Fokussieren und Drücken behalten die Schaltflächen zum Anwenden ihre Designfarben. Bei Walblau setzt sich die kräftigere blaue Navigation vom sanfteren Bücherregal ab.
 
 **9. November 2026 · B1 freigegeben · Alle 40 Prüfungen bestanden.** Im immersiven Modus bleiben beschriftete Schaltflächen für Darstellung, Vollbild und Beenden sichtbar. Bei E-Books lässt sich auch das Inhaltsverzeichnis ein- und ausblenden. Leiste und Einstellungsfenster übernehmen das Lesefarbschema. Die Einstellungen bleiben beim Neustart erhalten.
 

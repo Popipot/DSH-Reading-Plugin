@@ -678,6 +678,93 @@ try {
   results.push({ check:'b11-mascot-composition', windowCases:composition.length,
     minBackdropScalePercent:Math.min(...composition.map(entry => entry.backdropScalePercent)),
     maxAnchorErrorCssPx:Math.max(...composition.map(entry => entry.anchorErrorCssPx)) });
+  const swatch = document.createElement('canvas');
+  swatch.width = swatch.height = 1;
+  const pixel = swatch.getContext('2d', { willReadFrequently:true });
+  const luminance = (color, under = '#fff') => {
+    pixel.fillStyle = under;
+    pixel.fillRect(0,0,1,1);
+    pixel.fillStyle = color;
+    pixel.fillRect(0,0,1,1);
+    const linear = [...pixel.getImageData(0,0,1,1).data].slice(0,3).map(channel => {
+      const value = channel / 255;
+      return value <= 0.04045 ? value / 12.92 : ((value + 0.055) / 1.055) ** 2.4;
+    });
+    return linear[0]*0.2126 + linear[1]*0.7152 + linear[2]*0.0722;
+  };
+  const ratio = (a,b) => (Math.max(a,b)+0.05)/(Math.min(a,b)+0.05);
+  const forceState = async (selector, classes) => {
+    window.__libraryControlState = {selector,classes};
+    await until(() => !window.__libraryControlState, 'CSS state not applied: ' + classes.join(','));
+  };
+  const themeChoices = [['whale-navy','藏青像素'],['whale-blue','鲸海蓝'],['paper','纸本']];
+  const pickerChecks = [];
+  for (const [theme,label] of themeChoices) {
+    await click('主题');
+    await click('应用'+label,picker());
+    await until(() => shelfTheme()===theme, 'theme palette not applied');
+    for (const dark of [true,false]) {
+      document.documentElement.toggleAttribute('data-ds-dark-theme',dark);
+      await click('主题');
+      const menu = picker();
+      const surface = getComputedStyle(menu).backgroundColor;
+      const applied = menu.querySelector('.dshr-theme-apply:disabled');
+      assert(applied?.textContent === '已应用' && applied.closest('[data-option]').dataset.option === theme
+        && getComputedStyle(applied).opacity==='1'
+        && ratio(luminance(getComputedStyle(applied).color,surface),luminance(surface))>=4.5,'applied status unreadable or wrong');
+      for (const [target] of themeChoices.filter(([id]) => id !== theme)) {
+        const selector = '.dshr-theme-picker [data-option="' + target + '"] .dshr-theme-apply';
+        const button = document.querySelector(selector);
+        for (const [state,classes] of [['default',[]],['hover',['hover']],['focus',['focus','focus-visible']],['active',['hover','active']]]) {
+          if (classes.length) await forceState(selector,classes);
+          const style = getComputedStyle(button);
+          const textContrast = ratio(luminance(style.color,surface),luminance(style.backgroundColor,surface));
+          const focusContrast = state==='focus' ? ratio(luminance(style.outlineColor,surface),luminance(surface)) : null;
+          if (theme==='whale-navy' && target==='whale-blue' && dark && state==='hover') await capture('navy-theme-apply-hover');
+          assert(textContrast>=4.5, [theme,target,dark,state,'apply contrast',textContrast].join(' '));
+          if (state==='focus') assert(parseFloat(style.outlineWidth)>=2 && style.outlineStyle==='solid' && focusContrast>=3, 'picker focus indicator unreadable');
+          pickerChecks.push({theme,target,dark,state,textContrast,focusContrast});
+        }
+        await forceState(selector,[]);
+      }
+      await click('关闭主题选择',menu);
+    }
+  }
+  await click('主题');
+  await click('应用鲸海蓝',picker());
+  await until(() => shelfTheme()==='whale-blue','blue rail theme not applied');
+  const railChecks=[];
+  for (const width of [540,1280]) {
+    mount.style.width=width+'px';
+    for (const dark of [false,true]) {
+      document.documentElement.toggleAttribute('data-ds-dark-theme',dark);
+      const rail=document.querySelector('.dshr-library-nav');
+      const shell=rail.closest('.dshr-library-shell');
+      const railStyle=getComputedStyle(rail);
+      const main=getComputedStyle(shell).getPropertyValue('--dshr-blue-base');
+      const mainDeep=getComputedStyle(shell).getPropertyValue('--dshr-blue-deep');
+      const railLum=luminance(railStyle.backgroundColor);
+      const separation=Math.min(ratio(railLum,luminance(main)),ratio(railLum,luminance(mainDeep)));
+      const current=rail.querySelector('[aria-current="page"]');
+      const currentStyle=getComputedStyle(current);
+      const currentBackground=currentStyle.backgroundColor;
+      const navContrast=Math.min(ratio(luminance(railStyle.color),railLum),
+        ratio(luminance(currentStyle.color),luminance(currentStyle.backgroundColor,railStyle.backgroundColor)));
+      const divider=width===540 ? railStyle.borderBottomWidth : railStyle.borderRightWidth;
+      assert(separation>=1.6 && navContrast>=4.5 && parseFloat(divider)>=1 && rail.scrollWidth===rail.clientWidth,'blue rail blend or layout failed');
+      const selector='.dshr-library-nav [aria-current="page"]';
+      await forceState(selector,['hover']);
+      assert(getComputedStyle(current).backgroundColor===currentBackground
+        && ratio(luminance(getComputedStyle(current).color),luminance(getComputedStyle(current).backgroundColor,railStyle.backgroundColor))>=4.5,
+        'hover obscured current navigation');
+      await forceState(selector,[]);
+      railChecks.push({width,dark,separation,navContrast,dividerCssPx:parseFloat(divider)});
+      if (width===1280) await capture(dark ? 'blue-rail-dark' : 'blue-rail-light');
+    }
+  }
+  mount.style.width='';
+  document.documentElement.removeAttribute('data-ds-dark-theme');
+  results.push({check:'b13-theme-contrast',pickerChecks,railChecks});
   await clearLibrary();
   assert(!(await listBookCollections()).length && !(await listBooks()).length, 'clear library left stale folders');
   assert(errors.length === 0, errors.join('; '));

@@ -6,6 +6,8 @@ Use baseline requirement and verification IDs. Keep batch outcomes, defects, dec
 
 Every new feature follows the V-model workflow: record functional and non-functional requirements with measurable acceptance criteria, keep the SysML and verification trace synchronized, and archive decisions, candidate identity, failures, and evidence. Use a different process only when the user explicitly requests an exception, and record its scope and follow-up in the batch.
 
+Theme and UI-state changes follow the same archived process. Record theme-specific color and accessibility criteria, test pointer and keyboard states in the applicable host modes and widths, and link screenshots and measurements to the affected requirements and verification cases.
+
 ## Completion and publication
 
 At the end of each completed DSH Reader project task, synchronize both GitHub repositories before reporting completion.

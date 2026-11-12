@@ -112,9 +112,25 @@ try {
     pending.set(id, resolve);
     socket.send(JSON.stringify({ id, method, params }));
   });
+  if (libraryCheck) {
+    await command('DOM.enable');
+    await command('CSS.enable');
+  }
   let result;
   const deadline = Date.now() + 90000;
   while (Date.now() < deadline) {
+    if (libraryCheck) {
+      const probe = await command('Runtime.evaluate', { expression:'window.__libraryControlState', returnByValue:true });
+      const state = probe.result?.result?.value;
+      if (state) {
+        const { result:{ root } } = await command('DOM.getDocument');
+        const { result:{ nodeId } } = await command('DOM.querySelector', { nodeId:root.nodeId, selector:state.selector });
+        if (!nodeId) throw new Error('Missing library control: ' + state.selector);
+        const response = await command('CSS.forcePseudoState', { nodeId, forcedPseudoClasses:state.classes });
+        if (response.error) throw new Error(response.error.message);
+        await command('Runtime.evaluate', { expression:'window.__libraryControlState = null' });
+      }
+    }
     if (animationCheck || libraryCheck || workspaceCheck) {
       const capture = await command('Runtime.evaluate', { expression: 'window.__flowCapture?.name', returnByValue: true });
       const name = capture.result?.result?.value;
