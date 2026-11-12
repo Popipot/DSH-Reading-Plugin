@@ -2,7 +2,7 @@
 
 [English](README.md) · [简体中文](README.zh-CN.md) · **Deutsch**
 
-**[Installation & Anleitung](docs/INSTALL.de.md)** · **[ZIP herunterladen](https://github.com/Popipot/DSH-Reading-Plugin/archive/refs/heads/main.zip)** · **[Verbesserung vorschlagen](https://github.com/Popipot/DSH-Reading-Plugin/issues/new?template=feature_request.yml)** · **[Leistungsproblem melden](https://github.com/Popipot/DSH-Reading-Plugin/issues/new?template=performance.yml)**
+**[Installation & Anleitung](docs/INSTALL.de.md)** · **[B5-Vorabversion](https://github.com/Popipot/DSH-Reading-Plugin/releases/tag/v0.1.0-b5.1)** · **[ZIP herunterladen](https://github.com/Popipot/DSH-Reading-Plugin/archive/refs/heads/main.zip)** · **[Verbesserung vorschlagen](https://github.com/Popipot/DSH-Reading-Plugin/issues/new?template=feature_request.yml)** · **[Leistungsproblem melden](https://github.com/Popipot/DSH-Reading-Plugin/issues/new?template=performance.yml)**
 
 Ein Plugin für **DeepSeek Harness** zum Lesen von Fachliteratur und Büchern. Organisiere deine lokale Bibliothek in Sammlungen, lies PDFs neben ihrer chinesischen Übersetzung und nutze Anmerkungen oder KI-Fragen zu ausgewählten Textstellen.
 
@@ -201,7 +201,7 @@ Die Leistungstests umfassen komplexe Beispiel-PDFs und ein direkt in DSH geöffn
 
 **Illustrationen in der Bibliothek.** Das winkende Pixel-Walmädchen steht auf der Startseite der Bibliothek im Mittelpunkt und passt seine Größe an das Fenster an. Das Pixel-Walmädchen liest bei Büchern, sucht mit der Lupe bei Fachliteratur und schreibt bei Dokumenten. Weitere Posen begrüßen beim Start und begleiten leere Sammlungen und erfolgreiches Hinzufügen. [Alle sechs Posen ansehen](images/whale-girl/README.md).
 
-**B5-Nutzertest.** Die Unterlagen für den 14-tägigen Test mit 15 Personen liegen vor. Der Test steht noch aus.
+**B5-Nutzertest.** Die festgelegte Vorabversion v0.1.0-b5.1 basiert auf dem B4-Commit 199a485. Die Unterlagen für den 14-tägigen Test mit 15 Personen liegen vor. Der Test steht noch aus.
 
 Im früheren B1-Leistungstest mit 80 kalten Dokumentöffnungen in DSH Desktop lag der höchste P95 je Testgruppe bei **1.375 ms** für den Referenzartikel und **2.426 ms** für das Lehrbuch mit 1.029 Seiten. Bei 480 Seitenwechseln in DSH Web lag der höchste P95 bei **44 ms** mit und **259 ms** ohne Vorladen. Der finale Build bestand die Desktop-Prüfung der Darstellung und sechs Browser-Regressionsreihen.
 

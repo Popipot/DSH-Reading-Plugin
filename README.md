@@ -2,7 +2,7 @@
 
 **English** · [简体中文](README.zh-CN.md) · [Deutsch](README.de.md)
 
-**[Install & tutorial](docs/INSTALL.en.md)** · **[Download ZIP](https://github.com/Popipot/DSH-Reading-Plugin/archive/refs/heads/main.zip)** · **[Suggest an improvement](https://github.com/Popipot/DSH-Reading-Plugin/issues/new?template=feature_request.yml)** · **[Report slowness](https://github.com/Popipot/DSH-Reading-Plugin/issues/new?template=performance.yml)**
+**[Install & tutorial](docs/INSTALL.en.md)** · **[B5 pilot pre-release](https://github.com/Popipot/DSH-Reading-Plugin/releases/tag/v0.1.0-b5.1)** · **[Download ZIP](https://github.com/Popipot/DSH-Reading-Plugin/archive/refs/heads/main.zip)** · **[Suggest an improvement](https://github.com/Popipot/DSH-Reading-Plugin/issues/new?template=feature_request.yml)** · **[Report slowness](https://github.com/Popipot/DSH-Reading-Plugin/issues/new?template=performance.yml)**
 
 A **DeepSeek Harness** plugin for reading papers and books. Organize your local library into collections, read PDFs alongside Chinese translations, and annotate or ask AI about selected text.
 
@@ -201,7 +201,7 @@ The performance checks include complex sample PDFs and a 1,029-page textbook ope
 
 **Library illustrations.** The waving whale girl is the main illustration on the library home page, with a larger welcome card that adapts to the window. Six pixel-art whale girl poses distinguish Books, Papers and Documents, welcome readers to the library, and accompany empty and success states. [See all six poses](images/whale-girl/README.md).
 
-**B5 user trial.** The materials for the 15-person, 14-day study are ready. Participant testing is pending.
+**B5 user trial.** The fixed pilot build v0.1.0-b5.1 is available as a pre-release from B4 commit 199a485. The materials for the 15-person, 14-day study are ready. Participant testing is pending.
 
 In B1's earlier performance run, 80 cold opens on DSH Desktop had a highest group P95 of **1,375 ms** for the reference paper and **2,426 ms** for the 1,029-page textbook. For 480 adjacent-page turns on DSH Web, the highest group P95 was **44 ms** with preloading and **259 ms** without it. The final build passed the desktop appearance check and six browser regression suites.
 

@@ -2,7 +2,7 @@
 
 [English](README.md) · **简体中文** · [Deutsch](README.de.md)
 
-**[安装与教程](docs/INSTALL.zh-CN.md)** · **[下载 ZIP](https://github.com/Popipot/DSH-Reading-Plugin/archive/refs/heads/main.zip)** · **[提出改进建议](https://github.com/Popipot/DSH-Reading-Plugin/issues/new?template=feature_request.yml)** · **[反馈卡顿与性能问题](https://github.com/Popipot/DSH-Reading-Plugin/issues/new?template=performance.yml)**
+**[安装与教程](docs/INSTALL.zh-CN.md)** · **[B5 试点预发布版](https://github.com/Popipot/DSH-Reading-Plugin/releases/tag/v0.1.0-b5.1)** · **[下载 ZIP](https://github.com/Popipot/DSH-Reading-Plugin/archive/refs/heads/main.zip)** · **[提出改进建议](https://github.com/Popipot/DSH-Reading-Plugin/issues/new?template=feature_request.yml)** · **[反馈卡顿与性能问题](https://github.com/Popipot/DSH-Reading-Plugin/issues/new?template=performance.yml)**
 
 在 **DeepSeek Harness** 里读论文和书。用自建书单整理本地藏书，读 PDF 时对照中文译文，还能划词批注或就原文向 AI 提问。
 
@@ -201,7 +201,7 @@ PDF 阅读和批注截图见 [中文使用详解](docs/USER_GUIDE.zh-CN.md)。
 
 **书库鲸鱼娘。** 挥手鲸鱼娘是书架首页的主视觉，欢迎卡会随窗口调整尺寸。书籍、文献和文档分别使用读书、查资料和记笔记形象。书库首页、空状态和加入书单反馈也有对应插画。[查看六款原稿](images/whale-girl/README.md)。
 
-**B5 用户试点。** 15 人、14 天试点的材料已备齐，用户验证待启动。
+**B5 用户试点。** 固定预发布版 v0.1.0-b5.1 已发布，基于 B4 提交 199a485。15 人、14 天试点的材料已备齐，用户验证待启动。
 
 B1 前一轮性能测试在 DSH 桌面端完成 80 次冷打开，参考论文和 1029 页教材的最高分组 P95 分别为 **1375 ms** 和 **2426 ms**。DSH Web 完成 480 次相邻翻页，预热与未预热最高分组 P95 分别为 **44 ms** 和 **259 ms**。最终版本通过桌面外观复验及六类浏览器回归。
 
