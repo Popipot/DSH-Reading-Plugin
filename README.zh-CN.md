@@ -70,7 +70,7 @@ dsh plugin --profile web add "github:Popipot/DSH-Reading-Plugin#main"
 
 鲸鱼娘是这里的引导员。每张截图里的编号对应图下的步骤，右下角的牌子标出这是第几步。截图使用示例文档和「藏青像素」主题。
 
-![引导员的六个动作：开始、查找、阅读、记录、完成、休息](docs/images/guide/guide-poses.png)
+![引导员的四个动作：举牌、指左、指右、点赞](docs/images/guide/guide-poses.png)
 
 ### 书架：导入和整理
 
