@@ -171,6 +171,11 @@ Browser checks use an isolated local Chrome profile; set `CHROME_PATH` if needed
 
 Source: `web/src/` (reader/parsers), `lib/` (Host routes), `scripts/` and `tests/` (build/checks). Included builds: `client/client.js` and `dist/reader-assets/`. Interface contracts: [CONTRACTS.md](CONTRACTS.md).
 
+## Contributors
+
+- [Popipot](https://github.com/Popipot) maintains the project.
+- [Codex](https://github.com/codex) assisted with implementation, debugging, testing, and documentation.
+
 ## Contact
 
 **Email: [csty341@gmail.com](mailto:csty341@gmail.com)**

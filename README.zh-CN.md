@@ -171,6 +171,11 @@ npm run test:pdf-performance -- --hidpi
 
 源码：`web/src/`（阅读器/解析）、`lib/`（Host 路由）、`scripts/` 和 `tests/`（构建/测试）。构建产物：`client/client.js` 和 `dist/reader-assets/`。接口约定：[CONTRACTS.md](CONTRACTS.md)。
 
+## 贡献者
+
+- [Popipot](https://github.com/Popipot) 负责项目维护。
+- [Codex](https://github.com/codex) 作为 AI 编程助手参与功能开发、缺陷修复、测试和文档整理。
+
 ## 联系
 
 **联系邮箱：[csty341@gmail.com](mailto:csty341@gmail.com)**

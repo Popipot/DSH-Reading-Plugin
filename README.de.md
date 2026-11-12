@@ -171,6 +171,11 @@ Browserprüfungen verwenden ein separates Chrome-Profil; bei Bedarf `CHROME_PATH
 
 Quellcode: `web/src/` (Reader/Parser), `lib/` (Host-Routen), `scripts/` und `tests/` (Build/Tests). Fertige Dateien: `client/client.js` und `dist/reader-assets/`. Schnittstellen: [CONTRACTS.md](CONTRACTS.md).
 
+## Mitwirkende
+
+- [Popipot](https://github.com/Popipot) betreut das Projekt.
+- [Codex](https://github.com/codex) unterstützte als KI-Programmierassistent bei der Implementierung, Fehlersuche, Prüfung und Dokumentation.
+
 ## Kontakt
 
 **E-Mail: [csty341@gmail.com](mailto:csty341@gmail.com)**
