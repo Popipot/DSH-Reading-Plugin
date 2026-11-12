@@ -2820,13 +2820,13 @@ gate = \u6805\u6781`,onChange:R=>_(R.target.value)})]}),(0,Le.jsx)("button",{typ
 }
 /* The pane stays in place while its library child scrolls. */
 .dshr-library-pane[data-library-backdrop] { position:relative; isolation:isolate; overflow:hidden; }
-.dshr-library-pane[data-library-backdrop="welcome"] { --dshr-backdrop-image:url('/dsh-reader-assets/mascot/welcome-background.webp'); --dshr-backdrop-x:0.43; --dshr-backdrop-y:0.51; }
-.dshr-library-pane[data-library-backdrop="search"] { --dshr-backdrop-image:url('/dsh-reader-assets/mascot/search-background.webp'); --dshr-backdrop-x:0.42; --dshr-backdrop-y:0.51; }
-.dshr-library-pane[data-library-backdrop="reading"] { --dshr-backdrop-image:url('/dsh-reader-assets/mascot/reading-background.webp'); --dshr-backdrop-x:0.41; --dshr-backdrop-y:0.54; }
-.dshr-library-pane[data-library-backdrop="note"] { --dshr-backdrop-image:url('/dsh-reader-assets/mascot/note-background.webp'); --dshr-backdrop-x:0.44; --dshr-backdrop-y:0.54; }
+.dshr-library-pane[data-library-backdrop="welcome"] { --dshr-backdrop-image:url('/dsh-reader-assets/mascot/welcome-background.webp'); --dshr-backdrop-x:0.489; --dshr-backdrop-y:0.486; }
+.dshr-library-pane[data-library-backdrop="search"] { --dshr-backdrop-image:url('/dsh-reader-assets/mascot/search-background.webp'); --dshr-backdrop-x:0.49; --dshr-backdrop-y:0.479; }
+.dshr-library-pane[data-library-backdrop="reading"] { --dshr-backdrop-image:url('/dsh-reader-assets/mascot/reading-background.webp'); --dshr-backdrop-x:0.499; --dshr-backdrop-y:0.547; }
+.dshr-library-pane[data-library-backdrop="note"] { --dshr-backdrop-image:url('/dsh-reader-assets/mascot/note-background.webp'); --dshr-backdrop-x:0.505; --dshr-backdrop-y:0.55; }
 .dshr-library-pane[data-library-backdrop]::before {
-  content:""; position:absolute; z-index:-1; pointer-events:none; left:50%; top:50%; width:min(1440px,128%); aspect-ratio:1;
-  /* Anchor each pose on the head and torso so the tail and props can extend to the sides. */
+  content:""; position:absolute; z-index:-1; pointer-events:none; left:50%; top:50%; width:min(1400px,125%); aspect-ratio:1;
+  /* Each pose carries the centroid of its opaque pixels, which sits on the pane centre. */
   transform:translate(calc(var(--dshr-backdrop-x) * -100%),calc(var(--dshr-backdrop-y) * -100%));
   background:var(--dshr-backdrop-image) no-repeat center / 100% 100%;
   opacity:var(--dshr-blue-art-opacity);
@@ -2884,7 +2884,7 @@ gate = \u6805\u6781`,onChange:R=>_(R.target.value)})]}),(0,Le.jsx)("button",{typ
 [data-library-theme="whale-navy"] .dshr-resume__progress i { background:var(--dshr-navy-gold); }
 @container (max-width:760px) {
   .dshr-library-nav .dshr-theme-trigger__current { display:none; }
-  .dshr-library-pane[data-library-backdrop]::before { width:min(850px,154%); }
+  .dshr-library-pane[data-library-backdrop]::before { width:min(820px,150%); }
 }
 `;var Hf=String.raw`
 /* ------------------------------------------------------------- variables */

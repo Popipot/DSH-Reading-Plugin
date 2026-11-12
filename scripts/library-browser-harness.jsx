@@ -345,7 +345,7 @@ try {
   const backdropPane = () => document.querySelector('.dshr-library-pane');
   const backdrop = () => getComputedStyle(backdropPane(), '::before');
   const savedKey = 'dsh-reader:settings:v1';
-  const bodyAnchors = { welcome:[0.43,0.51], search:[0.42,0.51], reading:[0.41,0.54], note:[0.44,0.54] };
+  const bodyAnchors = { welcome:[0.489,0.486], search:[0.49,0.479], reading:[0.499,0.547], note:[0.505,0.55] };
   const measureBackdrop = (pose, width) => {
     const pane = backdropPane().getBoundingClientRect();
     const art = backdrop();
@@ -357,7 +357,7 @@ try {
     const previousSide = width === 540 ? Math.min(680, pane.width * 1.32) : Math.min(1180, pane.width * 1.11);
     const anchorError = Math.max(Math.abs(x - pane.width / 2), Math.abs(y - pane.height / 2));
     const scale = side / previousSide * 100;
-    assert(anchorError <= 1 && scale >= 112, `mascot body composition ${pose}: offset ${anchorError}px, scale ${scale}%`);
+    assert(anchorError <= 1 && scale >= 112, `mascot artwork composition ${pose}: offset ${anchorError}px, scale ${scale}%`);
     return { artSideCssPx:side, previousSideCssPx:previousSide, anchorErrorCssPx:anchorError, backdropScalePercent:scale };
   };
   assert(shelfTheme() === 'paper' && !performance.getEntriesByName(location.origin + artUrl).length,

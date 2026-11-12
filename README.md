@@ -124,7 +124,7 @@ The performance checks include complex sample PDFs and a 1,029-page textbook ope
 
 **Reader workspace, design A.** The library has category navigation, a top search and import bar, collection covers, and a recent-document list. The standard PDF view puts the document outline on the left and the current paper’s evidence and translation on the right. Narrow windows keep the PDF at full available width, with tools opening on demand.
 
-**Library themes.** Open **主题** (Theme) at the bottom of the library sidebar. Preview **纸本** (Paper), **鲸海蓝** (Whale Blue), or **藏青像素** (Navy Pixel) on your bookshelf, then click **应用** (Apply) to save your choice on this device. Whale Blue uses a different translucent whale girl on the library home, Papers, Books, and Documents. Each enlarged background centres the whale girl’s head and body and stays in place as you scroll, including in fullscreen. Navy Pixel pairs a navy sidebar with cream cards and pixel-style outlines, and shows the same four whale girl backgrounds.
+**Library themes.** Open **主题** (Theme) at the bottom of the library sidebar. Preview **纸本** (Paper), **鲸海蓝** (Whale Blue), or **藏青像素** (Navy Pixel) on your bookshelf, then click **应用** (Apply) to save your choice on this device. Whale Blue uses a different translucent whale girl on the library home, Papers, Books, and Documents. Each enlarged background is centred on the whole figure, tail and props included, and stays in place as you scroll, including in fullscreen. Navy Pixel pairs a navy sidebar with cream cards and pixel-style outlines, and shows the same four whale girl backgrounds.
 
 **Library card controls.** Category labels stay on one line, and whole buttons wrap when a card needs more room.
 
