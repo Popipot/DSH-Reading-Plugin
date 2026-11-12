@@ -581,7 +581,7 @@ try {
         const beforeRequests = totalRequests();
         const art = backdrop();
         assert(pane.dataset.libraryBackdrop === pose && art.backgroundImage.includes(pose + '-background.webp') && art.position === 'absolute'
-          && art.pointerEvents === 'none' && art.opacity === (dark ? '0.22' : '0.3'), 'navy backdrop did not match ' + pose);
+          && art.pointerEvents === 'none' && art.opacity === '0.3', 'navy backdrop did not match ' + pose);
         assert(!document.querySelector('.dshr-library-title .dshr-library-mascot'), 'navy category duplicated its sticker');
         shelf.scrollTop = 360;
         await until(() => shelf.scrollTop >= 300, 'navy fixture cannot scroll 300 CSS px');
@@ -605,7 +605,7 @@ try {
   await click('应用纸本', picker());
   await until(() => shelfTheme() === 'paper' && loadSettings().libraryTheme === 'paper', 'navy test did not restore paper');
   results.push({ check:'b10-whale-navy-theme', choices:3, previewWrites:0, persistedSwitches:2, backdropPoses:4, layoutCombinations:4, navyCases,
-    lightOpacity:0.3, darkOpacity:0.22, duplicateStickers:0, railColour:navyRail });
+    lightOpacity:0.3, darkOpacity:0.3, duplicateStickers:0, railColour:navyRail });
 
   const paperTitle = 'Card footer PDF';
   for (const title of [paperTitle, 'Card layout sample']) {
