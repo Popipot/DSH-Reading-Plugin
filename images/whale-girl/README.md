@@ -23,11 +23,11 @@ Die Originale dienen der Gestaltung und Dokumentation. Das Plugin lädt transpar
 
 ## Guide poses · 引导员动作 · Posen der Begleiterin
 
-Four poses guide readers through the step-by-step screenshots on the project page. They were produced with an image generator from the waving and note-taking stickers above, and the green background was removed locally. The files here are 200 × 200 transparent PNGs. The plugin does not bundle them.
+Four poses guide readers through the step-by-step screenshots on the project page. They were produced with an image generator from the waving and note-taking stickers above, and the green background was removed locally. The files here are 1264 × 1264 transparent PNGs. The plugin does not bundle them.
 
-四款动作用在项目主页的分步引导截图里。它们以上面的挥手和记笔记贴纸为参考，由图像生成工具生成，再在本地去掉绿色背景。这里的文件是 200 × 200 透明 PNG，不随插件安装。
+四款动作用在项目主页的分步引导截图里。它们以上面的挥手和记笔记贴纸为参考，由图像生成工具生成，再在本地去掉绿色背景。这里的文件是 1264 × 1264 透明 PNG，不随插件安装。
 
-Vier Posen begleiten die Schritt-für-Schritt-Bildschirmfotos auf der Projektseite. Sie wurden mit einem Bildgenerator aus den Stickern für Begrüßung und Notizen oben erzeugt, der grüne Hintergrund wurde lokal entfernt. Die Dateien hier sind transparente PNGs mit 200 × 200 Pixeln. Das Plugin enthält sie nicht.
+Vier Posen begleiten die Schritt-für-Schritt-Bildschirmfotos auf der Projektseite. Sie wurden mit einem Bildgenerator aus den Stickern für Begrüßung und Notizen oben erzeugt, der grüne Hintergrund wurde lokal entfernt. Die Dateien hier sind transparente PNGs mit 1264 × 1264 Pixeln. Das Plugin enthält sie nicht.
 
 | Illustration | 场景 | Where it appears | Einsatzort |
 | --- | --- | --- | --- |
