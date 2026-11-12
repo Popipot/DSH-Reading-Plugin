@@ -70,11 +70,11 @@ Für Desktop die integrierte Pluginverwaltung verwenden. Eine Installation im Pr
 
 Das Walmädchen führt durch die Anleitung. Die Nummern in jedem Bildschirmfoto gehören zu den Schritten darunter, und das Schild zeigt die Position in der Abfolge. Die Bildschirmfotos zeigen Beispieldokumente im Design Marine-Pixel. Die Oberfläche ist chinesisch.
 
-![Die vier Posen der Begleiterin: Schild halten, nach links zeigen, nach rechts zeigen, Daumen hoch](docs/images/guide/guide-poses.png)
+![Die vier Posen der Begleiterin: Schild halten, nach links zeigen, nach rechts zeigen, Daumen hoch](images/guide/guide-poses.png)
 
 ### Bibliothek: importieren und ordnen
 
-![Bibliotheksstart mit markierter Importschaltfläche, Kategorien in der Seitenleiste und einer Sammlungskarte](docs/images/guide/library-home.png)
+![Bibliotheksstart mit markierter Importschaltfläche, Kategorien in der Seitenleiste und einer Sammlungskarte](images/guide/library-home.png)
 
 1. **导入文档** (Dokument importieren) wählen oder Dateien in die Bibliothek ziehen. Unterstützt werden PDF, EPUB, MOBI, TXT, Markdown und HTML.
 2. In der Seitenleiste zwischen **我的书架** (Meine Bibliothek), **文献** (Fachliteratur), **书籍** (Bücher), **文档** (Dokumente) und **证据库** (Belege) wechseln.
@@ -82,7 +82,7 @@ Das Walmädchen führt durch die Anleitung. Die Nummern in jedem Bildschirmfoto 
 
 Für mehrere Bücher auf einmal zuerst **多选** (Mehrfachauswahl) wählen. Die [bebilderte chinesische Anleitung](docs/USER_GUIDE.zh-CN.md#图书馆封面书单与批量归类) zeigt, wie Sammlungen bearbeitet und Bücher entfernt werden.
 
-![Designauswahl mit Vorschau auf Walblau](docs/images/guide/library-theme.png)
+![Designauswahl mit Vorschau auf Walblau](images/guide/library-theme.png)
 
 1. Unten in der Seitenleiste **主题** (Design) wählen.
 2. Mit **预览** (Vorschau) ein Design ansehen und mit **应用** (Anwenden) übernehmen. Beim Schließen der Auswahl kehrt das bisherige Design zurück.
@@ -91,7 +91,7 @@ Für mehrere Bücher auf einmal zuerst **多选** (Mehrfachauswahl) wählen. Die
 
 **Schritt 1: PDF öffnen**
 
-![Die drei Bereiche des PDF-Arbeitsbereichs](docs/images/guide/pdf-open.png)
+![Die drei Bereiche des PDF-Arbeitsbereichs](images/guide/pdf-open.png)
 
 1. Links steht die Gliederung.
 2. In der Mitte steht das Original im unveränderten Layout.
@@ -99,42 +99,42 @@ Für mehrere Bücher auf einmal zuerst **多选** (Mehrfachauswahl) wählen. Die
 
 **Schritt 2: Zur gewünschten Stelle springen**
 
-![Ein Klick auf einen Gliederungseintrag springt zu Seite 2](docs/images/guide/pdf-outline.png)
+![Ein Klick auf einen Gliederungseintrag springt zu Seite 2](images/guide/pdf-outline.png)
 
 1. Einen Abschnitt in der Gliederung anklicken, um zu seiner Seite zu springen.
 2. Oder eine Seitenzahl in das Seitenfeld eingeben und die Eingabetaste drücken. Das hilft bei PDFs ohne Gliederung.
 
 **Schritt 3: Chinesische Übersetzung einschalten**
 
-![Der Schalter für die Live-Übersetzung und die chinesische Übersetzung rechts](docs/images/guide/pdf-translate.png)
+![Der Schalter für die Live-Übersetzung und die chinesische Übersetzung rechts](images/guide/pdf-translate.png)
 
 1. Oben **实时翻译** (Live-Übersetzung) einschalten. Sie ist standardmäßig aus und nutzt das in DSH eingerichtete Modell.
 2. Die Spalte zeigt die Übersetzung absatzweise. **定位原文** (Original anzeigen) führt zum passenden Absatz, **重译本段** (Neu übersetzen) übersetzt ihn erneut. Hier lassen sich auch die Schriftgröße ändern, das Glossar bearbeiten und die nächste Seite vorübersetzen.
 
 **Schritt 4: Die Stelle markieren, die zitiert werden soll**
 
-![Eine markierte Textstelle mit schwebender Werkzeugleiste und aktiver Schaltfläche zum Sichern in der Spalte](docs/images/guide/pdf-select.png)
+![Eine markierte Textstelle mit schwebender Werkzeugleiste und aktiver Schaltfläche zum Sichern in der Spalte](images/guide/pdf-select.png)
 
 1. Text im Original markieren. Die schwebende Werkzeugleiste kann ihn übersetzen, hervorheben, von der KI erklären lassen oder danach suchen.
 2. In der Spalte **保存证据** (Beleg speichern) wählen.
 
 **Schritt 5: Beleg speichern**
 
-![Der Dialog zum Speichern eines Belegs](docs/images/guide/pdf-evidence.png)
+![Der Dialog zum Speichern eines Belegs](images/guide/pdf-evidence.png)
 
 1. Notiz und gedruckte Seitenangabe sind freiwillig. Eine Übersetzung lässt sich später ergänzen.
 2. **保存证据** (Beleg speichern) wählen.
 
 **Schritt 6: Vom Beleg zum Original zurückkehren**
 
-![Nach dem Klick auf Zurück zum Original springt die Ansicht zu Seite 2 und bestätigt die genaue Stelle](docs/images/guide/pdf-return.png)
+![Nach dem Klick auf Zurück zum Original springt die Ansicht zu Seite 2 und bestätigt die genaue Stelle](images/guide/pdf-return.png)
 
 1. Die Belege des aktuellen Artikels stehen in der Spalte. **回到原文** (Zurück zum Original) wählen.
 2. Die Ansicht springt zur gespeicherten Auswahl und meldet, ob die Stelle genau gefunden wurde.
 
 **Schritt 7: Leseansicht anpassen**
 
-![Vier Gruppen von Bedienelementen in der oberen Leiste](docs/images/guide/pdf-view.png)
+![Vier Gruppen von Bedienelementen in der oberen Leiste](images/guide/pdf-view.png)
 
 1. Schalter für Gliederung, Lesespalte und immersiven Modus.
 2. Darstellung sowie Anmerkungen und Notizen.
@@ -143,7 +143,7 @@ Für mehrere Bücher auf einmal zuerst **多选** (Mehrfachauswahl) wählen. Die
 
 ### Belegsammlung und Themen
 
-![Der Dialog der Belegsammlung mit gespeicherten Belegen](docs/images/guide/evidence-library.png)
+![Der Dialog der Belegsammlung mit gespeicherten Belegen](images/guide/evidence-library.png)
 
 1. **证据库** (Belege) in der Seitenleiste sammelt die Belege aller Dokumente. Von dort geht es zurück zum Original, und Belege lassen sich bearbeiten, löschen oder für den Export auswählen.
 

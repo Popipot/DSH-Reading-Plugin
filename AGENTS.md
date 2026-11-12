@@ -13,3 +13,7 @@ At the end of each completed DSH Reader project task, synchronize both GitHub re
 1. Update the public project display in the English, Simplified Chinese, and German READMEs together. Identify the measured candidate and release gate accurately. Publish installable code and assets when the applicable release gate is met or the user has explicitly authorized their publication.
 2. Update the authorized private development-process repository with the batch status, applicable baseline changes, decisions, verification results, and shareable evidence indexes. Keep restricted originals in the local evidence package.
 3. Base each publication on that repository's current remote head, commit the intended files separately, and push normally. Verify both remote heads and report the published commits or any incomplete synchronization. When a repository has no meaningful diff, report its verified head.
+
+## Whale girl artwork
+
+Archive every new whale girl design in `images/whale-girl/` in the existing format: the next two-digit number, a transparent PNG, and a row in the trilingual gallery README that says where it appears. In the private development-process repository, record the full trace from requirement to implementation in the batch archive: requirement and verification IDs, use case, design part, how the artwork was produced and from which references, file hashes, the public commit, and the verification evidence.

@@ -70,11 +70,11 @@ For Desktop, use its plugin manager. A `web` profile installation does not insta
 
 The whale girl is your guide. The numbers in each screenshot match the steps below it, and her sign shows where you are in the sequence. The screenshots use sample documents and the Navy Pixel theme. The interface is in Chinese.
 
-![The guide’s four poses: holding a sign, pointing left, pointing right, thumbs up](docs/images/guide/guide-poses.png)
+![The guide’s four poses: holding a sign, pointing left, pointing right, thumbs up](images/guide/guide-poses.png)
 
 ### Library: import and organize
 
-![Library home with the import button, sidebar categories, and a collection card marked](docs/images/guide/library-home.png)
+![Library home with the import button, sidebar categories, and a collection card marked](images/guide/library-home.png)
 
 1. Click **导入文档** (Import document), or drop files into the library. PDF, EPUB, MOBI, TXT, Markdown, and HTML are supported.
 2. Use the sidebar to switch between **我的书架** (My library), **文献** (Papers), **书籍** (Books), **文档** (Documents), and **证据库** (Evidence).
@@ -82,7 +82,7 @@ The whale girl is your guide. The numbers in each screenshot match the steps bel
 
 To sort several books at once, click **多选** (Select) first. The [illustrated Chinese guide](docs/USER_GUIDE.zh-CN.md#图书馆封面书单与批量归类) shows how to edit a collection or remove books from it.
 
-![Theme picker previewing Whale Blue](docs/images/guide/library-theme.png)
+![Theme picker previewing Whale Blue](images/guide/library-theme.png)
 
 1. Click **主题** (Theme) at the bottom of the sidebar.
 2. Click **预览** (Preview) to try a theme, then **应用** (Apply) to keep it. Closing the panel restores the theme you had.
@@ -91,7 +91,7 @@ To sort several books at once, click **多选** (Select) first. The [illustrated
 
 **Step 1. Open a PDF**
 
-![The three areas of the PDF workspace](docs/images/guide/pdf-open.png)
+![The three areas of the PDF workspace](images/guide/pdf-open.png)
 
 1. The outline is on the left.
 2. The original is in the middle and keeps its layout.
@@ -99,42 +99,42 @@ To sort several books at once, click **多选** (Select) first. The [illustrated
 
 **Step 2. Go to the part you need**
 
-![Clicking an outline entry jumps to page 2](docs/images/guide/pdf-outline.png)
+![Clicking an outline entry jumps to page 2](images/guide/pdf-outline.png)
 
 1. Click a section in the outline to jump to its page.
 2. Or type a page number in the page box and press Enter. Use this for PDFs without an outline.
 
 **Step 3. Turn on the Chinese translation**
 
-![The live translation switch and the Chinese translation on the right](docs/images/guide/pdf-translate.png)
+![The live translation switch and the Chinese translation on the right](images/guide/pdf-translate.png)
 
 1. Turn on **实时翻译** (Live translation) in the top bar. It is off by default and calls the model you configured in DSH.
 2. The panel shows the translation paragraph by paragraph. **定位原文** (Locate original) returns to the matching paragraph and **重译本段** (Retranslate) translates it again. You can also change the font size, edit the glossary, and pretranslate the next page here.
 
 **Step 4. Select the passage you want to cite**
 
-![A selected passage with the floating toolbar, and the save evidence button enabled in the panel](docs/images/guide/pdf-select.png)
+![A selected passage with the floating toolbar, and the save evidence button enabled in the panel](images/guide/pdf-select.png)
 
 1. Select text in the original. The floating toolbar can translate it, mark it, ask AI to explain it, or search for it.
 2. Click **保存证据** (Save evidence) in the panel.
 
 **Step 5. Save the evidence**
 
-![The save evidence dialog](docs/images/guide/pdf-evidence.png)
+![The save evidence dialog](images/guide/pdf-evidence.png)
 
 1. The note and the printed page label are optional. You can add a translation later.
 2. Click **保存证据** (Save evidence).
 
 **Step 6. Return from evidence to the original**
 
-![After clicking return to original, the page jumps back to page 2 and confirms the exact location](docs/images/guide/pdf-return.png)
+![After clicking return to original, the page jumps back to page 2 and confirms the exact location](images/guide/pdf-return.png)
 
 1. Evidence from the current paper is listed in the panel. Click **回到原文** (Return to original).
 2. The page jumps back to the saved selection and tells you whether the location is exact.
 
 **Step 7. Adjust how you read**
 
-![Four groups of controls in the top bar](docs/images/guide/pdf-view.png)
+![Four groups of controls in the top bar](images/guide/pdf-view.png)
 
 1. Toggles for the outline, the reading panel, and immersive mode.
 2. Reading appearance, and annotations and notes.
@@ -143,7 +143,7 @@ To sort several books at once, click **多选** (Select) first. The [illustrated
 
 ### Evidence library and topics
 
-![The evidence library dialog listing saved evidence](docs/images/guide/evidence-library.png)
+![The evidence library dialog listing saved evidence](images/guide/evidence-library.png)
 
 1. **证据库** (Evidence) in the sidebar collects evidence from every document. You can return to the original, edit, delete, or select items to export.
 

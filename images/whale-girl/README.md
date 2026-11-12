@@ -20,3 +20,18 @@ The original PNGs are for design and documentation. The plugin loads transparent
 原稿用于设计和文档，插件加载随包提供的 192 × 192 透明 WebP。
 
 Die Originale dienen der Gestaltung und Dokumentation. Das Plugin lädt transparente WebP-Dateien mit 192 × 192 Pixeln aus dem Installationspaket.
+
+## Guide poses · 引导员动作 · Posen der Begleiterin
+
+Four poses guide readers through the step-by-step screenshots on the project page. They were produced with an image generator from the waving and note-taking stickers above, and the green background was removed locally. The files here are 200 × 200 transparent PNGs. The plugin does not bundle them.
+
+四款动作用在项目主页的分步引导截图里。它们以上面的挥手和记笔记贴纸为参考，由图像生成工具生成，再在本地去掉绿色背景。这里的文件是 200 × 200 透明 PNG，不随插件安装。
+
+Vier Posen begleiten die Schritt-für-Schritt-Bildschirmfotos auf der Projektseite. Sie wurden mit einem Bildgenerator aus den Stickern für Begrüßung und Notizen oben erzeugt, der grüne Hintergrund wurde lokal entfernt. Die Dateien hier sind transparente PNGs mit 200 × 200 Pixeln. Das Plugin enthält sie nicht.
+
+| Illustration | 场景 | Where it appears | Einsatzort |
+| --- | --- | --- | --- |
+| <a href="07-guide-sign.png"><img src="07-guide-sign.png" width="120" alt="举牌 / Holding a sign / Schild halten"></a> | 每组引导的起始步和对话框步骤 | First step of each guide and dialog steps | Erster Schritt jeder Anleitung und Dialogschritte |
+| <a href="08-guide-point-left.png"><img src="08-guide-point-left.png" width="120" alt="指左 / Pointing left / Nach links zeigen"></a> | 标注在左侧的步骤 | Steps whose callouts are on the left | Schritte mit Markierungen links |
+| <a href="09-guide-point-right.png"><img src="09-guide-point-right.png" width="120" alt="指右 / Pointing right / Nach rechts zeigen"></a> | 标注在右侧的步骤 | Steps whose callouts are on the right | Schritte mit Markierungen rechts |
+| <a href="10-guide-thumbs-up.png"><img src="10-guide-thumbs-up.png" width="120" alt="点赞 / Thumbs up / Daumen hoch"></a> | 每组引导的最后一步 | Last step of a guide | Letzter Schritt einer Anleitung |

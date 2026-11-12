@@ -70,11 +70,11 @@ dsh plugin --profile web add "github:Popipot/DSH-Reading-Plugin#main"
 
 鲸鱼娘是这里的引导员。每张截图里的编号对应图下的步骤，右下角的牌子标出这是第几步。截图使用示例文档和「藏青像素」主题。
 
-![引导员的四个动作：举牌、指左、指右、点赞](docs/images/guide/guide-poses.png)
+![引导员的四个动作：举牌、指左、指右、点赞](images/guide/guide-poses.png)
 
 ### 书架：导入和整理
 
-![书架首页，标出导入文档按钮、左栏分类和书单卡片](docs/images/guide/library-home.png)
+![书架首页，标出导入文档按钮、左栏分类和书单卡片](images/guide/library-home.png)
 
 1. 点 **导入文档**，或把文件拖进书架。支持 PDF、EPUB、MOBI、TXT、Markdown 和 HTML。
 2. 在左栏切换 **我的书架**、**文献**、**书籍**、**文档** 和 **证据库**。
@@ -82,7 +82,7 @@ dsh plugin --profile web add "github:Popipot/DSH-Reading-Plugin#main"
 
 批量归类先点 **多选**。编辑书单或移出书籍的方法见 [书单图文教程](docs/USER_GUIDE.zh-CN.md#图书馆封面书单与批量归类)。
 
-![主题选择器，正在预览鲸海蓝](docs/images/guide/library-theme.png)
+![主题选择器，正在预览鲸海蓝](images/guide/library-theme.png)
 
 1. 点左栏底部的 **主题**。
 2. 先点 **预览** 看效果，满意后点 **应用**。直接关闭面板会还原成原来的主题。
@@ -91,7 +91,7 @@ dsh plugin --profile web add "github:Popipot/DSH-Reading-Plugin#main"
 
 **第 1 步　打开 PDF**
 
-![PDF 工作区的三个区域](docs/images/guide/pdf-open.png)
+![PDF 工作区的三个区域](images/guide/pdf-open.png)
 
 1. 左侧是文档目录。
 2. 中间是原文，版式保持不变。
@@ -99,42 +99,42 @@ dsh plugin --profile web add "github:Popipot/DSH-Reading-Plugin#main"
 
 **第 2 步　跳到要读的位置**
 
-![点击目录条目跳转到第 2 页](docs/images/guide/pdf-outline.png)
+![点击目录条目跳转到第 2 页](images/guide/pdf-outline.png)
 
 1. 点目录里的章节，直接跳到对应页。
 2. 也可以在页码框输入页码后按回车。没有目录的 PDF 用这个方法。
 
 **第 3 步　打开中文对照**
 
-![实时翻译开关和右侧的中文对照](docs/images/guide/pdf-translate.png)
+![实时翻译开关和右侧的中文对照](images/guide/pdf-translate.png)
 
 1. 打开顶部的 **实时翻译**。它默认关闭，开启后会调用你在 DSH 里配置的模型。
 2. 右侧按段落显示译文。点 **定位原文** 回到对应段落，点 **重译本段** 重新翻译。这里还能调字号、编辑术语表和预译下一页。
 
 **第 4 步　选中要引用的原文**
 
-![选中一段原文后出现工具栏，侧栏的保存证据按钮可用](docs/images/guide/pdf-select.png)
+![选中一段原文后出现工具栏，侧栏的保存证据按钮可用](images/guide/pdf-select.png)
 
 1. 用鼠标选中原文。浮动工具栏可以翻译、标记、让 AI 解释或搜索这段文字。
 2. 点侧栏的 **保存证据**。
 
 **第 5 步　保存证据**
 
-![保存证据对话框](docs/images/guide/pdf-evidence.png)
+![保存证据对话框](images/guide/pdf-evidence.png)
 
 1. 备注和印刷页标都可以不填。译文可以之后再补。
 2. 点 **保存证据**。
 
 **第 6 步　从证据回到原文**
 
-![点击回到原文后，页面跳回第 2 页并提示已精确定位](docs/images/guide/pdf-return.png)
+![点击回到原文后，页面跳回第 2 页并提示已精确定位](images/guide/pdf-return.png)
 
 1. 当前论文的证据列在侧栏里。点 **回到原文**。
 2. 页面跳回保存时的选区，并提示是否精确定位。
 
 **第 7 步　调整阅读方式**
 
-![顶栏的四组控制](docs/images/guide/pdf-view.png)
+![顶栏的四组控制](images/guide/pdf-view.png)
 
 1. 依次是目录、阅读侧栏和沉浸模式的开关。
 2. 阅读外观，以及批注与便签。
@@ -143,7 +143,7 @@ dsh plugin --profile web add "github:Popipot/DSH-Reading-Plugin#main"
 
 ### 证据库和专题
 
-![证据库对话框，列出已保存的证据](docs/images/guide/evidence-library.png)
+![证据库对话框，列出已保存的证据](images/guide/evidence-library.png)
 
 1. 左栏的 **证据库** 汇总所有文档的证据。可以回到原文、编辑、删除，或勾选后导出。
 
