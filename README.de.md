@@ -14,6 +14,94 @@ Ein Plugin für **DeepSeek Harness** zum Lesen von Fachliteratur und Büchern. O
 
 ![DSH-Reader-Banner in Pixeloptik mit einem lesenden Walmädchen](docs/images/dsh-reader-banner.png)
 
+## Ein Blick auf die Oberfläche
+
+Die Bibliothek hat drei Designs. Unter **主题** (Design) unten in der Seitenleiste kannst du sie ansehen und wechseln. Die Auswahl wird auf diesem Gerät gespeichert.
+
+| 纸本 (Papier) | 鲸海蓝 (Walblau) | 藏青像素 (Marine-Pixel) |
+| --- | --- | --- |
+| ![Bibliotheksstart im Papier-Design auf dunklem Host](docs/images/library-paper.png) | ![Bibliotheksstart in Walblau mit geöffneter Designauswahl unten links](docs/images/library-whale-blue.png) | ![Bibliotheksstart im Marine-Pixel-Design](docs/images/library-navy-pixel.png) |
+| Warme Papiertöne, das winkende Walmädchen sitzt auf der Begrüßungskarte. | Hellblaues Regal mit dem Walmädchen als halbtransparentem Hintergrund. | Marineblaue Seitenleiste, cremefarbene Karten und Pixelkonturen. |
+
+Beide Walmädchen-Designs zeigen auf der Startseite sowie unter Fachliteratur, Büchern und Dokumenten jeweils ein passendes Motiv. Der Hintergrund bleibt beim Scrollen stehen.
+
+Beim Lesen einer PDF steht links die Gliederung und in der Mitte das Original. Rechts wechselst du zwischen den Belegen und der Übersetzung des aktuellen Artikels.
+
+![PDF-Arbeitsbereich mit Gliederung links und Belegspalte rechts](docs/images/pdf-workspace.png)
+
+Die Bildschirmfotos zeigen synthetische Testdokumente. Die Oberfläche ist chinesisch.
+
+## Funktionen
+
+| Funktion | Möglichkeiten |
+| --- | --- |
+| Formate | PDF, EPUB, MOBI/AZW/AZW3, TXT, Markdown und HTML lesen. |
+| Lokale Bibliothek | Standardkategorien und eigene Sammlungsordner mit Covervorschau, Suche und Zuordnung mehrerer Bücher auf einmal. |
+| PDF-Anzeige | Scrollen oder horizontal umblättern, zoomen, Seitenbreite/ganze Seite anpassen, Seiten anspringen und Text auswählen. |
+| PDF-Übersetzung | Feste chinesische Übersetzungsspalte mit Absatzverknüpfung, Glossar, Pause/Wiederholung und lokalem Cache. |
+| E-Books | Typografie anpassen und in beide Richtungen über Kapitelgrenzen hinweg blättern. |
+| Notizen und KI | Markierungen, Unterstreichungen, Notizzettel, Übersetzung einer Auswahl, Fragen im Kontext und Google/Google Scholar. |
+| Darstellung | Schrift, Abstände, Textbreite, Helligkeit, Hintergrund und immersives Lesen anpassen. |
+| Öffentliche Quellen | Unterstützte direkte Dateilinks aus öffentlichen Buchsammlungen und Open-Access-Quellen importieren. |
+| Belege sichern | Text in einer PDF auswählen und als Beleg speichern, auf Wunsch mit bestätigter Übersetzung, und später aus der Belegsammlung zur genauen Stelle zurückkehren. |
+| Themenvergleich und Export | Zu einer Sammlung eine Forschungsfrage festhalten, Belege aus mehreren Artikeln gruppieren, Vergleiche verfassen und als UTF-8-Markdown exportieren. |
+| Sicherung und Wiederherstellung | Lese- und Forschungsdaten als lokale ZIP-Datei exportieren, wahlweise mit Originaldateien, und Konflikte vor der Wiederherstellung prüfen. |
+| Bibliotheksdesigns | Papier, Walblau oder Marine-Pixel wählen, mit Vorschau vor dem Anwenden. |
+
+Projektübersicht und Installationsanleitungen gibt es auf Englisch, Chinesisch und Deutsch. Die Oberfläche ist derzeit überwiegend chinesisch. Automatische Dokumentübersetzungen erscheinen auf **vereinfachtem Chinesisch**.
+
+## Installation
+
+Die [Installationsanleitung](docs/INSTALL.de.md) beschreibt Desktop, CLI/Web, lokale Entwicklung, Aktualisierungen und Fehlerbehebung. Die Build-Dateien für eine reguläre GitHub-Installation sind enthalten.
+
+| Methode | Adresse oder Aktion |
+| --- | --- |
+| DSH-Pluginverwaltung — empfohlen | **Plugins → Add plugin** → `github:Popipot/DSH-Reading-Plugin#main` |
+| Quellcode herunterladen | [Quellcode einschließlich Build-Dateien herunterladen](https://github.com/Popipot/DSH-Reading-Plugin/archive/refs/heads/main.zip) |
+| CLI-verwaltetes Web-Profil | Folgenden Befehl ausführen und die betreffende Web-Instanz neu starten. |
+
+```sh
+dsh plugin --profile web add "github:Popipot/DSH-Reading-Plugin#main"
+```
+
+Für Desktop die integrierte Pluginverwaltung verwenden. Eine Installation im Profil `web` installiert das Plugin nicht im separaten Desktop-Profil.
+
+## Bibliothek organisieren
+
+Neben den Standardkategorien für Bücher, Fachliteratur und Dokumente kannst du eigene Sammlungen für Themen, Projekte oder Leselisten anlegen. Die Ordnerkarte zeigt bis zu vier Cover und Titel. Klappe die Titelliste auf, um alle enthaltenen Bücher zu sehen und direkt zu öffnen.
+
+![Beispielbibliothek mit Covervorschau der Sammlungen und aufgeklappter Titelliste in der chinesischen Oberfläche](docs/images/library-paper.png)
+
+Über **加入书单** (Zur Sammlung hinzufügen) auf der Buchkarte ordnest du einzelne Bücher zu. Mit **多选** (Mehrfachauswahl) kannst du mehrere Bücher gleichzeitig hinzufügen. Ein Buch kann zu mehreren Sammlungen gehören und behält dabei dieselbe Leseposition und dieselben Anmerkungen. Die [bebilderte Anleitung zu Sammlungen](docs/USER_GUIDE.zh-CN.md#图书馆封面书单与批量归类) zeigt, wie du Sammlungen bearbeitest und Bücher daraus entfernst.
+
+## Erste Schritte
+
+1. **阅读** (Lesen) in der DSH-Seitenleiste öffnen.
+2. Eine unterstützte Datei in die Bibliothek ziehen oder **导入文档** (Dokument importieren) wählen.
+3. Das Dokument öffnen und oben zwischen Scrollen und horizontalem Umblättern wechseln.
+4. Bei Bedarf **实时翻译** (Live-Übersetzung) aktivieren. Standardmäßig ist sie ausgeschaltet.
+5. Text zum Übersetzen, Markieren, Fragenstellen oder Suchen auswählen. Lesepositionen und Anmerkungen werden lokal gespeichert.
+
+Die Übersetzungsspalte lässt sich unabhängig scrollen, während das PDF sein Originallayout behält. Sie bietet Absatzverknüpfungen, ein Glossar, eine einstellbare Schriftgröße, erneute Übersetzungsversuche und die optionale Vorübersetzung der nächsten Seite. Bei E-Books mit fließendem Layout stehen Übersetzungen unter den Absätzen.
+
+Im horizontalen Modus beginnt jedes E-Book-Kapitel auf einer neuen Seite. Einmal vorwärts blättern führt vom Kapitelende auf die erste Seite des nächsten Kapitels. Einmal rückwärts blättern führt vom Kapitelanfang auf die letzte Seite des vorherigen Kapitels. Bei EPUB und anderen Formaten mit fließendem Layout kannst du zwischen horizontalem Schieben, Überdecken und einer 3D-Animation mit Faltung ab der Seitenecke wählen. Der Reader berücksichtigt die Systemeinstellung für reduzierte Bewegung. Die 3D-Animation verwendet die Faltgeometrie von [StPageFlip](https://github.com/Nodlik/StPageFlip) ([MIT-Hinweis](LICENSES/StPageFlip.txt)).
+
+Die [bebilderte chinesische Anleitung](docs/USER_GUIDE.zh-CN.md) enthält auch Screenshots zur PDF-Ansicht und zu Anmerkungen.
+
+## PDF-Leistung
+
+Analyse und Zeichnen laufen, soweit unterstützt, in separaten Workern. Lokale Dateien werden bedarfsgerecht abschnittsweise gelesen; nahe Seiten werden virtualisiert. Vorschaubilder werden verfeinert, zuletzt gelesene Seiten in einem begrenzten Bildcache gehalten. Die Cover-Erstellung stoppt beim Öffnen des Readers.
+
+Die Leistungstests umfassen komplexe Beispiel-PDFs und ein direkt in DSH geöffnetes Lehrbuch mit 1.029 Seiten. Das [Optimierungsprotokoll](OPTIMIZATION.md#12-pdf-性能方案-a双-worker随机读取与分级缓存2026-11-06) dokumentiert Testumgebung und Messergebnisse auf Chinesisch.
+
+## Datenschutz und Grenzen
+
+- Dokumente, Anmerkungen, Lesepositionen und Übersetzungscaches liegen lokal in IndexedDB/localStorage. Öffentliche Importe werden über den lokalen DSH-Host heruntergeladen.
+- Übersetzung und KI senden relevante Textstellen, begrenzten Kontext und gegebenenfalls das Glossar an das in DSH konfigurierte Modell. Die Vorübersetzung sendet auch Text der nächsten Seite. Modellaufrufe können Kosten verursachen.
+- Gescannte PDFs lassen sich anzeigen; Textauswahl und Übersetzung benötigen eine vorhandene Textebene. OCR ist nicht enthalten.
+- DRM-E-Books werden nicht unterstützt; manche festen oder vertikalen Layouts werden als fließender Text dargestellt.
+- Layoutgetreuer Export übersetzter PDFs und Export von Anmerkungen sind nicht enthalten. Belege und Themennotizen lassen sich als Markdown exportieren. Beim Löschen lokaler Website-Daten gehen Bibliothek und Einstellungen verloren.
+
 ## Entwicklungsstand
 
 **9. November 2026 · B1 freigegeben · Alle 40 Prüfungen bestanden.** Im immersiven Modus bleiben beschriftete Schaltflächen für Darstellung, Vollbild und Beenden sichtbar. Bei E-Books lässt sich auch das Inhaltsverzeichnis ein- und ausblenden. Leiste und Einstellungsfenster übernehmen das Lesefarbschema. Die Einstellungen bleiben beim Neustart erhalten.
@@ -45,73 +133,6 @@ Ein Plugin für **DeepSeek Harness** zum Lesen von Fachliteratur und Büchern. O
 **B5-Nutzertest.** Die Unterlagen für den 14-tägigen Test mit 15 Personen liegen vor. Der Test steht noch aus.
 
 Im früheren B1-Leistungstest mit 80 kalten Dokumentöffnungen in DSH Desktop lag der höchste P95 je Testgruppe bei **1.375 ms** für den Referenzartikel und **2.426 ms** für das Lehrbuch mit 1.029 Seiten. Bei 480 Seitenwechseln in DSH Web lag der höchste P95 bei **44 ms** mit und **259 ms** ohne Vorladen. Der finale Build bestand die Desktop-Prüfung der Darstellung und sechs Browser-Regressionsreihen.
-
-## Funktionen
-
-| Funktion | Möglichkeiten |
-| --- | --- |
-| Formate | PDF, EPUB, MOBI/AZW/AZW3, TXT, Markdown und HTML lesen. |
-| Lokale Bibliothek | Standardkategorien und eigene Sammlungsordner mit Covervorschau, Suche und Zuordnung mehrerer Bücher auf einmal. |
-| PDF-Anzeige | Scrollen oder horizontal umblättern, zoomen, Seitenbreite/ganze Seite anpassen, Seiten anspringen und Text auswählen. |
-| PDF-Übersetzung | Feste chinesische Übersetzungsspalte mit Absatzverknüpfung, Glossar, Pause/Wiederholung und lokalem Cache. |
-| E-Books | Typografie anpassen und in beide Richtungen über Kapitelgrenzen hinweg blättern. |
-| Notizen und KI | Markierungen, Unterstreichungen, Notizzettel, Übersetzung einer Auswahl, Fragen im Kontext und Google/Google Scholar. |
-| Darstellung | Schrift, Abstände, Textbreite, Helligkeit, Hintergrund und immersives Lesen anpassen. |
-| Öffentliche Quellen | Unterstützte direkte Dateilinks aus öffentlichen Buchsammlungen und Open-Access-Quellen importieren. |
-
-Projektübersicht und Installationsanleitungen gibt es auf Englisch, Chinesisch und Deutsch. Die Oberfläche ist derzeit überwiegend chinesisch. Automatische Dokumentübersetzungen erscheinen auf **vereinfachtem Chinesisch**.
-
-## Installation
-
-Die [Installationsanleitung](docs/INSTALL.de.md) beschreibt Desktop, CLI/Web, lokale Entwicklung, Aktualisierungen und Fehlerbehebung. Die Build-Dateien für eine reguläre GitHub-Installation sind enthalten.
-
-| Methode | Adresse oder Aktion |
-| --- | --- |
-| DSH-Pluginverwaltung — empfohlen | **Plugins → Add plugin** → `github:Popipot/DSH-Reading-Plugin#main` |
-| Quellcode herunterladen | [Quellcode einschließlich Build-Dateien herunterladen](https://github.com/Popipot/DSH-Reading-Plugin/archive/refs/heads/main.zip) |
-| CLI-verwaltetes Web-Profil | Folgenden Befehl ausführen und die betreffende Web-Instanz neu starten. |
-
-```sh
-dsh plugin --profile web add "github:Popipot/DSH-Reading-Plugin#main"
-```
-
-Für Desktop die integrierte Pluginverwaltung verwenden. Eine Installation im Profil `web` installiert das Plugin nicht im separaten Desktop-Profil.
-
-## Bibliothek organisieren
-
-Neben den Standardkategorien für Bücher, Fachliteratur und Dokumente kannst du eigene Sammlungen für Themen, Projekte oder Leselisten anlegen. Die Ordnerkarte zeigt bis zu vier Cover und Titel. Klappe die Titelliste auf, um alle enthaltenen Bücher zu sehen und direkt zu öffnen.
-
-![Beispielbibliothek mit Covervorschau und aufgeklappter Titelliste in der chinesischen Oberfläche](docs/images/library-collections.png)
-
-Über **加入书单** (Zur Sammlung hinzufügen) auf der Buchkarte ordnest du einzelne Bücher zu. Mit **多选** (Mehrfachauswahl) kannst du mehrere Bücher gleichzeitig hinzufügen. Ein Buch kann zu mehreren Sammlungen gehören und behält dabei dieselbe Leseposition und dieselben Anmerkungen. Die [bebilderte Anleitung zu Sammlungen](docs/USER_GUIDE.zh-CN.md#图书馆封面书单与批量归类) zeigt, wie du Sammlungen bearbeitest und Bücher daraus entfernst.
-
-## Erste Schritte
-
-1. **阅读** (Lesen) in der DSH-Seitenleiste öffnen.
-2. Eine unterstützte Datei in die Bibliothek ziehen oder **导入文档** (Dokument importieren) wählen.
-3. Das Dokument öffnen und oben zwischen Scrollen und horizontalem Umblättern wechseln.
-4. Bei Bedarf **实时翻译** (Live-Übersetzung) aktivieren. Standardmäßig ist sie ausgeschaltet.
-5. Text zum Übersetzen, Markieren, Fragenstellen oder Suchen auswählen. Lesepositionen und Anmerkungen werden lokal gespeichert.
-
-Die Übersetzungsspalte lässt sich unabhängig scrollen, während das PDF sein Originallayout behält. Sie bietet Absatzverknüpfungen, ein Glossar, eine einstellbare Schriftgröße, erneute Übersetzungsversuche und die optionale Vorübersetzung der nächsten Seite. Bei E-Books mit fließendem Layout stehen Übersetzungen unter den Absätzen.
-
-Im horizontalen Modus beginnt jedes E-Book-Kapitel auf einer neuen Seite. Einmal vorwärts blättern führt vom Kapitelende auf die erste Seite des nächsten Kapitels. Einmal rückwärts blättern führt vom Kapitelanfang auf die letzte Seite des vorherigen Kapitels. Bei EPUB und anderen Formaten mit fließendem Layout kannst du zwischen horizontalem Schieben, Überdecken und einer 3D-Animation mit Faltung ab der Seitenecke wählen. Der Reader berücksichtigt die Systemeinstellung für reduzierte Bewegung. Die 3D-Animation verwendet die Faltgeometrie von [StPageFlip](https://github.com/Nodlik/StPageFlip) ([MIT-Hinweis](LICENSES/StPageFlip.txt)).
-
-Die [bebilderte chinesische Anleitung](docs/USER_GUIDE.zh-CN.md) enthält auch Screenshots zur PDF-Ansicht und zu Anmerkungen.
-
-## PDF-Leistung
-
-Analyse und Zeichnen laufen, soweit unterstützt, in separaten Workern. Lokale Dateien werden bedarfsgerecht abschnittsweise gelesen; nahe Seiten werden virtualisiert. Vorschaubilder werden verfeinert, zuletzt gelesene Seiten in einem begrenzten Bildcache gehalten. Die Cover-Erstellung stoppt beim Öffnen des Readers.
-
-Die Leistungstests umfassen komplexe Beispiel-PDFs und ein direkt in DSH geöffnetes Lehrbuch mit 1.029 Seiten. Das [Optimierungsprotokoll](OPTIMIZATION.md#12-pdf-性能方案-a双-worker随机读取与分级缓存2026-11-06) dokumentiert Testumgebung und Messergebnisse auf Chinesisch.
-
-## Datenschutz und Grenzen
-
-- Dokumente, Anmerkungen, Lesepositionen und Übersetzungscaches liegen lokal in IndexedDB/localStorage. Öffentliche Importe werden über den lokalen DSH-Host heruntergeladen.
-- Übersetzung und KI senden relevante Textstellen, begrenzten Kontext und gegebenenfalls das Glossar an das in DSH konfigurierte Modell. Die Vorübersetzung sendet auch Text der nächsten Seite. Modellaufrufe können Kosten verursachen.
-- Gescannte PDFs lassen sich anzeigen; Textauswahl und Übersetzung benötigen eine vorhandene Textebene. OCR ist nicht enthalten.
-- DRM-E-Books werden nicht unterstützt; manche festen oder vertikalen Layouts werden als fließender Text dargestellt.
-- Layoutgetreuer Export übersetzter PDFs und Export von Anmerkungen sind nicht enthalten. Beim Löschen lokaler Website-Daten gehen Bibliothek und Einstellungen verloren.
 
 ## Feedback
 
