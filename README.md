@@ -72,6 +72,8 @@ The whale girl is your guide. The numbers in each screenshot match the steps bel
 
 ![Four whale girl poses: holding a sign, pointing left, pointing right with a small smile, and giving a thumbs up](images/guide/guide-poses.png)
 
+See the [whale girl gallery](images/whale-girl/README.md#character-portraits--角色立绘--charakterporträts) for the mature and energetic character portraits.
+
 ### Library: import and organize
 
 ![Library home with the import button, sidebar categories, and a collection card marked](images/guide/library-home.png)

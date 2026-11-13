@@ -37,3 +37,14 @@ Vier Posen begleiten die Schritt-für-Schritt-Bildschirmfotos auf der Projektsei
 | <a href="08-guide-point-left.png"><img src="08-guide-point-left.png" width="120" alt="指左 / Pointing left / Nach links zeigen"></a> | 标注在左侧的步骤 | Steps whose callouts are on the left | Schritte mit Markierungen links |
 | <a href="09-guide-point-right.png"><img src="09-guide-point-right.png" width="120" alt="指右 / Pointing right / Nach rechts zeigen"></a> | 标注在右侧的步骤，睁眼浅笑 | Steps with callouts on the right, eyes open with a small smile | Schritte mit Markierungen rechts, offene Augen und ein kleines Lächeln |
 | <a href="10-guide-thumbs-up.png"><img src="10-guide-thumbs-up.png" width="120" alt="点赞 / Thumbs up / Daumen hoch"></a> | 引导的最后一步，闭嘴微笑 | Last step of a guide, with a soft closed-mouth smile | Letzter Schritt einer Anleitung, mit einem sanften Lächeln |
+
+## Character portraits · 角色立绘 · Charakterporträts
+
+These full-body illustrations are 1024 × 1536 transparent PNGs for promotional artwork and dialogue previews.
+两张全身立绘为 1024 × 1536 透明 PNG，供宣传图和对话预览使用。
+Die Ganzkörperporträts sind transparente PNGs mit 1024 × 1536 Pixeln für Werbemotive und Dialogvorschauen.
+
+| Illustration | 场景 | Where it appears | Einsatzort |
+| --- | --- | --- | --- |
+| <a href="11-mature.png"><img src="11-mature.png" width="120" alt="成熟鲸鱼娘抱书浅笑 / Mature whale girl smiling with a book / Reifes Walmädchen mit Buch"></a> | 成熟形态，讲解与宣传素材 | Mature form for narration and promotional art | Reife Form für Erklärungen und Werbemotive |
+| <a href="12-genki.png"><img src="12-genki.png" width="120" alt="元气鲸鱼娘挥手微笑 / Energetic whale girl waving / Munteres Walmädchen beim Winken"></a> | 元气形态，开场与宣传素材 | Energetic form for openings and promotional art | Muntere Form für Einstiege und Werbemotive |

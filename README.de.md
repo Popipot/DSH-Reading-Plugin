@@ -72,6 +72,8 @@ Das Walmädchen führt durch die Anleitung. Die Nummern in jedem Bildschirmfoto 
 
 ![Vier Posen des Walmädchens: Schild halten, nach links zeigen, lächelnd nach rechts zeigen und Daumen hoch](images/guide/guide-poses.png)
 
+Die [Galerie des Walmädchens](images/whale-girl/README.md#character-portraits--角色立绘--charakterporträts) zeigt die reife und die muntere Form als Ganzkörperporträts.
+
 ### Bibliothek: importieren und ordnen
 
 ![Bibliotheksstart mit markierter Importschaltfläche, Kategorien in der Seitenleiste und einer Sammlungskarte](images/guide/library-home.png)

@@ -72,6 +72,8 @@ dsh plugin --profile web add "github:Popipot/DSH-Reading-Plugin#main"
 
 ![鲸鱼娘举牌、指左、浅笑指右和微笑点赞](images/guide/guide-poses.png)
 
+[鲸鱼娘图集](images/whale-girl/README.md#character-portraits--角色立绘--charakterporträts)已收录成熟和元气两款全身立绘。
+
 ### 书架：导入和整理
 
 ![书架首页，标出导入文档按钮、左栏分类和书单卡片](images/guide/library-home.png)
