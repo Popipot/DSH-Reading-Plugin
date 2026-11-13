@@ -203,6 +203,8 @@ The performance checks include complex sample PDFs and a 1,029-page textbook ope
 
 **B5 user trial.** The [fixed pilot build v0.1.0-b5.1](https://github.com/Popipot/DSH-Reading-Plugin/releases/tag/v0.1.0-b5.1) is available as a pre-release from B4 commit 199a485. The materials for the 15-person, 14-day study are ready. Participant testing is pending.
 
+**Promo video.** A short vertical video presented by the whale girl is in production to recruit pilot users. It shows the current build's real interface with narration generated locally; the final cut follows once the dialogue script is approved.
+
 In B1's earlier performance run, 80 cold opens on DSH Desktop had a highest group P95 of **1,375 ms** for the reference paper and **2,426 ms** for the 1,029-page textbook. For 480 adjacent-page turns on DSH Web, the highest group P95 was **44 ms** with preloading and **259 ms** without it. The final build passed the desktop appearance check and six browser regression suites.
 
 ## Feedback
