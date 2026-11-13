@@ -35,5 +35,5 @@ Vier Posen begleiten die Schritt-für-Schritt-Bildschirmfotos auf der Projektsei
 | --- | --- | --- | --- |
 | <a href="07-guide-sign.png"><img src="07-guide-sign.png" width="120" alt="举牌 / Holding a sign / Schild halten"></a> | 每组引导的起始步和对话框步骤 | First step of each guide and dialog steps | Erster Schritt jeder Anleitung und Dialogschritte |
 | <a href="08-guide-point-left.png"><img src="08-guide-point-left.png" width="120" alt="指左 / Pointing left / Nach links zeigen"></a> | 标注在左侧的步骤 | Steps whose callouts are on the left | Schritte mit Markierungen links |
-| <a href="09-guide-point-right.png"><img src="09-guide-point-right.png" width="120" alt="指右 / Pointing right / Nach rechts zeigen"></a> | 标注在右侧的步骤 | Steps whose callouts are on the right | Schritte mit Markierungen rechts |
+| <a href="09-guide-point-right.png"><img src="09-guide-point-right.png" width="120" alt="指右 / Pointing right / Nach rechts zeigen"></a> | 标注在右侧的步骤；2026-11-13 按形象基线重画脸部 | Steps whose callouts are on the right; face redrawn to the character baseline on 2026-11-13 | Schritte mit Markierungen rechts; Gesicht am 13.11.2026 nach der Charaktervorgabe neu gezeichnet |
 | <a href="10-guide-thumbs-up.png"><img src="10-guide-thumbs-up.png" width="120" alt="点赞 / Thumbs up / Daumen hoch"></a> | 每组引导的最后一步 | Last step of a guide | Letzter Schritt einer Anleitung |
