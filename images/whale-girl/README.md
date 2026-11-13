@@ -6,7 +6,7 @@ The library uses six poses for its categories and states. Click an image to open
 
 Die Bibliothek verwendet sechs Posen für ihre Kategorien und Zustände. Ein Klick öffnet das transparente PNG-Original (1254 × 1254).
 
-**Character · 形象设定 · Charakter.** An innocent, lively and earnest little girl who loves naps and plain white rice, gentle and without guile. 天真可爱、活泼认真、单纯没什么心思、爱睡觉、喜欢吃白饭的温柔小闺女。Ein unschuldiges, munteres und gewissenhaftes kleines Mädchen, sanft und arglos, das gern schläft und am liebsten weißen Reis isst.
+**Character · 形象设定 · Charakter.** An innocent, lively and earnest girl who loves naps and plain white rice, gentle and without guile. She has three forms: the small pixel form shown here, a genki girl and a mature older sister. New art also follows the community character reference [DeepSeek Whale-chan](https://github.com/Neko3000/deepseek-whalechan). 天真可爱、活泼认真、单纯没什么心思、爱睡觉、喜欢吃白饭的温柔闺女，分小小（本图集）、元气、成熟三种形态；新图同时参照社区角色规范 DeepSeek Whale-chan。Ein unschuldiges, munteres und gewissenhaftes Mädchen, sanft und arglos, das gern schläft und am liebsten weißen Reis isst. Es gibt drei Formen: die kleine Pixelform hier, ein quirliges Mädchen und eine erwachsene große Schwester. Neue Bilder folgen zusätzlich der Community-Referenz DeepSeek Whale-chan.
 
 | Illustration | 场景 | Where it appears | Einsatzort |
 | --- | --- | --- | --- |
