@@ -6,6 +6,8 @@ The library uses six poses for its categories and states. Click an image to open
 
 Die Bibliothek verwendet sechs Posen für ihre Kategorien und Zustände. Ein Klick öffnet das transparente PNG-Original (1254 × 1254).
 
+**Character · 形象设定 · Charakter.** An innocent, lively and earnest little girl who loves naps and plain white rice, gentle and without guile. 天真可爱、活泼认真、单纯没什么心思、爱睡觉、喜欢吃白饭的温柔小闺女。Ein unschuldiges, munteres und gewissenhaftes kleines Mädchen, sanft und arglos, das gern schläft und am liebsten weißen Reis isst.
+
 | Illustration | 场景 | Where it appears | Einsatzort |
 | --- | --- | --- | --- |
 | <a href="01-welcome.png"><img src="01-welcome.png" width="120" alt="挥手欢迎 / Waving hello / Begrüßung"></a> | 书架首页 | Library home | Bibliotheksstart |

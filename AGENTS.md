@@ -19,3 +19,5 @@ At the end of each completed DSH Reader project task, synchronize both GitHub re
 ## Whale girl artwork
 
 Archive every new whale girl design in `images/whale-girl/` in the existing format: the next two-digit number, a transparent PNG, and a row in the trilingual gallery README that says where it appears. In the private development-process repository, record the full trace from requirement to implementation in the batch archive: requirement and verification IDs, use case, design part, how the artwork was produced and from which references, file hashes, the public commit, and the verification evidence.
+
+Design and check every new or redrawn whale girl against the character baseline at `project-management/baseline/Whale-Girl-Character.md` (requirement NFR-049): an innocent, lively, earnest, guileless, sleepy, rice-loving and gentle little girl, with a small soft mouth, no teeth or fang, and no smug or boyish expression. Record the six-item checklist result for each image in the batch archive.
