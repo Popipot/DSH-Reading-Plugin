@@ -70,7 +70,7 @@ Für Desktop die integrierte Pluginverwaltung verwenden. Eine Installation im Pr
 
 Das Walmädchen führt durch die Anleitung. Die Nummern in jedem Bildschirmfoto gehören zu den Schritten darunter, und das Schild zeigt die Position in der Abfolge. Die Bildschirmfotos zeigen Beispieldokumente im Design Marine-Pixel. Die Oberfläche ist chinesisch.
 
-![Die vier Posen der Begleiterin: Schild halten, nach links zeigen, nach rechts zeigen, Daumen hoch](images/guide/guide-poses.png)
+![Vier Posen des Walmädchens: Schild halten, nach links zeigen, lächelnd nach rechts zeigen und Daumen hoch](images/guide/guide-poses.png)
 
 ### Bibliothek: importieren und ordnen
 

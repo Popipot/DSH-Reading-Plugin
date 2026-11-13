@@ -25,15 +25,15 @@ Die Originale dienen der Gestaltung und Dokumentation. Das Plugin lädt transpar
 
 ## Guide poses · 引导员动作 · Posen der Begleiterin
 
-Four poses guide readers through the step-by-step screenshots on the project page. They were produced with an image generator from the waving and note-taking stickers above, and the green background was removed locally. The files here are 1264 × 1264 transparent PNGs. The plugin does not bundle them.
+Four poses guide readers through the step-by-step screenshots on the project page. They were produced with an image generator from the waving and note-taking stickers above, and the green background was removed locally. All guide poses are transparent PNGs. Poses 07 and 08 are 1264 × 1264, and the revised poses 09 and 10 are 1254 × 1254. The plugin does not bundle them.
 
-四款动作用在项目主页的分步引导截图里。它们以上面的挥手和记笔记贴纸为参考，由图像生成工具生成，再在本地去掉绿色背景。这里的文件是 1264 × 1264 透明 PNG，不随插件安装。
+四款动作用在项目主页的分步引导截图里。它们以上面的挥手和记笔记贴纸为参考，由图像生成工具生成，再在本地去掉绿色背景。引导图均为透明 PNG。07、08 号为 1264 × 1264，重画后的 09、10 号为 1254 × 1254，不随插件安装。
 
-Vier Posen begleiten die Schritt-für-Schritt-Bildschirmfotos auf der Projektseite. Sie wurden mit einem Bildgenerator aus den Stickern für Begrüßung und Notizen oben erzeugt, der grüne Hintergrund wurde lokal entfernt. Die Dateien hier sind transparente PNGs mit 1264 × 1264 Pixeln. Das Plugin enthält sie nicht.
+Vier Posen begleiten die Schritt-für-Schritt-Bildschirmfotos auf der Projektseite. Sie wurden mit einem Bildgenerator aus den Stickern für Begrüßung und Notizen oben erzeugt, der grüne Hintergrund wurde lokal entfernt. Alle Posen sind transparente PNGs. 07 und 08 messen 1264 × 1264 Pixel, die überarbeiteten Posen 09 und 10 messen 1254 × 1254 Pixel. Das Plugin enthält sie nicht.
 
 | Illustration | 场景 | Where it appears | Einsatzort |
 | --- | --- | --- | --- |
 | <a href="07-guide-sign.png"><img src="07-guide-sign.png" width="120" alt="举牌 / Holding a sign / Schild halten"></a> | 每组引导的起始步和对话框步骤 | First step of each guide and dialog steps | Erster Schritt jeder Anleitung und Dialogschritte |
 | <a href="08-guide-point-left.png"><img src="08-guide-point-left.png" width="120" alt="指左 / Pointing left / Nach links zeigen"></a> | 标注在左侧的步骤 | Steps whose callouts are on the left | Schritte mit Markierungen links |
-| <a href="09-guide-point-right.png"><img src="09-guide-point-right.png" width="120" alt="指右 / Pointing right / Nach rechts zeigen"></a> | 标注在右侧的步骤；2026-11-13 按形象基线重画脸部 | Steps whose callouts are on the right; face redrawn to the character baseline on 2026-11-13 | Schritte mit Markierungen rechts; Gesicht am 13.11.2026 nach der Charaktervorgabe neu gezeichnet |
-| <a href="10-guide-thumbs-up.png"><img src="10-guide-thumbs-up.png" width="120" alt="点赞 / Thumbs up / Daumen hoch"></a> | 每组引导的最后一步 | Last step of a guide | Letzter Schritt einer Anleitung |
+| <a href="09-guide-point-right.png"><img src="09-guide-point-right.png" width="120" alt="指右 / Pointing right / Nach rechts zeigen"></a> | 标注在右侧的步骤，睁眼浅笑 | Steps with callouts on the right, eyes open with a small smile | Schritte mit Markierungen rechts, offene Augen und ein kleines Lächeln |
+| <a href="10-guide-thumbs-up.png"><img src="10-guide-thumbs-up.png" width="120" alt="点赞 / Thumbs up / Daumen hoch"></a> | 引导的最后一步，闭嘴微笑 | Last step of a guide, with a soft closed-mouth smile | Letzter Schritt einer Anleitung, mit einem sanften Lächeln |

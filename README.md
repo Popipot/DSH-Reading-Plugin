@@ -70,7 +70,7 @@ For Desktop, use its plugin manager. A `web` profile installation does not insta
 
 The whale girl is your guide. The numbers in each screenshot match the steps below it, and her sign shows where you are in the sequence. The screenshots use sample documents and the Navy Pixel theme. The interface is in Chinese.
 
-![The guide’s four poses: holding a sign, pointing left, pointing right, thumbs up](images/guide/guide-poses.png)
+![Four whale girl poses: holding a sign, pointing left, pointing right with a small smile, and giving a thumbs up](images/guide/guide-poses.png)
 
 ### Library: import and organize
 
