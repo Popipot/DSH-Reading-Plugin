@@ -175,6 +175,8 @@ The performance checks include complex sample PDFs and a 1,029-page textbook ope
 
 ## Development status
 
+**Standalone Windows app · requirements study.** The study uses plugin revision `f083c83` as the reference and covers offline reading, library migration, Windows integration, signed updates, and accessibility. The Windows release gate is pending a packaged candidate and Windows acceptance tests.
+
 **Theme contrast.** Apply buttons keep their current theme colors when hovered, focused, or pressed. Whale Blue uses a deeper blue navigation area beside a softer bookshelf.
 
 **November 9, 2026 · B1 released · 40 of 40 checks passed.** Immersive reading now has an always-visible row of labeled controls for appearance, fullscreen, and exit. Ebooks also have a contents toggle. The toolbar and appearance panel follow the reading theme, and settings persist across restarts.

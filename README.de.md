@@ -175,6 +175,8 @@ Die Leistungstests umfassen komplexe Beispiel-PDFs und ein direkt in DSH geöffn
 
 ## Entwicklungsstand
 
+**Eigenständige Windows-App · Anforderungsanalyse.** Die Analyse verwendet den Plugin-Stand `f083c83` als Referenz und behandelt Offline-Lesen, Bibliotheksmigration, Windows-Integration, signierte Updates und Barrierefreiheit. Die Windows-Freigabe setzt einen paketierten Kandidaten und Abnahmetests unter Windows voraus.
+
 **Designkontrast.** Beim Überfahren, Fokussieren und Drücken behalten die Schaltflächen zum Anwenden ihre Designfarben. Bei Walblau setzt sich die kräftigere blaue Navigation vom sanfteren Bücherregal ab.
 
 **9. November 2026 · B1 freigegeben · Alle 40 Prüfungen bestanden.** Im immersiven Modus bleiben beschriftete Schaltflächen für Darstellung, Vollbild und Beenden sichtbar. Bei E-Books lässt sich auch das Inhaltsverzeichnis ein- und ausblenden. Leiste und Einstellungsfenster übernehmen das Lesefarbschema. Die Einstellungen bleiben beim Neustart erhalten.
