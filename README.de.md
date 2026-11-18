@@ -207,7 +207,7 @@ Die Leistungstests umfassen komplexe Beispiel-PDFs und ein direkt in DSH geöffn
 
 **B5-Nutzertest.** Die [festgelegte Vorabversion v0.1.0-b5.1](https://github.com/Popipot/DSH-Reading-Plugin/releases/tag/v0.1.0-b5.1) basiert auf dem B4-Commit 199a485. Die Unterlagen für den 14-tägigen Test mit 15 Personen liegen vor. Der Test steht noch aus.
 
-**Werbevideo.** Werbematerial zur Gewinnung von Testpersonen ist in der Prüfung: ein kurzes Hochformatvideo, präsentiert vom Walmädchen, und eine 34 Sekunden lange animierte Erklärseite in fünf Szenen. Beide zeigen die echte Oberfläche der aktuellen Version. Dialog und lokal erzeugte Stimmen stehen fest; veröffentlicht wird das Material nach der Freigabe.
+**Werbevideo.** Werbematerial zur Gewinnung von Testpersonen: Eine 34 Sekunden lange animierte Erklärseite in fünf Szenen ist freigegeben, ein kurzes Hochformatvideo, präsentiert vom Walmädchen, ist noch in der Prüfung. Beide zeigen die echte Oberfläche der aktuellen Version; Dialog und lokal erzeugte Stimmen stehen fest.
 
 Im früheren B1-Leistungstest mit 80 kalten Dokumentöffnungen in DSH Desktop lag der höchste P95 je Testgruppe bei **1.375 ms** für den Referenzartikel und **2.426 ms** für das Lehrbuch mit 1.029 Seiten. Bei 480 Seitenwechseln in DSH Web lag der höchste P95 bei **44 ms** mit und **259 ms** ohne Vorladen. Der finale Build bestand die Desktop-Prüfung der Darstellung und sechs Browser-Regressionsreihen.
 
