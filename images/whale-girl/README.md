@@ -41,10 +41,14 @@ Vier Posen begleiten die Schritt-für-Schritt-Bildschirmfotos auf der Projektsei
 ## Character portraits · 角色立绘 · Charakterporträts
 
 These full-body illustrations are 1024 × 1536 transparent PNGs for promotional artwork and dialogue previews.
-两张全身立绘为 1024 × 1536 透明 PNG，供宣传图和对话预览使用。
+全身立绘为 1024 × 1536 透明 PNG，供宣传图、对话预览和动画讲解页使用。
 Die Ganzkörperporträts sind transparente PNGs mit 1024 × 1536 Pixeln für Werbemotive und Dialogvorschauen.
 
 | Illustration | 场景 | Where it appears | Einsatzort |
 | --- | --- | --- | --- |
 | <a href="11-mature.png"><img src="11-mature.png" width="120" alt="成熟鲸鱼娘抱书浅笑 / Mature whale girl smiling with a book / Reifes Walmädchen mit Buch"></a> | 成熟形态，讲解与宣传素材 | Mature form for narration and promotional art | Reife Form für Erklärungen und Werbemotive |
 | <a href="12-genki.png"><img src="12-genki.png" width="120" alt="元气鲸鱼娘挥手微笑 / Energetic whale girl waving / Munteres Walmädchen beim Winken"></a> | 元气形态，开场与宣传素材 | Energetic form for openings and promotional art | Muntere Form für Einstiege und Werbemotive |
+| <a href="13-genki-relief.png"><img src="13-genki-relief.png" width="120" alt="元气鲸鱼娘闭眼放松 / Energetic whale girl relieved, eyes closed / Munteres Walmädchen erleichtert mit geschlossenen Augen"></a> | 元气形态，动画讲解页开场：笔记写完，闭眼松一口气 | Energetic form, explainer opening: notes done, a relieved sigh | Muntere Form, Einstieg der Erklärseite: Notizen fertig, erleichtert |
+| <a href="14-genki-surprise.png"><img src="14-genki-surprise.png" width="120" alt="元气鲸鱼娘抬笔愣住 / Energetic whale girl surprised, pen raised / Munteres Walmädchen überrascht mit erhobenem Stift"></a> | 元气形态，动画讲解页：发现出处没记，抬笔愣住 | Energetic form, explainer: the source is missing, pen raised in surprise | Muntere Form, Erklärseite: die Quelle fehlt, überrascht mit erhobenem Stift |
+| <a href="15-genki-attentive.png"><img src="15-genki-attentive.png" width="120" alt="元气鲸鱼娘执笔思考 / Energetic whale girl thinking with a pen / Munteres Walmädchen nachdenklich mit Stift"></a> | 元气形态，动画讲解页：回想出处、认真听讲 | Energetic form, explainer: recalling the source and listening | Muntere Form, Erklärseite: erinnert sich an die Quelle und hört zu |
+| <a href="16-mature-pointing.png"><img src="16-mature-pointing.png" width="120" alt="成熟鲸鱼娘抬手指向 / Mature whale girl pointing / Reifes Walmädchen zeigt"></a> | 成熟形态，动画讲解页：演示操作时指向按钮 | Mature form, explainer: pointing at the button during a demo | Reife Form, Erklärseite: zeigt bei der Vorführung auf die Schaltfläche |
