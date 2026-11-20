@@ -209,7 +209,7 @@ Die Leistungstests umfassen komplexe Beispiel-PDFs und ein direkt in DSH geöffn
 
 **Werbevideo.** Werbematerial zur Gewinnung von Testpersonen: Die 34 Sekunden lange [animierte Erklärseite](promo/dsh-reader-explainer.html) in fünf Szenen ist veröffentlicht (herunterladen und im Browser öffnen, auch als [Video](promo/dsh-reader-explainer-34s.mp4)), ein kurzes Hochformatvideo, präsentiert vom Walmädchen, ist noch in der Prüfung. Beide zeigen die echte Oberfläche der aktuellen Version; Dialog und lokal erzeugte Stimmen stehen fest.
 
-Die Einstiegsanimation mit dem kleinen Walmädchen für „Tiefseesuche“ ist in der Prüfung. Der B14-Kandidat `action-review-r1` umfasst sieben gemessene Bewegungsproben von je einer Sekunde mit fünf Bildern, darunter die ratlose Reaktion aus einer zweiten Perspektive. Der überarbeitete Film wartet auf die Freigabe.
+Die freigegebenen [Einstiegsanimationen des kleinen Walmädchens](images/whale-girl/README.md#brand-film-actions) für „Tiefseesuche“ sind in der Galerie verfügbar. Der B14-Kandidat `action-review-r1` umfasst sieben gemessene Clips von je einer Sekunde mit fünf Bildern und ein Standbild aus der Ich-Perspektive. Der überarbeitete Film wartet auf die Freigabe.
 
 Im früheren B1-Leistungstest mit 80 kalten Dokumentöffnungen in DSH Desktop lag der höchste P95 je Testgruppe bei **1.375 ms** für den Referenzartikel und **2.426 ms** für das Lehrbuch mit 1.029 Seiten. Bei 480 Seitenwechseln in DSH Web lag der höchste P95 bei **44 ms** mit und **259 ms** ohne Vorladen. Der finale Build bestand die Desktop-Prüfung der Darstellung und sechs Browser-Regressionsreihen.
 
