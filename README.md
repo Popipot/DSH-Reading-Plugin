@@ -209,6 +209,8 @@ The performance checks include complex sample PDFs and a 1,029-page textbook ope
 
 **Promo video.** Promo material to recruit pilot users: the 34-second [animated explainer page](promo/dsh-reader-explainer.html) in five scenes is published (download it and open it in a browser; also as a [video](promo/dsh-reader-explainer-34s.mp4)), and a short vertical video presented by the whale girl is still in review. Both show the current build's real interface, and the dialogue and the locally generated voices are final.
 
+The opening whale girl animation for “Deep Sea Search” is in review. The B14 action candidate `action-review-r1` has seven one-second tests measured at 5 fps, including a second angle for the puzzled reaction. The revised film is awaiting approval.
+
 In B1's earlier performance run, 80 cold opens on DSH Desktop had a highest group P95 of **1,375 ms** for the reference paper and **2,426 ms** for the 1,029-page textbook. For 480 adjacent-page turns on DSH Web, the highest group P95 was **44 ms** with preloading and **259 ms** without it. The final build passed the desktop appearance check and six browser regression suites.
 
 ## Feedback
