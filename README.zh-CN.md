@@ -209,7 +209,7 @@ PDF 阅读和批注截图见 [中文使用详解](docs/USER_GUIDE.zh-CN.md)。
 
 **宣传短片。** 招募试点用户的宣传素材：34 秒、分 5 个场景的[动画讲解页](promo/dsh-reader-explainer.html)已发布（下载后用浏览器打开，也有[视频版](promo/dsh-reader-explainer-34s.mp4)），鲸鱼娘主讲的竖屏短片还在审阅。画面都取自当前版本的真实界面，对话和本机合成的配音已经定稿。
 
-「深海寻句」开场的[小鲸鱼娘动作](images/whale-girl/README.md#brand-film-actions)已审核并收入图集。B14 动作候选 `action-review-r1` 有 7 段实测各 1 秒、5 帧的动作，另附第一视角定帧。改版成片待放行。
+「深海寻句」开场的[小鲸鱼娘动作](images/whale-girl/README.md#brand-film-actions)已审核并收入图集。B14 动作候选 `action-review-r1` 有 7 段实测各 1 秒、5 帧的动作，另附第一视角定帧。改版成片待放行。 16 秒、30 fps 增帧试剪 `action-review-r2` 正在审核，角色每秒 10–15 张，甩头关键段和变身光效另行加密。
 
 B1 前一轮性能测试在 DSH 桌面端完成 80 次冷打开，参考论文和 1029 页教材的最高分组 P95 分别为 **1375 ms** 和 **2426 ms**。DSH Web 完成 480 次相邻翻页，预热与未预热最高分组 P95 分别为 **44 ms** 和 **259 ms**。最终版本通过桌面外观复验及六类浏览器回归。
 
